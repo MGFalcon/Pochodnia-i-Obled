@@ -44,6 +44,7 @@ function nextStep() {
     return { tab: 'stol', txt: 'Walka trwa — <b>Następna tura</b>.' };
   }
   if (st.enemies.some(e => !e.corpse)) return { tab: 'stol', sel: '[data-act=fightStart]', txt: 'Na stole stoją wrogowie: <b>Stół → Rozpocznij walkę</b>. Najpierw ustawcie szyk.', prz: P('Pozycja znaczy więcej niż siła. Kto stoi z przodu, ten krwawi pierwszy.') };
+  if (!w.quest && UI.wsub === 'prep' && typeof prepQuest === 'function' && prepQuest()) return { tab: 'wyprawa', sel: '[data-act=depart]', txt: 'Skompletujcie drużynę (do czterech, 1 = przód) i plecak, potem <b>Wyrusz</b>.', prz: P('Wybieraj tych, których stać na jeszcze jedno zejście.') };
   if (w.quest) {
     if (w.pending) return { tab: 'wyprawa', sel: '.eventbox', txt: 'Zdecydujcie: <b>' + esc(pendingTitle(w.pending)) + '</b> (na mapie wyprawy).' };
     if (w.camp) return { tab: 'wyprawa', sel: '.campp', txt: 'Obóz: rozdajcie <b>Punkty Odpoczynku</b> (zostało ' + w.camp.pts + '), potem <b>Noc</b>.', prz: P('Ogień trzyma ciemność na dystans. Na krótko.') };
@@ -57,12 +58,13 @@ function nextStep() {
     if (st.torch <= 3 && (w.sup.Pochodnie || 0) > 0) return { tab: 'wyprawa', sel: '[data-act=torchUse]', txt: 'Robi się ciemno (Pochodnia ' + st.torch + '). Zapalcie <b>Pochodnię +3</b> albo idźcie w mroku po lepsze łupy. Cel: ' + esc(g.txt) + '.' };
     return { tab: 'wyprawa', sel: '.scoutbar .scoutbtn, .room.reach', txt: 'Wybierzcie sąsiednią komnatę na mapie. <b>Zwiad</b> przed wejściem zdradza, co czeka. Cel: ' + esc(g.txt) + '.', prz: P('Każdy korytarz kosztuje światło. Światło to życie.') };
   }
+  const ready = live.filter(h => canLevel(h) && h.status !== 'wyprawa');
+  if (!w.quest && ready.length) return { tab: 'bohaterowie', hero: ready[0].id, sel: '[data-act=levelUp]', txt: 'Awans! ' + ready.map(h => '<b>' + esc(heroLabel(h)) + '</b>').join(', ') + ' ' + (ready.length > 1 ? 'mają' : 'ma') + ' dość doświadczenia — gracz klika „Awansuj” na karcie bohatera.', prz: P('Każdy Poziom to jedno zejście więcej, które przeżyli.') };
   const sick = live.filter(h => h.stress >= 8 && h.status === 'osada');
   if (o.lastReturn && sick.length && !(o.svc && Object.keys(o.svc).length)) return { tab: 'bohaterowie', txt: 'Po wyprawie: ' + sick.map(h => esc(heroLabel(h))).join(', ') + ' ' + (sick.length > 1 ? 'mają' : 'ma') + ' dużo Stresu — wyślijcie do Opactwa albo Gospody (karta bohatera). Potem <b>Nowy tydzień</b>.' };
   if (o.decision) return { tab: 'osada', sel: '.hamdec', txt: 'W Osadzie czeka decyzja: <b>' + esc((HAMLET_DECISIONS.find(x => x.key === o.decision.key) || {}).title || '') + '</b>.' };
   if (!(o.board || []).length) return { tab: 'osada', sel: '[data-act=newWeek]', txt: 'Tablica zadań jest pusta: <b>Osada → Nowy tydzień</b> (albo MG losuje tablicę).' };
-  if (st.heroes.length < Math.min(4, live.filter(h => !heroAway(h)).length)) return { tab: 'stol', sel: '[data-act=formation]', txt: 'Ustawcie drużynę: <b>Stół → Ustaw drużynę</b> (do czterech, pozycja 1 z przodu).' };
-  return { tab: 'wyprawa', sel: '[data-act=wsub][data-v=tablica]', txt: 'Wybierzcie zadanie: <b>Wyprawa → Tablica zadań</b>, spakujcie plecak i ruszajcie.', prz: P('Kupuj pochodnie. I nie licz, ilu wróci.') };
+  return { tab: 'wyprawa', sel: '.estate .hasq', txt: 'Wybierzcie zadanie: na <b>mapie posiadłości</b> świecą miejsca z zadaniem — kliknijcie jedno, złóżcie drużynę i <b>Wyrusz</b>.', prz: P('Kupuj pochodnie. I nie licz, ilu wróci.') };
 }
 function renderGuide() {
   const el = $('#guide'); if (!el) return;
@@ -77,6 +79,8 @@ Object.assign(ACT, {
   guideGo: () => {
     const n = UI._guide; if (!n) return;
     if (n.tab === 'wyprawa' && Store.S.wyprawa.quest) UI.wsub = 'loch';
+    if (n.hero) UI.heroSel = n.hero;
+    if (n.tab === 'wyprawa' && !Store.S.wyprawa.quest && /hasq/.test(n.sel || '')) UI.wsub = 'mapa';
     if (n.tab && UI.view !== n.tab) location.hash = '#' + n.tab;
     setTimeout(() => { const t = n.sel && $(n.sel); if (t) { t.scrollIntoView({ behavior: 'smooth', block: 'center' }); t.classList.add('pulse'); setTimeout(() => t.classList.remove('pulse'), 2400); } }, 120);
   },
@@ -149,7 +153,7 @@ function resolveFeature(optId) {
   Store.act([opSet('wyprawa', w)], { quiet: true });
   commit({ lines, stol: st, touched }, fight ? 'bad' : '');
   if (loot) rollLoot(loot, 'gruz');
-  if (fight) location.hash = '#stol';
+  if (fight) goFight();
 }
 
 /* ======================= rozmowy przy ognisku ======================= */

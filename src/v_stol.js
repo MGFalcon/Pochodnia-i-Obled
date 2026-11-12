@@ -540,6 +540,7 @@ Object.assign(ACT, {
     s.fight = false; s.init = []; s.turn = -1; s.round = 0; s.last = null; s.enemies = s.enemies.filter(e => !e.corpse); s.fallen = []; s.roomId = null; s.forceSurprise = null; s.lootBonus = 0; s.acted = null; s.cauldron = null; s.witchDmg = null; s.bossName = null; s.bossFight = false;
     if (ops.length) Store.act(ops, { quiet: true });
     commit({ lines, stol: s, touched }, 'sys');
+    if (Store.S.wyprawa.quest && won && !s.siege) { UI.wsub = 'loch'; setTimeout(() => { if (location.hash === '#stol' && !Store.S.stol.fight) location.hash = '#wyprawa'; }, 1800); }
   },
   lootFight: () => {
     const s = Store.S.stol; if (s.looted) return toast('Łup za tę walkę został już wylosowany.');

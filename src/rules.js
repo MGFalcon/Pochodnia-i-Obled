@@ -78,6 +78,9 @@ function heroStats(h) {
   return st;
 }
 const whyText = (st, k) => (st.why[k] || []).map(([s, v]) => s + ' ' + (k === 'virtue' && s === 'bazowo' ? v : (st.why[k][0] && st.why[k][0][0] === s && (s === 'klasa' || s === 'bazowo') ? v : sgn(v)))).join(', ');
+/* doświadczenie: próg rośnie z Poziomem (0→1: 2, 1→2: 3 … 5→6: 7); awans klika gracz, zawsze o jeden Poziom */
+const xpNeed = lvl => 2 + (lvl || 0);
+const canLevel = h => !h.dead && h.level < 6 && (h.xp || 0) >= xpNeed(h.level);
 const maxRank = (h, building) => Math.min(h.level + 1, 1 + (building || 0), 4);
 
 /* ---------- umiejętności ---------- */

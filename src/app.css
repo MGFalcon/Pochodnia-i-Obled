@@ -432,3 +432,32 @@ label.chk.sick { opacity: .45; filter: grayscale(.8); cursor: not-allowed; }
 /* imiona bohaterów i nazwy wrogów mieszczą się w wąskich polach */
 .slot .nm { font-size: clamp(13px, 1.25vw + 6px, 18px); overflow-wrap: normal; word-break: normal; hyphens: manual; }
 @media (max-width: 600px) { .slot .nm { font-size: clamp(11px, 3.3vw, 15px); } .slot .cl { font-size: 11px; } }
+/* mapa: lokacje z zadaniem */
+.estate .qring { fill: none; stroke: var(--gold); stroke-width: 3; animation: qglow 2s ease-in-out infinite; }
+.estate .qmark { font-family: var(--f-display); font-size: 22px; font-weight: 700; fill: var(--gold); paint-order: stroke; stroke: #0e0c0b; stroke-width: 4px; }
+@keyframes qglow { 50% { stroke-opacity: .35; } }
+@media (prefers-reduced-motion: reduce) { .estate .qring { animation: none; } }
+.mapq .quest { margin: 8px 0 12px; }
+/* przygotowanie wyprawy */
+.prep { display: grid; gap: 14px; }
+.pslots { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; margin-bottom: 10px; }
+.pslot { border: 1px solid var(--rule2); border-radius: var(--r); padding: 8px; background: rgba(20,15,12,.6); min-height: 120px; }
+.pslot.empty { border-style: dashed; opacity: .7; }
+.pslot .pos { font-size: 12px; color: var(--bone3); letter-spacing: .05em; }
+.pslot .pn { font-family: var(--f-display); font-size: 18px; color: var(--pale); margin: 2px 0; }
+.benchlist { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; }
+.bench { text-align: left; display: flex; flex-direction: column; gap: 2px; padding: 8px 10px; border: 1px solid var(--rule2); border-radius: var(--r); background: rgba(20,15,12,.5); color: var(--bone); cursor: pointer; font: inherit; }
+.bench:hover:not([disabled]) { border-color: var(--gold2); }
+.bench.off, .bench[disabled] { opacity: .55; cursor: default; }
+.prep .go .big { font-size: 20px; padding: 10px 34px; }
+@media (max-width: 600px) { .pslots { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+/* doświadczenie */
+.lvnum { font-family: var(--f-display); font-size: 22px; color: var(--gold); margin-right: 6px; }
+.xpbar { display: inline-flex; gap: 3px; }
+.xpbar i.xp { width: 12px; height: 12px; border-radius: 2px; transform: rotate(45deg); border: 1px solid var(--gold2); background: transparent; display: inline-block; }
+.xpbar i.xp.on { background: var(--gold); }
+.lvup { animation: lvglow 1.6s ease-in-out infinite; }
+@keyframes lvglow { 50% { box-shadow: 0 0 12px rgba(214,170,90,.6); } }
+@media (prefers-reduced-motion: reduce) { .lvup { animation: none; } }
+.lvbadge { color: var(--gold); font-weight: 700; }
+.gmfix { margin-left: 6px; opacity: .8; }

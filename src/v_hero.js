@@ -46,7 +46,7 @@ VIEWS.bohaterowie = {
       <div class="rlist">${list.map(h => {
         const st = heroStats(h);
         return `<button class="rcard ${UI.heroSel === h.id ? 'on' : ''} ${h.dead ? 'dead' : ''} ${!h.dead && heroAway(h) ? 'sick' : ''}" data-act="heroSel" data-id="${h.id}" ${!h.dead && heroAway(h) ? `title="${esc(heroAway(h))}"` : ''}>
-          <span class="rp2">${portraitHtml(h, 'rp-img')}</span><span class="rn">${esc(heroLabel(h))}</span><span class="rc">${h.name ? esc(CLS[h.cls].name) + ' · ' : ''}Poz. ${h.level}</span>
+          <span class="rp2">${portraitHtml(h, 'rp-img')}</span><span class="rn">${esc(heroLabel(h))}</span><span class="rc">${h.name ? esc(CLS[h.cls].name) + ' · ' : ''}Poz. ${h.level}${h.level < 6 ? ' · dośw. ' + (h.xp || 0) + '/' + xpNeed(h.level) : ''}${canLevel(h) ? ' <b class="lvbadge">★ awans</b>' : ''}</span>
           ${h.dead ? `<span class="rc">☩ ${esc(h.deathCause || '')}</span>` : bar('hp', h.hp, st.maxhp, h.hp + '/' + st.maxhp) + bar('st', h.stress, 20, 'Stres ' + h.stress)}
           <span class="ro">${esc(ownerName(h))}${h.status && h.status !== 'osada' ? ' · ' + esc(h.status) : ''}</span></button>`;
       }).join('') || `<div class="empty-state"><p>${filt === 'dead' ? 'Cmentarz jest jeszcze pusty.' : 'W rejestrze nie ma jeszcze bohaterów.'}</p>${W && filt !== 'dead' ? '<p class="dim">Każdy gracz wybiera na start klasę jednego bohatera, resztę losujecie z dyliżansu (k20).</p>' : ''}</div>`}</div>
@@ -67,9 +67,9 @@ VIEWS.bohaterowie = {
           <div class="hcls">${esc(c.name)} <span class="muted">· ${esc(c.role || '')}</span></div>
           ${h.story ? `<div class="hstory small"><span class="muted">${esc(h.story.origin)}.</span> Marzenie: ${esc(h.story.dreamText)} <span class="muted">(${h.story.done ? '<b>spełnione</b>' : 'cel: ' + esc(h.story.goal) + ' → pozytywne dziwactwo'})</span></div>` : can ? `<button class="btn sm ghost" data-act="storyRoll">Nadaj historię (pochodzenie i marzenie)</button>` : ''}
           ${Object.entries(h.bonds || {}).filter(([id, n]) => n && H(id) && !H(id).dead).length ? `<div class="hbonds small">${Object.entries(h.bonds).filter(([id, n]) => n && H(id) && !H(id).dead).map(([id, n]) => `<span class="chip sm ${n >= 2 ? 'gold' : n <= -2 ? 'red' : ''}">${esc(heroLabel(H(id)))}: ${bondName(n)}</span>`).join('')}</div>` : ''}
-          <div class="row lvl"><span class="lbl">Poziom</span>${[0, 1, 2, 3, 4, 5, 6].map(i => `<button class="lv ${i === h.level ? 'on' : ''}" data-act="setLevel" data-v="${i}" ${dis}>${i}</button>`).join('')}
-            <span class="lbl">znaczniki</span>${[1, 2].map(i => `<i class="xp ${i <= h.xp ? 'on' : ''}"></i>`).join('')}
-            ${can ? `<button class="btn sm ghost" data-act="addXp" data-v="1">+1</button><button class="btn sm ghost" data-act="addXp" data-v="2">+2</button><button class="btn sm ghost" data-act="addXp" data-v="3">+3</button>` : ''}</div>
+          <div class="row lvl"><span class="lbl">Poziom</span><b class="lvnum num">${h.level}</b>${h.level < 6 ? `<span class="lbl">doświadczenie</span><span class="xpbar" title="${h.xp || 0} z ${xpNeed(h.level)} do Poziomu ${h.level + 1}">${Array.from({ length: xpNeed(h.level) }, (_, i) => `<i class="xp ${i < (h.xp || 0) ? 'on' : ''}"></i>`).join('')}</span><span class="num small">${h.xp || 0} / ${xpNeed(h.level)} do Poziomu ${h.level + 1}</span>` : '<span class="chip sm gold">Poziom maksymalny</span>'}
+            ${can && canLevel(h) ? `<button class="btn sm gold lvup" data-act="levelUp" ${h.status === 'wyprawa' ? 'disabled title="Awans po powrocie do Osady"' : ''}>Awansuj na Poziom ${h.level + 1}</button>` : ''}
+            ${Store.isGM() ? `<span class="gmfix"><button class="btn sm ghost" data-act="addXp" data-v="-1" title="Poprawka MG: −1 doświadczenia">−1</button><button class="btn sm ghost" data-act="addXp" data-v="1" title="Poprawka MG: +1 doświadczenia">+1</button></span>` : ''}</div>
           <div class="row"><span class="chip">${esc(ownerName(h))}</span>
             ${Store.canWrite() && h.owner !== Store.me.id && (Store.isGM() || !h.owner) ? `<button class="btn sm ghost" data-act="claim">Przypisz do mnie</button>` : ''}
             ${Store.isGM() && h.owner ? `<button class="btn sm ghost" data-act="unclaim">Zwolnij</button>` : ''}
@@ -242,13 +242,20 @@ Object.assign(ACT, {
   portraitReset: () => { const h = curHero(); delete h.portrait; saveHero(h); },
   claim: () => { const h = curHero(); h.owner = Store.me.id; h.ownerName = Store.me.name; saveHero(h); },
   unclaim: () => { const h = curHero(); h.owner = null; saveHero(h); },
-  setLevel: el => { const h = curHero(); const st0 = heroStats(h); h.level = +el.dataset.v; const st1 = heroStats(h); h.hp = clamp(h.hp + (st1.maxhp - st0.maxhp), 0, st1.maxhp); saveHero(h); },
   addXp: el => {
-    const h = curHero(); const st0 = heroStats(h); h.xp += +el.dataset.v; let up = 0;
-    while (h.xp >= 3 && h.level < 6) { h.xp -= 3; h.level++; up++; }
-    if (h.level >= 6) h.xp = Math.min(h.xp, 2);
+    if (!Store.isGM()) return toast('Doświadczenie poprawia tylko MG.');
+    const h = curHero(); h.xp = Math.max(0, (h.xp || 0) + +el.dataset.v);
+    saveHero(h); rollLog('MG poprawia doświadczenie: ' + heroLabel(h) + ' — ' + h.xp + ' / ' + xpNeed(h.level) + '.', '', 'sys');
+  },
+  levelUp: () => {
+    const h = curHero(); if (!canHero(h)) return toast('To bohater innego gracza.');
+    if (!canLevel(h)) return toast(h.level >= 6 ? 'To już Poziom maksymalny.' : 'Za mało doświadczenia: ' + (h.xp || 0) + ' z ' + xpNeed(h.level) + '.');
+    if (h.status === 'wyprawa') return toast('Awans po powrocie do Osady.');
+    const need = xpNeed(h.level); const st0 = heroStats(h); h.xp -= need; h.level++;
     const st1 = heroStats(h); h.hp = Math.min(st1.maxhp, h.hp + (st1.maxhp - st0.maxhp));
-    saveHero(h); if (up) rollLog('**' + heroLabel(h) + '** awansuje na Poziom ' + h.level + '.', 'good', 'sys');
+    const gains = ['Zdrowie +1'].concat([1, 3, 5].includes(h.level) ? ['Unik +1'] : [], ['rangi w Kuźni i Gildii do ' + Math.min(4, h.level + 1)]);
+    const dl = []; dreamCheck(h, dl, 'level');
+    saveHero(h); rollLog('**' + heroLabel(h) + '** awansuje na Poziom ' + h.level + ': ' + gains.join(', ') + '. Następny próg: ' + (h.level < 6 ? xpNeed(h.level) + ' doświadczenia' : 'brak — Poziom maksymalny') + '.' + (dl.length ? ' ' + dl.join(' ') : ''), 'good', 'sys');
   },
   pip: el => {
     if (el.dataset.k === 'npchp') { const n = clone(Store.G.npc[UI.npcSel]); let v = +el.dataset.v; if (n.enemy.hp === v) v--; n.enemy.hp = v; npcSave(n); return renderView(); }

@@ -249,7 +249,7 @@ function heroUse(h0, idx, targetIds) {
         const amt = Math.max(1, (crit ? Math.ceil(diceMax(inf.heal, v.healBonus) * 1.5) : hr.total) + bb);
         if (bb) lines.push(bb > 0 ? '(przyjaźń: leczenie +1)' : '(niechęć: leczenie −1)');
         const got = heroHeal(t, amt, lines, crit);
-        if (low && t.id !== h.id && stol.fight && d(2) === 1) bondAdd(h, t, 1, lines); bits.push('+' + got + ' Zdrowia' + (hr && inf.heal.n ? ' (k' + inf.heal.n + ' = ' + hr.roll + ')' : ''));
+        if (low && t.id !== h.id && stol.fight) bondAdd(h, t, 1, lines); bits.push('+' + got + ' Zdrowia' + (hr && inf.heal.n ? ' (k' + inf.heal.n + ' = ' + hr.roll + ')' : ''));
         const bl = sk.eff.match(/przy wyniku 1–(\d) leczony zaczyna krwawić \((\d)\)/);
         if (bl && hr && hr.roll <= +bl[1] && !t.dead) {
           t.fx = Object.assign({}, t.fx); addFx(t.fx, 'bleed', +bl[2] + (t.qn.some(q => qname(q.t) === 'Hemofilik') ? 1 : 0));
