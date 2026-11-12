@@ -21,6 +21,32 @@ function stateChip(h) {
   return gchip(c, h.state.name, h.state.name);
 }
 function curEntry() { const s = Store.S.stol; return s.init && s.init[s.turn]; }
+/* kolejka w walce: działa się tylko w swojej turze, jedna akcja na turę; ogłuszony traci turę */
+const turnKey = () => { const s = Store.S.stol; return (s.round || 0) + ':' + s.turn; };
+const inTurns = () => { const s = Store.S.stol; return !!(s.fight && (s.init || []).length && curEntry()); };
+function entryName(x) { if (!x) return '—'; return x.k === 'h' ? (H(x.id) ? heroLabel(H(x.id)) : '—') : ((Store.S.stol.enemies.find(e => e.id === x.id) || {}).name || '—'); }
+function heroTurn(h) {
+  if (!inTurns()) return { ok: true, mine: true };
+  const s = Store.S.stol; const ce = curEntry();
+  if (!(ce.k === 'h' && ce.id === h.id)) return { ok: false, mine: false, why: 'Teraz tura: ' + entryName(ce) + '. ' + heroLabel(h) + ' działa w swojej kolejce.', short: 'nie jego tura' };
+  if (h.fx && h.fx.lostTurn === (s.round || 0)) return { ok: false, mine: true, lost: true, why: h.fx.lostWhy === 'stun' ? heroLabel(h) + ' jest ogłuszony i traci tę turę.' : 'Tę turę przejęła Przypadłość (' + (h.state ? h.state.name : '') + ').', short: h.fx.lostWhy === 'stun' ? 'ogłuszony' : 'tura przejęta' };
+  if (s.acted === turnKey()) return { ok: false, mine: true, why: heroLabel(h) + ' już działał w tej turze. Kliknij „Następna tura”.', short: 'już działał' };
+  return { ok: true, mine: true };
+}
+function enemyTurn(e) {
+  if (!inTurns()) return { ok: true };
+  const s = Store.S.stol; const ce = curEntry();
+  if (!(ce.k === 'e' && ce.id === e.id)) return { ok: false, why: 'Teraz tura: ' + entryName(ce) + '.' };
+  if (e.fx && e.fx.lostTurn === (s.round || 0)) return { ok: false, lost: true, why: e.name + ' jest ogłuszony i traci tę turę.' };
+  if (s.acted === turnKey()) return { ok: false, why: e.name + ' już działał w tej turze. Kliknij „Następna tura”.' };
+  return { ok: true };
+}
+function actedCommit(res, cls) { if (res && inTurns()) { res.stol = res.stol || clone(Store.S.stol); res.stol.acted = turnKey(); } commit(res, cls); }
+/* ogłuszony albo martwy na początku tury: po chwili tura sama przechodzi dalej */
+function autoSkip(res) {
+  if (!res || !res.skip) return; const key = turnKey();
+  setTimeout(() => { const s = Store.S.stol; if (s.fight && turnKey() === key) ACT.nextTurn(); }, res.quiet ? 300 : 1600);
+}
 
 function heroSlot(id, pos) {
   const h = H(id); if (!h) return `<div class="slot empty"><div class="pos">${pos}</div></div>`;
@@ -94,7 +120,7 @@ VIEWS.stol = {
     ${UI.epend ? `<div class="pendbar">Wybierz bohatera, w którego ${esc(UI.epend.label)} <button class="btn sm" data-act="cancelPend">Anuluj</button></div>` : ''}
     <section class="panel fieldp">
       <div class="fhead">
-        <div><span class="lbl">${s.fight ? 'Walka' : 'Spokój'}</span> <b class="round">${s.fight ? 'Runda ' + s.round : 'Drużyna w szyku'}</b>${curName ? ` <span class="chip gold">tura: ${esc(curName)}</span>` : ''}</div>
+        <div><span class="lbl">${s.fight ? 'Walka' : 'Spokój'}</span> <b class="round">${s.fight ? 'Runda ' + s.round : 'Drużyna w szyku'}</b>${curName ? ` <span class="chip gold">tura: ${esc(curName)}${(() => { const x = ce.k === 'h' ? H(ce.id) : s.enemies.find(e => e.id === ce.id); return x && x.fx && x.fx.lostTurn === (s.round || 0) ? (x.fx.lostWhy === 'stun' ? ' · ogłuszony, tura przepada' : ' · tura przejęta') : s.acted === turnKey() ? ' · już działał' : ''; })()}</span>` : ''}</div>
         <div class="row">
           ${W ? `<button class="btn sm" data-act="formation">Ustaw drużynę</button>` : ''}
           ${W && !s.fight ? `<button class="btn sm primary" data-act="fightStart" ${s.enemies.length && s.heroes.length ? '' : 'disabled'}>Rozpocznij walkę</button>` : ''}
@@ -132,33 +158,33 @@ VIEWS.stol = {
     const ohyda = c.name === 'Ohyda';
     const skills = h.skills.filter(i => !ohyda || (c.skills[i].form === (h.form === 'beast' ? 'bestia' : 'człowiek')));
     const sup = Store.S.wyprawa.sup || {};
-    const rd = Store.S.stol.round || 0; const lost = Store.S.stol.fight && h.fx && h.fx.lostTurn === rd && (curEntry() || {}).id === h.id;
+    const g = heroTurn(h); const lost = !!g.lost; const busy = !g.ok;
     const ekst = h.state && h.state.kind === 'ekstaza';
     return `<section class="panel act">
-      ${lost ? `<p class="warn">Tę turę przejęła Przypadłość (${esc(h.state ? h.state.name : '')}). Kliknij „Następna tura”.</p>` : ''}
+      ${busy && can ? `<p class="${lost ? 'warn' : 'muted'}">${esc(g.why)}</p>` : ''}
       ${ekst ? `<p class="warn">Ekstaza bólu: musi atakować i nie leczy innych.</p>` : ''}
       <h2>${esc(heroLabel(h))} <span class="hint">${pos ? 'pozycja ' + pos : 'poza szykiem'} · ${esc(ownerName(h))}</span></h2>
       ${!can ? `<p class="muted">To bohater innego gracza — możesz go obejrzeć, ale działa nim jego gracz albo MG.</p>` : ''}
       <p class="legend-pos"><span class="pdots from"><i class="on"></i></span> złote — z której pozycji bohatera (ułożone jak na polu: 4 3 2 1, pozycja 1 z przodu) · <span class="pdots to"><i class="on"></i></span> czerwone — które pozycje wroga trafia (1 2 3 4, od przodu)</p>
       <div class="skills">${skills.map(i => {
         const v = skillView(h, i, st); const okPos = pos && v.inf.from.includes(pos);
-        const lim = /2 razy na walkę/.test(v.s.eff) ? 2 : /raz na walkę/.test(v.s.eff) ? 1 : 0; const used = ((h.fx || {}).used || {})[i] || 0; const spent = (lim && used >= lim) || lost || (ekst && !v.inf.attack);
-        return `<button class="skill" data-act="useSkill" data-i="${i}" ${can && okPos && !spent && Store.S.stol.heroes.includes(h.id) ? '' : 'disabled'} title="${esc(spent ? 'Wykorzystane w tej walce' : !okPos ? 'Nie z tej pozycji' : v.s.eff || '')}">
+        const lim = /2 razy na walkę/.test(v.s.eff) ? 2 : /raz na walkę/.test(v.s.eff) ? 1 : 0; const used = ((h.fx || {}).used || {})[i] || 0; const spent = (lim && used >= lim) || busy || (ekst && !v.inf.attack);
+        return `<button class="skill" data-act="useSkill" data-i="${i}" ${can && okPos && !spent && Store.S.stol.heroes.includes(h.id) ? '' : 'disabled'} title="${esc(busy ? g.why : spent ? 'Wykorzystane w tej walce' : !okPos ? 'Nie z tej pozycji' : v.s.eff || '')}">
           <span class="sn">${esc(v.s.name)}${!okPos && pos ? ' <span class="nopos">nie z poz. ' + pos + '</span>' : ''}</span>
           <span class="sp2">${posDots(v.inf.from, 'from')}<span class="sep">▸</span>${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(v.s.w)}</span>`}<span class="ptxt">${esc(skillPosTxt(v))}</span></span>
           <span class="sv num">${v.cel != null ? 'Cel. ' + v.cel : ''}${v.dmg ? ' · ' + v.dmg : ''}${v.heal ? ' · leczy ' + v.heal : ''}${v.stress ? ' · −' + v.stress + ' Stres' : ''}${lim ? ' · ' + (lim - used) + '/' + lim + ' w walce' : ''}</span>
         </button>`;
       }).join('')}</div>
       ${can ? `<div class="row acts">
-        <button class="btn sm" data-act="heroMove" data-d="1" ${pos && pos < Store.S.stol.heroes.length ? '' : 'disabled'} title="Zamiana z sąsiadem z tyłu (dalej od wrogów)">◀ do tyłu</button>
-        <button class="btn sm" data-act="heroMove" data-d="-1" ${pos > 1 ? '' : 'disabled'} title="Zamiana z sąsiadem z przodu (bliżej wrogów)">do przodu ▶</button>
-        <button class="btn sm" data-act="heroPass">Pas</button>
-        ${ohyda ? `<button class="btn sm gold" data-act="transform">${h.form === 'beast' ? 'Wróć do ludzkiej postaci' : 'Przemiana w bestię'}</button>` : ''}
-        <button class="btn sm" data-act="retreat">Odwrót</button>
+        <button class="btn sm" data-act="heroMove" data-d="1" ${pos && pos < Store.S.stol.heroes.length && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z tyłu (dalej od wrogów)">◀ do tyłu</button>
+        <button class="btn sm" data-act="heroMove" data-d="-1" ${pos > 1 && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z przodu (bliżej wrogów)">do przodu ▶</button>
+        <button class="btn sm" data-act="heroPass" ${busy ? 'disabled' : ''}>Pas</button>
+        ${ohyda ? `<button class="btn sm gold" data-act="transform" ${busy ? 'disabled' : ''}>${h.form === 'beast' ? 'Wróć do ludzkiej postaci' : 'Przemiana w bestię'}</button>` : ''}
+        <button class="btn sm" data-act="retreat" ${busy || !Store.S.stol.fight ? 'disabled' : ''} ${Store.S.stol.enemies.some(e => e.boss && !e.corpse) ? 'title="Z walki z bossem nie ma odwrotu"' : ''}>Odwrót</button>
       </div>
       <div class="row acts items">
         <span class="lbl">Plecak</span>
-        ${[['Bandaże', 'bandaż', 'bleed'], ['Antidota', 'antidotum', 'blight'], ['Laudanum', 'laudanum', 'horror'], ['Zioła', 'zioła', 'debuff'], ['Prowiant', 'prowiant', 'food']].map(([k, n, w]) => `<button class="btn sm ghost" data-act="useItem" data-k="${k}" data-w="${w}">${n} <span class="muted num">${sup[k] != null ? sup[k] : '–'}</span></button>`).join('')}
+        ${[['Bandaże', 'bandaż', 'bleed'], ['Antidota', 'antidotum', 'blight'], ['Laudanum', 'laudanum', 'horror'], ['Zioła', 'zioła', 'debuff'], ['Prowiant', 'prowiant', 'food']].map(([k, n, w]) => `<button class="btn sm ghost" data-act="useItem" data-k="${k}" data-w="${w}" ${busy && (!g.mine || lost) ? 'disabled' : ''}>${n} <span class="muted num">${sup[k] != null ? sup[k] : '–'}</span></button>`).join('')}
       </div>
       <div class="row acts">
         <span class="lbl">Popraw</span>
@@ -171,12 +197,13 @@ VIEWS.stol = {
   enemyPanel() {
     const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id);
     if (!e) return `<section class="panel"><h2>Wróg</h2><p class="muted">Ten wróg już nie stoi w szyku.</p></section>`;
-    const gm = Store.isGM();
+    const gm = Store.isGM(); const eg = enemyTurn(e); const eoff = !eg.ok;
     return `<section class="panel act">
+      ${eoff && gm ? `<p class="${eg.lost ? 'warn' : 'muted'}">${esc(eg.why)}</p>` : ''}
       <h2>${esc(e.name)} <span class="hint">${e.boss ? 'boss · 2 tury na rundę' : esc(e.pos ? 'pozycje ' + e.pos : '')}</span></h2>
       <p class="dim num">Zdrowie ${e.hp}/${e.maxhp} · Unik ${enemyDodge(e)} · Pancerz ${enemyProt(e)} · Szybkość ${e.speed} · Krzepa ${e.krzepa} · Odporność ${e.odp}${e.noBleed ? ' · niewrażliwy na krwawienie' : ''}</p>
       <div class="atks">${(e.attacks || []).map((a, i) => `<div class="atk"><div>${a.w ? `<span class="sp2">${posDots(posList(a.w), a.aoe ? 'to multi' : 'to', 'hero')}<span class="ptxt">w bohaterów ${esc(a.w)}</span></span> ` : ''}${attackText(a)}</div>${gm && a.w ? `<div class="row">
-        ${a.aoe ? `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="all">Atakuj pozycje ${esc(a.w)}</button>` : `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="rand">Losowy cel</button><button class="btn sm" data-act="eAtk" data-i="${i}" data-m="pick">Wybierz cel</button>`}
+        ${a.aoe ? `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="all" ${eoff ? 'disabled' : ''}>Atakuj pozycje ${esc(a.w)}</button>` : `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="rand" ${eoff ? 'disabled' : ''}>Losowy cel</button><button class="btn sm" data-act="eAtk" data-i="${i}" data-m="pick" ${eoff ? 'disabled' : ''}>Wybierz cel</button>`}
       </div>` : gm ? `<div class="row"><button class="btn sm" data-act="eSay" data-i="${i}">Ogłoś</button></div>` : ''}</div>`).join('') || '<p class="muted">Zwłoki nic nie robią.</p>'}</div>
       ${e.notes && e.notes.length ? `<div class="bnotes">${e.notes.map(n => `<p>${md(n.replace(/^([^:]+):/, '**$1:**'))}</p>`).join('')}</div>` : ''}
       ${gm ? `<div class="row acts">
@@ -227,11 +254,13 @@ document.addEventListener('drop', ev => {
   if (to < 0) { const p = +((sl.querySelector('.pos') || {}).textContent || 0); to = Math.min(st0.heroes.length - 1, Math.max(0, p - 1)); }
   if (from < 0 || to < 0 || from === to) return;
   if (st0.fight && Math.abs(from - to) > 1) return toast('W walce zamieniasz się tylko z sąsiadem.');
+  if (st0.fight) { const g = heroTurn(H(_dragId)); if (!g.ok) return toast(g.why); }
   const other = st0.heroes[to] && H(st0.heroes[to]); const rd = st0.round || 0;
   const blk = [H(_dragId), other].find(x => x && x.fx && x.fx.noSwap != null && x.fx.noSwap >= rd && st0.fight);
   if (blk) return toast(heroLabel(blk) + ' odmawia zamiany pozycji.');
   const id = _dragId;
-  setStol(st => { const a = st.heroes.indexOf(id), b = to; [st.heroes[a], st.heroes[b]] = [st.heroes[b], st.heroes[a]]; }, heroLabel(H(id)) + ' zamienia się miejscami' + (other ? ' z: ' + heroLabel(other) : '') + '.');
+  const mark = inTurns() ? turnKey() : null;
+  setStol(st => { const a = st.heroes.indexOf(id), b = to; [st.heroes[a], st.heroes[b]] = [st.heroes[b], st.heroes[a]]; if (mark) st.acted = mark; }, heroLabel(H(id)) + ' zamienia się miejscami' + (other ? ' z: ' + heroLabel(other) : '') + '.');
 });
 function runFollow(res) { if (!res || !res.followUp) return; const fu = res.followUp; setTimeout(() => { const hh = H(fu.hid); if (hh && !hh.dead) commit(heroUse(hh, fu.idx, fu.targets || [])); }, 700); }
 function setStol(fn, logText, cls) { const st = clone(Store.S.stol); fn(st); const ops = [opSet('stol', st)]; if (logText) ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', cls: cls || '', text: logText } }); Store.act(ops); }
@@ -264,28 +293,31 @@ Object.assign(ACT, {
     if (!v.inf.from.includes(pos)) return toast(v.s.name + ' działa tylko z pozycji ' + v.s.z + ', a ' + heroLabel(h) + ' stoi na ' + pos + '. Najpierw zmień pozycję.');
     const lim = /2 razy na walkę/.test(v.s.eff) ? 2 : /raz na walkę/.test(v.s.eff) ? 1 : 0;
     if (lim && (((h.fx || {}).used || {})[i] || 0) >= lim) return toast(v.s.name + ' jest już wykorzystana w tej walce.');
-    if (st0.fight && h.fx && h.fx.lostTurn === (st0.round || 0) && (curEntry() || {}).id === h.id) return toast('Tę turę przejęła Przypadłość.');
+    { const g = heroTurn(h); if (!g.ok) return toast(g.why); }
     if (h.state && h.state.kind === 'ekstaza' && !v.inf.attack) return toast('W Ekstazie bólu ' + heroLabel(h) + ' może tylko atakować.');
     if (CLS[h.cls].name === 'Ohyda' && v.s.form !== (h.form === 'beast' ? 'bestia' : 'człowiek')) return toast('Ta umiejętność należy do drugiej postaci Ohydy.');
-    if (v.inf.target === 'self' || v.inf.target === 'party') { UI.pend = null; return commit(heroUse(h, i, [])); }
+    if (v.inf.target === 'self' || v.inf.target === 'party') { UI.pend = null; return actedCommit(heroUse(h, i, [])); }
     if (v.inf.target === 'ally') { UI.pend = { hid: h.id, idx: i, need: 'ally', label: v.s.name + ' — kliknij sojusznika' }; return renderView(); }
     const valid = validEnemyTargets(v);
     if (!valid.length) return toast('Nikt nie stoi na pozycjach ' + v.s.w + '.');
     if (v.inf.target === 'multi') { UI.pend = { hid: h.id, idx: i, need: 'enemy', valid, multi: true, label: v.s.name + ' (pozycje ' + v.s.w + ')' }; return renderView(); }
     UI.pend = { hid: h.id, idx: i, need: 'enemy', valid, label: v.s.name + ' (pozycje ' + v.s.w + ')' }; renderView();
   },
-  pickEnemy: el => { const P = UI.pend; UI.pend = null; if (P.multi) return commit(heroUse(H(P.hid), P.idx, P.valid)); commit(heroUse(H(P.hid), P.idx, [el.dataset.id])); },
-  fireMulti: () => { const P = UI.pend; UI.pend = null; commit(heroUse(H(P.hid), P.idx, P.valid)); },
-  pickAlly: el => { const P = UI.pend; UI.pend = null; commit(heroUse(H(P.hid), P.idx, [el.dataset.id])); },
+  pickEnemy: el => { const P = UI.pend; UI.pend = null; if (P.multi) return actedCommit(heroUse(H(P.hid), P.idx, P.valid)); actedCommit(heroUse(H(P.hid), P.idx, [el.dataset.id])); },
+  fireMulti: () => { const P = UI.pend; UI.pend = null; actedCommit(heroUse(H(P.hid), P.idx, P.valid)); },
+  pickAlly: el => { const P = UI.pend; UI.pend = null; actedCommit(heroUse(H(P.hid), P.idx, [el.dataset.id])); },
   slotMove: el => { UI.sel = { k: 'h', id: el.dataset.id }; ACT.heroMove(el); },
   heroMove: el => {
     const id = el.dataset.id || UI.sel.id; const st0 = Store.S.stol; const i = st0.heroes.indexOf(id); const j = i + +el.dataset.d; const rd = st0.round || 0;
     const blk = [id, st0.heroes[j]].map(H).find(x => x && x.fx && x.fx.noSwap != null && x.fx.noSwap >= rd && st0.fight);
     if (blk) return toast(heroLabel(blk) + ' odmawia zamiany pozycji (' + (blk.state ? blk.state.name : 'Przypadłość') + ').');
-    setStol(st => { moveInList(st.heroes, i, +el.dataset.d); }, heroLabel(H(id)) + ' zmienia pozycję.');
+    if (st0.fight) { const g = heroTurn(H(id)); if (!g.ok) return toast(g.why); }
+    const mark = inTurns() ? turnKey() : null;
+    setStol(st => { moveInList(st.heroes, i, +el.dataset.d); if (mark) st.acted = mark; }, heroLabel(H(id)) + ' zmienia pozycję.');
   },
-  heroPass: () => rollLog(heroLabel(H(UI.sel.id)) + ' pasuje.', '', 'sys'),
+  heroPass: () => { const h = H(UI.sel.id); const g = heroTurn(h); if (!g.ok) return toast(g.why); const mark = inTurns() ? turnKey() : null; setStol(st => { if (mark) st.acted = mark; }, heroLabel(h) + ' pasuje.'); },
   transform: () => {
+    { const g = heroTurn(H(UI.sel.id)); if (!g.ok) return toast(g.why); }
     const h = clone(H(UI.sel.id)); const lines = [];
     if (h.form === 'beast') { h.form = 'human'; lines.push(heroLabel(h) + ' wraca do ludzkiej postaci.'); }
     else {
@@ -295,20 +327,23 @@ Object.assign(ACT, {
         const touched = { [h.id]: h };
         st.heroes.filter(id => id !== h.id).forEach(id => { const t = clone(H(id)); heroStress(t, 1, lines); touched[id] = t; });
         lines.push('Pierwsza przemiana w tej walce: sojusznicy +1 Stres.');
-        return commit({ lines, stol: st, touched });
+        return actedCommit({ lines, stol: st, touched });
       }
     }
-    commit({ lines, stol: null, touched: { [h.id]: h } });
+    actedCommit({ lines, stol: null, touched: { [h.id]: h } });
   },
   retreat: () => {
+    if (Store.S.stol.enemies.some(e => e.boss && !e.corpse)) return toast('Z walki z bossem nie ma odwrotu.');
+    { const g = heroTurn(H(UI.sel.id)); if (!g.ok) return toast(g.why); }
     const r = d(10); const ok = r <= 7 && r !== 10;
     const lines = ['Odwrót: k10 = **' + r + '** przy Szansie 7 → **' + (ok ? 'udany' : 'nieudany, tura stracona') + '**.'];
     const touched = {};
     if (ok) Store.S.stol.heroes.forEach(id => { const t = clone(H(id)); heroStress(t, 1, lines); touched[id] = t; });
     if (ok) lines.push('Każdy bohater +1 Stres. Drużyna wraca do poprzedniej komnaty.');
-    commit({ lines, stol: ok ? Object.assign(clone(Store.S.stol), { fight: false, init: [], turn: -1 }) : null, touched }, ok ? '' : 'bad');
+    if (ok) commit({ lines, stol: Object.assign(clone(Store.S.stol), { fight: false, init: [], turn: -1 }), touched }); else actedCommit({ lines, stol: null, touched }, 'bad');
   },
   useItem: el => {
+    { const g = heroTurn(H(UI.sel.id)); if (!g.ok && (!g.mine || g.lost)) return toast(g.mine ? g.why : 'Przedmioty z plecaka bierze się w swojej turze. ' + g.why); }
     const h = clone(H(UI.sel.id)); const k = el.dataset.k; const w = el.dataset.w;
     const sup = Store.S.wyprawa.sup || {}; const lines = [];
     if (Store.S.wyprawa.quest && !(sup[k] > 0)) return toast('W plecaku nie ma już: ' + k.toLowerCase() + '.');
@@ -361,21 +396,22 @@ Object.assign(ACT, {
   },
   eAtk: el => {
     const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id); const i = +el.dataset.i; const a = e.attacks[i]; const m = el.dataset.m;
+    { const g = enemyTurn(e); if (!g.ok) return toast(g.why); }
     const order = Store.S.stol.heroes; const allowed = posList(a.w) || [1, 2, 3, 4];
     const inRange = order.map((id, k) => ({ id, pos: k + 1 })).filter(x => allowed.includes(x.pos) && H(x.id) && !H(x.id).dead).map(x => x.id);
     if (!inRange.length) return toast('Na pozycjach ' + a.w + ' nikogo nie ma.');
-    if (m === 'all') return commit(enemyAttack(e, i, inRange));
+    if (m === 'all') return actedCommit(enemyAttack(e, i, inRange));
     if (m === 'pick') { UI.epend = { eid: e.id, idx: i, valid: inRange, label: 'uderza ' + a.name }; return renderView(); }
     const marked = inRange.filter(id => (H(id).fx || {}).mark);
     const pool = marked.length ? marked : inRange; const pt = pickD(pool); let t = pt.v;
     let note = pool.length > 1 ? 'Cel losowany spośród ' + pool.map(x => heroLabel(H(x))).join(', ') + ': ' + pt.t + ' → ' + heroLabel(H(t)) + '.' : marked.length ? 'Cel: ' + heroLabel(H(t)) + ' (Znak).' : '';
     const g = (H(t).fx || {}); if (g.guard && g.guardBy && order.includes(g.guardBy) && !H(g.guardBy).dead) { t = g.guardBy; note += ' Ochrona: atak przejmuje ' + heroLabel(H(t)) + '.'; }
-    const res = enemyAttack(e, i, [t]); if (note && res) { res.lines.splice(1, 0, note); res.sum && res.sum.unshift(note); } commit(res);
+    const res = enemyAttack(e, i, [t]); if (note && res) { res.lines.splice(1, 0, note); res.sum && res.sum.unshift(note); } actedCommit(res);
   },
   pickHeroT: el => {
     const P = UI.epend; UI.epend = null; const e = Store.S.stol.enemies.find(x => x.id === P.eid);
     let t = el.dataset.id; const g = (H(t).fx || {}); if (g.guard && g.guardBy && Store.S.stol.heroes.includes(g.guardBy)) t = g.guardBy;
-    commit(enemyAttack(e, P.idx, [t]));
+    actedCommit(enemyAttack(e, P.idx, [t]));
   },
   /* przebieg walki */
   fightStart: () => {
@@ -411,14 +447,14 @@ Object.assign(ACT, {
     const nm = x => x.k === 'h' ? heroLabel(H(x.id)) : (s.enemies.find(e => e.id === x.id) || {}).name;
     const txt = '**Runda ' + s.round + '.** Inicjatywa (k10 + Szybkość): ' + init.map(x => nm(x) + ' ' + x.tot).join(', ') + (sur && sur !== 'nikt' ? ' — zaskoczeni działają na końcu.' : '.');
     Store.act([opSet('stol', s), { log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', text: txt } }]);
-    const first = init[0]; if (first) { const res = startTurn(first); if (res && !res.quiet) commit(res); runFollow(res); }
+    const first = init[0]; if (first) { const res = startTurn(first); if (res && !res.quiet) commit(res); runFollow(res); autoSkip(res); }
   },
   nextTurn: () => {
     const s = Store.S.stol;
     if (s.turn + 1 >= s.init.length) return ACT.newRound();
     setStol(st => { st.turn++; });
     const e = Store.S.stol.init[Store.S.stol.turn];
-    const res = startTurn(e); if (res && !res.quiet) commit(res); runFollow(res);
+    const res = startTurn(e); if (res && !res.quiet) commit(res); runFollow(res); autoSkip(res);
   },
   fightEnd: () => {
     const s = clone(Store.S.stol); const touched = {}; const lines = ['**Koniec walki.** Efekty wygasają.'];

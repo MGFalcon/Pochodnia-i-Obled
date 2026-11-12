@@ -390,9 +390,13 @@ function enemyAttack(e0, aIdx, heroIds) {
 function afterDeaths(res) {
   const ids = res.lines._deaths || []; if (!ids.length) return [];
   const ops = []; const st = res.stol || clone(Store.S.stol);
+  const rk = () => (st.round || 0) + ':' + st.turn; const wasActed = st.acted === rk();
   ids.forEach(id => {
     st.heroes = st.heroes.filter(x => x !== id);
-    st.init = (st.init || []).filter(x => x.id !== id);
+    /* zgon wypada z kolejki; indeks bieżącej tury przesuwa się, żeby nikt nie został pominięty ani nie działał dwa razy */
+    const init = st.init || []; const idx = init.findIndex(x => x.id === id);
+    if (idx >= 0) { const cur = idx === st.turn; init.splice(idx, 1); if (idx <= st.turn) st.turn--; if (cur) st.acted = rk(); }
+    st.init = init;
     const h = res.touched[id];
     ops.push(opSet('osada.cemetery', (Store.S.osada.cemetery || []).concat([{ name: heroLabel(h), cls: CLS[h.cls].name, level: h.level, cause: h.deathCause, week: Store.S.osada.week }])));
   });
@@ -400,6 +404,7 @@ function afterDeaths(res) {
     const h = res.touched[id] || (res.touched[id] = clone(Store.S.heroes[id]));
     const l = []; heroStress(h, 3 * ids.length, l); res.lines.push(heroLabel(h) + ' +' + 3 * ids.length + ' Stresu (śmierć towarzysza).'); l.forEach(x => res.lines.push(x));
   });
+  if (wasActed) st.acted = rk();
   res.stol = st;
   return ops;
 }
@@ -465,7 +470,7 @@ function afflictionAct(h, stol, touched, lines, ev, sum) {
   if (act === 'forward') { moveInList(stol.heroes, i0, -9); say = 'wysuwa się na sam przód szyku.'; }
   if (act === 'selfharm') { const r = d(4); heroDamage(h, r, lines, 'samookaleczenie'); say = 'rani się sam: ' + obrN(r) + ' (k4 = ' + r + ').'; ev.push({ id: h.id, k: 'hit', txt: '−' + r }); }
   if (act === 'skip') say = 'pomija turę.';
-  h.fx = Object.assign({}, h.fx, { lostTurn: rd });
+  h.fx = Object.assign({}, h.fx, { lostTurn: rd, lostWhy: 'affl' });
   ev.push({ id: h.id, k: 'fx', txt: name.toUpperCase() });
   const line = '**' + name + '**' + pick0 + ': ' + heroLabel(h) + ' ' + say;
   lines.push(line); sum.push(line + (follow ? '' : ' Gracz nie wykonuje akcji w tej turze.'));
@@ -490,7 +495,12 @@ function startTurn(entry) {
     e.fx = e.fx || {};
     const { dot } = tick(e.fx);
     if (dot) { e.hp -= dot; lines.push(e.name + ': ' + obrN(dot) + ' od krwawienia i zarazy.'); if (e.hp <= 0) { lines.push('**' + e.name + ' pada.**'); killEnemy(stol, e, 'dot'); } }
-    if (e.fx.stun) { e.fx.stun = 0; e.fx.stunImm = (stol.round || 0) + 1; lines.push(e.name + ' jest ogłuszony i traci turę.'); }
+    if (e.fx.stun && !e.corpse && e.hp > 0) {
+      e.fx.stun = 0; e.fx.stunImm = (stol.round || 0) + 1; e.fx.lostTurn = stol.round || 0; e.fx.lostWhy = 'stun';
+      lines.push('**' + e.name + ' jest ogłuszony i traci turę.**');
+      return { lines, stol, touched, ev: [{ id: e.id, k: 'fx', txt: 'OGŁUSZONY' }], sum: [e.name + ' jest ogłuszony i traci turę.'], head: e.name + ' — ogłuszenie', skip: true };
+    }
+    if (e.corpse || e.hp <= 0) return lines.length ? { lines, stol, touched, skip: true } : { lines: [], stol, touched, quiet: true, skip: true };
     if (!lines.length) return { lines: [], stol, touched, quiet: true };
     return { lines, stol, touched };
   }
@@ -500,7 +510,7 @@ function startTurn(entry) {
   if (dot) { lines.push(heroLabel(h) + ': ' + obrN(dot) + ' od krwawienia i zarazy.'); heroDamage(h, dot, lines, 'krwawienie/zaraza'); }
   if (hor && !h.dead) { lines.push(heroLabel(h) + ': groza +' + hor + ' Stresu.'); heroStress(h, hor, lines); }
   if (h.state && h.state.kind === 'ekstaza' && !h.dead && h.hp > 1) { h.hp -= 1; lines.push(heroLabel(h) + ' traci 1 Zdrowia (Ekstaza bólu).'); }
-  if (h.fx.stun && !h.dead) { h.fx.stun = 0; h.fx.stunImm = (stol.round || 0) + 1; lines.push(heroLabel(h) + ' jest ogłuszony i traci turę.'); }
+  if (h.fx.stun && !h.dead) { h.fx.stun = 0; h.fx.stunImm = (stol.round || 0) + 1; h.fx.lostTurn = stol.round || 0; h.fx.lostWhy = 'stun'; lines.push('**' + heroLabel(h) + ' jest ogłuszony i traci turę.**'); return { lines, stol, touched, ev: [{ id: h.id, k: 'fx', txt: 'OGŁUSZONY' }], sum: [heroLabel(h) + ' jest ogłuszony i traci turę.'], head: heroLabel(h) + ' — ogłuszenie', skip: true }; }
   else if (h.state && !h.dead && (h.state.kind === 'affliction' || h.state.kind === 'virtue')) {
     const r = d(10);
     if (h.state.kind === 'affliction') {
