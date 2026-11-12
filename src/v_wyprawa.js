@@ -1,6 +1,5 @@
 /* Widok Wyprawa: mapa posiadłości, tablica zadań, mapa komnat z korytarzami. */
 const SUPPLY = [['Prowiant', 0.5, 'za 2 szt. 1 Z'], ['Pochodnie', 1], ['Łopaty', 2], ['Bandaże', 1], ['Antidota', 1], ['Laudanum', 1], ['Zioła', 2], ['Woda święcona', 2], ['Klucze', 2]];
-const PACK = { krotka: { Prowiant: 8, Pochodnie: 2, 'Łopaty': 1, 'Bandaże': 2, Antidota: 1 }, srednia: { Prowiant: 18, Pochodnie: 4, 'Łopaty': 2, 'Bandaże': 3, Antidota: 2 }, dluga: { Prowiant: 32, Pochodnie: 6, 'Łopaty': 2, 'Bandaże': 4, Antidota: 2 } };
 const GOALS = { eksploracja: 'Eksploracja: odwiedź 9 na 10 komnat', oczyszczenie: 'Oczyszczenie: wygraj każdą walkę w komnatach', zbiorka: 'Zbiórka', aktywacja: 'Aktywacja', boss: 'Boss' };
 const regionOfKey = k => REGION_IDS.find(id => REGIONS[id].key === k);
 const topLevel = () => liveHeroes().reduce((m, h) => Math.max(m, h.level), 0);
@@ -10,7 +9,7 @@ function goalText(q) {
   const R = REGIONS[q.region];
   if (q.dd != null) return 'Zejdź na piętro ' + (q.dd + 1) + ' i pokonaj: ' + DD_FLOORS[q.dd].boss;
   if (q.goal === 'zbiorka') return 'Zbiórka: znajdź 3 × ' + R.gather;
-  if (q.goal === 'aktywacja') return 'Aktywacja: użyj 3 × ' + R.activate + ' (właściwy przedmiot: ' + R.activateItem + ')';
+  if (q.goal === 'aktywacja') return 'Aktywacja: użyj 3 × ' + R.activate;
   if (q.goal === 'boss') return 'Boss: ' + DATA.bestiary[R.key].boss.name + ' w lokacji ' + R.lair.name;
   return GOALS[q.goal];
 }
@@ -39,6 +38,11 @@ function rollBoard() {
     return q;
   });
   if (!(o.questsDone || 0) && !board.some(q => q.len === 'krotka')) { board[0].len = 'krotka'; if (board[0].goal === 'boss') board[0].goal = 'eksploracja'; lines.push('pierwsza wyprawa kampanii: ' + REGIONS[board[0].region].name + ' — krótka'); }
+  for (const reg of open) {
+    if (((o.regionDone || {})[reg] || 0) < 3 || board.some(q => q.region === reg && q.goal === 'boss')) continue;
+    const dl = Math.max(...levels.filter(l => !(o.bosses || {})[reg + l]).concat(-1)); if (dl < 0) continue;
+    board.push({ id: uid(), region: reg, dl, len: 'srednia', goal: 'boss' }); lines.push(REGIONS[reg].name + ': po ' + o.regionDone[reg] + ' zadaniach w regionie budzi się boss (' + DL[dl] + ')');
+  }
   if (top >= 5 && (o.dd || 0) < 4) board.push({ id: uid(), region: 'dd', dd: o.dd || 0, dl: 2, len: 'srednia', goal: 'boss' });
   Store.act([opSet('osada.board', board), { log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'sys', text: '**Tablica zadań, tydzień ' + o.week + '.** ' + lines.join('; ') + '.' } }]);
 }
@@ -120,16 +124,16 @@ function mapPanel() {
   } else {
     const l = R.locs[sel.l]; const I = DL_INFO[sel.l];
     head = `<h2>${esc(l.name)} <span class="hint"><span class="ldot lv${sel.l}">${DL_ROMAN[sel.l]}</span> ${DL[sel.l]}</span></h2><p>${esc(l.desc)}</p>
-      <table class="t"><tr><th>Kto zejdzie</th><td>${I.who}</td></tr><tr><th>Zalecane</th><td>${I.rec}</td></tr><tr><th>Złoto</th><td>×${String(I.mult).replace('.', ',')}</td></tr><tr><th>Wrogowie</th><td>${I.scale}</td></tr></table>`;
+      <table class="t"><tr><th>Kto zejdzie</th><td>${I.who}</td></tr><tr><th>Złoto</th><td>×${String(I.mult).replace('.', ',')}</td></tr><tr><th>Wrogowie</th><td>${I.scale}</td></tr></table>`;
   }
   const here = (o.board || []).filter(q => q.region === sel.r && (sel.l === 'lair' ? q.goal === 'boss' : q.dl === sel.l && q.goal !== 'boss'));
   const qbox = `<div class="mapq">${here.length ? here.map(q => questCard(q, true)).join('') : `<p class="muted small">${open ? 'Na tablicy nie ma teraz zadania w tym miejscu.' : 'Region jeszcze zamknięty — otworzy się po wykonanej wyprawie.'} ${(o.board || []).length ? 'Zadania są tu: ' + (o.board || []).map(q => q.dd != null ? 'Najmroczniejszy Loch' : REGIONS[q.region].locs[q.dl].name).join(', ') + ' (świecą na mapie).' : ''}</p>`}</div>`;
   return `<section class="panel">${head}${qbox}
     <div class="ph">${esc(R.name)}${open ? '' : ' · zamknięty'}</div>
     <p class="dim">${esc(R.desc)}</p>
-    <p><b>Mieszkańcy:</b> ${esc(reg.who)}. <b>Groźba:</b> ${esc(reg.threat)}. <b>Zabierz:</b> ${esc(reg.pack)}.</p>
+    <p><b>Mieszkańcy:</b> ${esc(reg.who)}. <b>Groźba:</b> ${esc(reg.threat)}.</p>
     <p><b>Przodownicy:</b> ${esc(DATA.encounters[R.key].front)}. <b>Tylni:</b> ${esc(DATA.encounters[R.key].back)}.</p>
-    <p><b>Osobliwości:</b> ${curios.map(c => esc(c.name) + ' (' + esc(c.item) + ')').join(', ')}.</p>
+    <p><b>Osobliwości:</b> ${curios.map(c => { const k = curioKnow(c.name); return esc(c.name) + (k.item ? ' (działa: ' + esc(k.item.toLowerCase()) + ')' : ''); }).join(', ')}.</p>
     ${Store.isGM() ? `<label class="chk"><input type="checkbox" data-act-change="regionOpen" value="${sel.r}" ${open ? 'checked' : ''}> region otwarty</label>` : ''}
   </section>`;
 }
@@ -273,10 +277,13 @@ VIEWS.wyprawa = {
       if (!r[f] || !open) return;
       const cu = DATA.curios.find(c => c.name === r[f]) || { item: 'brak', good: '', bad: '' };
       const pt = party(); const ciek = pt.filter(h => h.qn.some(q => qname(q.t) === 'Ciekawski')); const obl = pt.filter(h => h.state && h.state.kind === 'affliction' && h.state.name === 'Obłęd');
-      bits.push(`<div class="curiobox"><p>Osobliwość${f === 'ccurio' ? ' z korytarza' : ''}: <b>${esc(r[f])}</b>${f === 'curio' && r.goal ? ' (cel zadania)' : ''}. Właściwy przedmiot: <b>${esc(cu.item)}</b> — pewny dobry wynik. Bez niego k10: 1–4 dobrze, 5–7 nic, 8–10 źle. <span class="dim small">Dobrze: ${esc(cu.good)}. Źle: ${esc(cu.bad)}.</span></p>
+      const kn = curioKnow(r[f]); const have = Object.keys(CURIO_ITEM).filter(it => ((Store.S.wyprawa.sup || {})[CURIO_ITEM[it]] || 0) > 0);
+      const seen = [kn.item ? 'działa: ' + kn.item.toLowerCase() + ' (pewny dobry wynik)' : '', (kn.no || []).length ? 'nie działa: ' + kn.no.map(x => x.toLowerCase()).join(', ') : '', kn.good ? 'dobrze — ' + cu.good : '', kn.bad ? 'źle — ' + cu.bad : ''].filter(Boolean);
+      bits.push(`<div class="curiobox"><p>Osobliwość${f === 'ccurio' ? ' z korytarza' : ''}: <b>${esc(r[f])}</b>${f === 'curio' && r.goal ? ' (cel zadania)' : ''}. Dotknięcie gołą ręką: k10 1–4 dobrze, 5–7 nic, 8–10 źle. Właściwy przedmiot daje pewny dobry wynik — niewłaściwy przepada bez skutku.</p>
+        ${seen.length ? `<p class="small dim">Wiecie już: ${esc(seen.join('; '))}.</p>` : ''}
         ${ciek.length || obl.length ? `<p class="small warn">${obl.map(h => esc(heroLabel(h)) + ' (Obłęd) dotknie jej bez pytania, jeśli ją ominiecie.').concat(ciek.map(h => esc(heroLabel(h)) + ' (Ciekawski) przy k10 1–5 dotknie jej sam, jeśli ją ominiecie.')).join(' ')}</p>` : ''}
         ${fightHere && f === 'curio' ? '<p class="muted small">Najpierw walka — osobliwość poczeka.</p>' : W ? `<div class="row"><label class="lbl" for="cwho-${f}">Kto dotyka</label><select id="cwho-${f}">${pt.map(h => `<option value="${h.id}">${esc(heroLabel(h))}</option>`).join('')}</select>
-          <button class="btn sm" data-act="curio" data-m="roll" data-f="${f}">Dotknij (k10)</button>${cu.item !== 'brak' ? `<button class="btn sm gold" data-act="curio" data-m="item" data-f="${f}">Użyj: ${esc(cu.item)} (${(Store.S.wyprawa.sup || {})[CURIO_ITEM[cu.item]] || 0})</button>` : ''}<button class="btn sm ghost" data-act="curio" data-m="skip" data-f="${f}">Omiń</button></div>` : ''}</div>`);
+          <button class="btn sm" data-act="curio" data-m="roll" data-f="${f}">Dotknij (k10)</button>${have.length ? `<select id="citem-${f}" aria-label="Przedmiot">${have.map(it => `<option value="${esc(it)}" ${kn.item === it ? 'selected' : ''}>${esc(it)}${(kn.no || []).includes(it) ? ' (nie działa)' : ''}</option>`).join('')}</select><button class="btn sm gold" data-act="curio" data-m="item" data-f="${f}">Użyj przedmiotu</button>` : ''}<button class="btn sm ghost" data-act="curio" data-m="skip" data-f="${f}">Omiń</button></div>` : ''}</div>`);
     });
     if (r.c === 'skrzynia' && !r.opened) bits.push(`<p>Skrzynia. ${W ? `<button class="btn sm gold" data-act="chest">Otwórz</button>` : ''}</p>`);
     if (/pusta|wejście/.test(r.c) && !r.desc) bits.push('<p class="muted">Pusto. Cisza i kurz.</p>');
@@ -365,30 +372,6 @@ Object.assign(ACT, {
   },
   ddSet: el => Store.act([opSet('osada.dd', +el.dataset.v)]),
   rollBoard: () => rollBoard(),
-  takeQuestOld: el => {
-    const q = (Store.S.osada.board || []).find(x => x.id === el.dataset.id);
-    const sup = Object.assign({}, PACK[q.len]);
-    const pt = party();
-    const refuse = pt.filter(h => (q.dl === 0 && h.level >= 3) || (q.dl === 1 && h.level >= 5));
-    const sick = pt.filter(h => heroAway(h));
-    modal(`<h3>Zaopatrzenie</h3>
-      <p class="dim">${esc(goalText(q))}. Zalecany zestaw na ${({ krotka: 'krótką', srednia: 'średnią', dluga: 'długą' })[q.len]} wyprawę jest już wpisany — dopakujcie przedmioty pod region (${esc(q.dd != null ? 'wszystko' : DATA.regions[REGIONS[q.region].key].pack)}).</p>
-      ${refuse.length ? `<p class="warn">Odmowa: ${refuse.map(h => esc(heroLabel(h)) + ' (Poz. ' + h.level + ')').join(', ')} nie zejdzie do lochu ${DL[q.dl]}. Zmień drużynę na Stole.</p>` : ''}
-      ${!pt.length ? `<p class="warn">Drużyna jest pusta — ustaw ją na Stole.</p>` : ''}
-      ${sick.length ? `<p class="warn">Nie może iść: ${sick.map(h => esc(heroLabel(h)) + ' (' + esc(heroAway(h)) + ')').join(', ')}. Zmień drużynę na Stole.</p>` : ''}
-      <div class="supgrid">${SUPPLY.map(([k, c]) => `<label class="sup"><span>${k} <span class="muted small">${c === 0.5 ? '1 Z / 2 szt.' : c + ' Z'}</span></span><input type="number" min="0" max="40" data-sup="${k}" value="${sup[k] || 0}" style="width:4.5em"></label>`).join('')}</div>
-      <p>Koszt: <b id="pcost">${packCost(sup)}</b> Z · w skarbcu ${Store.S.osada.gold} Z · plecak: <b id="pslots">${packSlots(sup, {})}</b> z 16 miejsc</p>`,
-      [{ t: 'Anuluj' }, { t: 'Kup i wyrusz', cls: 'primary', fn: () => {
-        const s2 = {}; $$('[data-sup]').forEach(i => { s2[i.dataset.sup] = Math.max(0, +i.value || 0); });
-        const cost = packCost(s2);
-        if (sick.length) { toast('W drużynie jest bohater, który nie może iść — zmień skład na Stole.'); return false; }
-        if (packSlots(s2, {}) > 16) { toast('Plecak ma 16 miejsc (4 sztuki zapasów na miejsce) — ten zestaw zajmuje ' + packSlots(s2, {}) + '.'); return false; }
-        if (refuse.length) { toast('Ktoś w drużynie odmawia zejścia do lochu ' + DL[q.dl] + ' — zmień skład na Stole.'); return false; }
-        if (Store.S.osada.gold < cost) { toast('Za mało Złota: zestaw kosztuje ' + cost + ', w skarbcu jest ' + Store.S.osada.gold + '.'); return false; }
-        startQuest(q, s2, cost);
-      } }]);
-    $$('[data-sup]').forEach(i => i.addEventListener('input', () => { const s2 = {}; $$('[data-sup]').forEach(j => { s2[j.dataset.sup] = +j.value || 0; }); $('#pcost').textContent = packCost(s2); $('#pslots').textContent = packSlots(s2, {}); }));
-  },
   evPick: el => resolveRoad(el.dataset.o),
   evHunger: () => resolveHunger(),
   goRoom: el => {
@@ -428,7 +411,7 @@ Object.assign(ACT, {
     if (r.c === 'boss') ancestorSay('boss');
     goFight();
   },
-  curio: el => resolveCurio(el.dataset.f || 'curio', el.dataset.m),
+  curio: el => { const f = el.dataset.f || 'curio'; const it = $('#citem-' + f); resolveCurio(f, el.dataset.m, it ? it.value : null); },
   chest: () => {
     setW(w => { w.rooms.find(x => x.id === w.at).opened = true; });
     const klep = party().find(h => h.qn.some(q => qname(q.t) === 'Kleptoman'));
@@ -619,12 +602,14 @@ function finishQuest(done) {
     });
     if (q.goal === 'boss' && q.dd == null) o.bosses = Object.assign({}, o.bosses, { [q.region + q.dl]: true });
     if (q.dd != null) { o.dd = Math.max(o.dd || 0, q.dd + 1); pt.forEach(h => { const t = touched[h.id]; if (t && !t.dead) t.restUntil = o.week + 2; }); lines.push('Ocaleni z Najmroczniejszego Lochu przez 2 tygodnie nie zejdą do żadnego lochu.'); }
-    o.questsDone = (o.questsDone || 0) + 1; o.lastQuestWeek = o.week; o.threat = Math.max(0, (o.threat || 0) - 2);
+    o.questsDone = (o.questsDone || 0) + 1; o.lastQuestWeek = o.week;
+    { const drop = (q.goal === 'boss' ? 3 : 0) + ({ krotka: 0, srednia: 1, dluga: 2 })[q.len]; if (drop) { o.threat = Math.max(0, (o.threat || 0) - drop); lines.push('Ciemność cofa się o ' + drop + ' (' + o.threat + '/10).'); } }
+    if (q.dd == null) { o.regionDone = Object.assign({}, o.regionDone); o.regionDone[q.region] = q.goal === 'boss' ? 0 : (o.regionDone[q.region] || 0) + 1; }
     { const alive = pt.map(h => touched[h.id] || h).filter(h => !h.dead); if (alive.length >= 2 && d(2) === 1) { const a = pickD(alive); const b = pickD(alive.filter(x => x.id !== a.v.id)); const A = touched[a.v.id] || (touched[a.v.id] = clone(a.v)); const B = touched[b.v.id] || (touched[b.v.id] = clone(b.v)); bondAdd(A, B, 1, lines); lines.push(heroLabel(A) + ' i ' + heroLabel(B) + ' wracają razem — coś ich połączyło w lochu (więź +1).'); } }
     pt.forEach(h => { const t = touched[h.id]; if (t && !t.dead) { t.tally = Object.assign({ quests: 0, bosses: 0, ddSurvived: 0 }, t.tally); t.tally.quests++; } });
     const nextReg = ['ruiny', 'nory', 'knieja', 'zatoka'].find(r => !(o.regions || []).includes(r));
     if (nextReg) { o.regions = (o.regions || ['ruiny']).concat([nextReg]); lines.push('**Otwiera się nowy region: ' + REGIONS[nextReg].name + '.**'); }
-  } else pt.forEach(h => { const t = touched[h.id] = clone(h); heroStress(t, 3, lines); lines.push(heroLabel(t) + ' +3 Stres (porzucona wyprawa).'); });
+  } else { pt.forEach(h => { const t = touched[h.id] = clone(h); heroStress(t, 3, lines); lines.push(heroLabel(t) + ' +3 Stres (porzucona wyprawa).'); }); o.threat = Math.min(10, (o.threat || 0) + 1); lines.push('Porzucona wyprawa — Ciemność rośnie (' + o.threat + '/10).'); }
   pt.forEach(h => { const t = touched[h.id] || (touched[h.id] = clone(h)); t.status = 'osada'; t.fx = {}; t.dd = t.dd && t.hp === 0; });
   lines.push('Niewykorzystane zapasy przepadają.');
   const qlines = pt.filter(h => !(touched[h.id] || h).dead).map(h => { const t = touched[h.id]; const q = rollQuirkFor(t); return q.txt; });
@@ -644,6 +629,7 @@ function finishQuest(done) {
 }
 
 /* ---------- osobliwości: skutki działają naprawdę ---------- */
+const curioKnow = name => ((Store.S.osada.curioKnow || {})[name] || {});
 const CURIO_ITEM = { 'Klucz': 'Klucze', 'Woda święcona': 'Woda święcona', 'Łopata': 'Łopaty', 'Antidotum': 'Antidota', 'Laudanum': 'Laudanum' };
 /* pułapka trafia bohatera: k4 na skutek */
 function trapHit(t, lines, pre) {
@@ -683,7 +669,7 @@ function curioEffect(name, good, hid, w, lines, touched) {
   }
   return res;
 }
-function resolveCurio(f, m) {
+function resolveCurio(f, m, itemName) {
   const s = Store.S; const w = clone(s.wyprawa); const r = w.rooms.find(x => x.id === w.at); const name = r[f]; if (!name) return;
   const cu = DATA.curios.find(c => c.name === name) || { item: 'brak', good: '?', bad: '?' };
   const sel = $('#cwho-' + f); let hid = sel ? sel.value : (party()[0] || {}).id; if (!hid) return toast('Drużyna jest pusta.');
@@ -696,23 +682,32 @@ function resolveCurio(f, m) {
       if (m === 'skip') lines.push('Drużyna omija: ' + name + '.');
     }
   }
+  const know = clone(s.osada.curioKnow || {}); const kn = know[name] = know[name] || {};
   if (m === 'item') {
-    const key = CURIO_ITEM[cu.item];
-    if (key && !((w.sup || {})[key] > 0)) return toast('W plecaku nie ma: ' + cu.item.toLowerCase() + '.');
-    if (key) w.sup[key]--;
-    outcome = 'dobrze'; lines.push('**' + name + '** + ' + cu.item.toLowerCase() + ' (' + heroLabel(H(hid)) + ') → **dobrze:** ' + cu.good + '.');
+    const it = itemName || kn.item; const key = CURIO_ITEM[it];
+    if (!key || !((w.sup || {})[key] > 0)) return toast('W plecaku nie ma: ' + String(it || 'przedmiotu').toLowerCase() + '.');
+    w.sup[key]--;
+    if (it !== cu.item) {
+      kn.no = Array.from(new Set((kn.no || []).concat(it)));
+      lines.push('**' + name + '** + ' + it.toLowerCase() + ' (' + heroLabel(H(hid)) + ') → nic się nie dzieje. Przedmiot przepada, osobliwość czeka dalej.');
+      Store.act([opSet('wyprawa', w), opSet('osada.curioKnow', know)], { quiet: true });
+      return commit({ lines, touched }, '');
+    }
+    kn.item = it; kn.good = true;
+    outcome = 'dobrze'; lines.push('**' + name + '** + ' + it.toLowerCase() + ' (' + heroLabel(H(hid)) + ') → **dobrze:** ' + cu.good + '. Ród zapamięta, co tu działa.');
   } else if (m === 'roll') {
     let t = rollTable('osobliwosc'); let extra = '';
     if (w.lucky) { const t2 = rollTable('osobliwosc'); extra = ' i drugi rzut k10 = **' + t2.r + '** (Złodziejski nos — wybieracie lepszy)'; if (t2.r < t.r) t = t2; w.lucky = false; }
     outcome = t.text; lines.push('**' + name + '** — dotyka ' + heroLabel(H(hid)) + ': k10 = **' + t.r + '**' + extra + ' → **' + t.text + '**' + (t.text === 'dobrze' ? ': ' + cu.good : t.text === 'źle' ? ': ' + cu.bad : '') + '.');
   }
+  if (outcome === 'dobrze') kn.good = true; if (outcome === 'źle') kn.bad = true;
   let res = {};
   if (outcome === 'dobrze' || outcome === 'źle') res = curioEffect(name, outcome === 'dobrze', hid, w, lines, touched);
   r[f + 'Done'] = true; if (f === 'curio' && r.goal && outcome) w.activated = (w.activated || 0) + 1;
   if (f === 'curio' && r.goal && outcome) lines.push('Aktywacja: ' + w.activated + ' z 3.');
   let st = null;
   if (res.fight) { st = clone(s.stol); const region = w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key; st.region = region; st.dl = w.quest.dl; st.enemies = rollEncounter(region, w.quest.dl).list.filter(Boolean); st.roomId = null; st.looted = false; lines.push('**Zasadzka!** ' + st.enemies.map(e => e.name).join(', ') + '. Przejdźcie na Stół.'); }
-  Store.act([opSet('wyprawa', w)], { quiet: true });
+  Store.act([opSet('wyprawa', w), opSet('osada.curioKnow', know)], { quiet: true });
   commit({ lines, stol: st, touched }, outcome === 'dobrze' ? 'good' : outcome === 'źle' ? 'bad' : '');
   if (res.loot) rollLoot(res.loot + (party().some(h => CLS[h.cls].name === 'Antykwariuszka') ? 1 : 0), 'osobliwość');
   if (res.fight) goFight();
@@ -842,17 +837,12 @@ function questCard(q, compact) {
     <div class="qh"><span class="ldot lv${q.dl}">${isDD ? '☩' : DL_ROMAN[q.dl]}</span> <b>${esc(loc)}</b></div>
     <div class="dim small">${isDD ? 'Najmroczniejszy Loch, piętro ' + (q.dd + 1) : esc(R.name) + ' · ' + DL[q.dl]} · ${esc(L.name)} (${L.rooms} komnat, obozy: ${L.camps})</div>
     <p>${esc(goalText(q))}</p>
-    <p class="small"><b>Nagroda:</b> ${rw.gold} Złota, ${rw.mem} pamiątki, +${rw.xp} doświadczenia dla każdego. <b>Kto zejdzie:</b> ${DL_INFO[q.dl].who}. <b>Zalecany zestaw:</b> <span class="${packCost(PACK[q.len]) > Store.S.osada.gold ? 'warn' : ''}">${packCost(PACK[q.len])} Z</span> (w skarbcu ${Store.S.osada.gold} Z).</p>
+    <p class="small"><b>Nagroda:</b> ${rw.gold} Złota, ${rw.mem} pamiątki, +${rw.xp} doświadczenia dla każdego. <b>Kto zejdzie:</b> ${DL_INFO[q.dl].who}. <b>W skarbcu:</b> ${Store.S.osada.gold} Z.</p>
     ${W ? `<button class="btn primary" data-act="takeQuest" data-id="${q.id}" ${Store.S.wyprawa.quest ? 'disabled title="Najpierw zakończ obecną wyprawę"' : ''}>Przygotuj wyprawę →</button>` : ''}
   </article>`;
 }
 const refuses = (h, q) => (q.dl === 0 && h.level >= 3) ? 'Poz. ' + h.level + ' — nie zejdzie do lochu Uczniowskiego' : (q.dl === 1 && h.level >= 5) ? 'Poz. ' + h.level + ' — nie zejdzie do lochu Weterańskiego' : '';
 const prepQuest = () => UI.prep && (Store.S.osada.board || []).find(q => q.id === UI.prep.qid);
-function bestParty(q) {
-  const av = liveHeroes().filter(h => !heroAway(h) && h.status === 'osada' && !refuses(h, q));
-  const firstPos = h => (posList(CLS[h.cls].pos || '') || [2])[0];
-  return av.sort((a, b) => (b.level - a.level) || (a.stress - b.stress)).slice(0, 4).sort((a, b) => firstPos(a) - firstPos(b)).map(h => h.id);
-}
 function prepView() {
   const q = prepQuest(); if (!q) return '';
   const st = Store.S.stol; const o = Store.S.osada; const W = Store.canWrite();
@@ -867,17 +857,15 @@ function prepView() {
     ${W ? `<div class="row">${p < pt.length ? `<button class="btn sm ghost" data-act="prepMove" data-id="${h.id}" data-d="1" title="Do tyłu">◀</button>` : ''}${p > 1 ? `<button class="btn sm ghost" data-act="prepMove" data-id="${h.id}" data-d="-1" title="Do przodu">▶</button>` : ''}<button class="btn sm ghost" data-act="prepDel" data-id="${h.id}" title="Zostaje w Osadzie">✕</button></div>` : ''}` : '<div class="muted small">wolne miejsce</div>'}</div>`; }).join('');
   const bench = liveHeroes().filter(h => !st.heroes.includes(h.id));
   const benchHtml = bench.map(h => { const why = heroAway(h) || refuses(h, q) || (h.status === 'wyprawa' ? 'na wyprawie' : ''); return `<button class="bench ${why ? 'off' : ''}" data-act="prepAdd" data-id="${h.id}" ${why || pt.length >= 4 || !W ? 'disabled' : ''} title="${esc(why || 'Dodaj do drużyny')}"><b>${esc(heroLabel(h))}</b> <span class="small dim">${esc(CLS[h.cls].name)} · Poz. ${h.level} · Stres ${h.stress} · najlepiej ${esc(CLS[h.cls].pos || '?')}</span>${why ? `<span class="small warn">${esc(why)}</span>` : ''}</button>`; }).join('') || '<p class="muted small">Wszyscy dostępni bohaterowie są już w drużynie.</p>';
-  const region = q.dd != null ? 'wszystko' : DATA.regions[REGIONS[q.region].key].pack;
   return `<div class="prep">
     <section class="panel"><h2>Przygotowanie wyprawy</h2>${questCard(Object.assign({}, q), true).replace(/<button[^>]*takeQuest[^>]*>[^<]*<\/button>/, '')}</section>
     <section class="panel"><h2>Drużyna <span class="hint">${pt.length} z 4 · ustawienie jak na Stole (1 = przód)</span></h2>
       <div class="pslots">${slotHtml}</div>
-      ${W ? `<div class="row"><button class="btn sm" data-act="prepAuto">Zaproponuj skład</button><span class="small muted">najwyższe Poziomy, najmniej Stresu, ustawieni według ulubionych pozycji</span></div>` : ''}
       <div class="ph">Dostępni w Osadzie</div><div class="benchlist">${benchHtml}</div></section>
     <section class="panel"><h2>Plecak <span class="hint">${slots} z 16 miejsc · koszt ${cost} Z · w skarbcu ${o.gold} Z</span></h2>
-      <p class="small dim">Zalecany zestaw na ${({ krotka: 'krótką', srednia: 'średnią', dluga: 'długą' })[q.len]} wyprawę jest wpisany. W tym regionie przydadzą się: ${esc(region)}.</p>
+      <p class="small dim">Plecak jest pusty — sami zdecydujcie, co i ile zabrać. Cztery sztuki zapasów mieszczą się na jednym miejscu.</p>
       <div class="supgrid">${SUPPLY.map(([k, c]) => `<div class="sup"><span>${k} <span class="muted small">${c === 0.5 ? '1 Z / 2 szt.' : c + ' Z'}</span></span><span class="row">${W ? `<button class="btn sm ghost" data-act="prepSup" data-k="${k}" data-v="${k === 'Prowiant' ? -2 : -1}">−</button>` : ''}<b class="num">${sup[k] || 0}</b>${W ? `<button class="btn sm ghost" data-act="prepSup" data-k="${k}" data-v="${k === 'Prowiant' ? 2 : 1}">+</button>` : ''}</span></div>`).join('')}</div>
-      ${W ? `<div class="row"><button class="btn sm ghost" data-act="prepPack">Przywróć zalecany zestaw</button>${cost > o.gold ? `<button class="btn sm gold" data-act="prepFit">Dopasuj do skarbca (${o.gold} Z)</button>` : ''}</div>` : ''}</section>
+      ${W && Object.values(sup).some(v => v > 0) ? `<div class="row"><button class="btn sm ghost" data-act="prepClear">Opróżnij plecak</button></div>` : ''}</section>
     <section class="panel go"><h2>Gotowi?</h2>${problems.length ? `<ul class="warn small">${problems.map(p => `<li>${esc(p)}</li>`).join('')}</ul>` : '<p class="small">Wszystko gotowe. Pochodnia startuje z 10.</p>'}
       ${W ? `<div class="row"><button class="btn primary big" data-act="depart" ${problems.length ? 'disabled' : ''}>Wyrusz</button><button class="btn ghost" data-act="wsub" data-v="mapa">Wróć do mapy</button></div>` : '<p class="muted">MG i gracze z prawem edycji składają drużynę.</p>'}</section>
   </div>`;
@@ -885,20 +873,16 @@ function prepView() {
 Object.assign(ACT, {
   takeQuest: el => {
     const q = (Store.S.osada.board || []).find(x => x.id === el.dataset.id); if (!q) return;
-    UI.prep = { qid: q.id, sup: Object.assign({}, PACK[q.len]) }; UI.wsub = 'prep';
-    if (packCost(UI.prep.sup) > Store.S.osada.gold) { fitPack(UI.prep.sup, Store.S.osada.gold, 4); toast('Zalecany zestaw jest za drogi — plecak przycięty do ' + packCost(UI.prep.sup) + ' Z. Możecie go zmienić.'); }
-    const st = Store.S.stol; const bad = st.heroes.map(H).filter(h => !h || h.dead || heroAway(h) || refuses(h, q));
-    if (!st.heroes.length || bad.length) { const bp = bestParty(q); setStol(s => { s.heroes = bp; }); }
+    UI.prep = { qid: q.id, sup: {} }; UI.wsub = 'prep';
+    const st = Store.S.stol; if (st.heroes.some(id => { const h = H(id); return !h || h.dead; })) setStol(s => { s.heroes = s.heroes.filter(id => { const h = H(id); return h && !h.dead; }); });
     if (location.hash !== '#wyprawa') location.hash = '#wyprawa'; else renderView();
     window.scrollTo({ top: 0, behavior: 'smooth' });
   },
   prepAdd: el => { const st = Store.S.stol; if (st.heroes.length >= 4) return toast('W drużynie są już cztery osoby.'); setStol(s => { s.heroes = s.heroes.concat(el.dataset.id); }); },
   prepDel: el => setStol(s => { s.heroes = s.heroes.filter(x => x !== el.dataset.id); }),
   prepMove: el => setStol(s => { const i = s.heroes.indexOf(el.dataset.id); moveInList(s.heroes, i, +el.dataset.d); }),
-  prepAuto: () => { const q = prepQuest(); if (q) setStol(s => { s.heroes = bestParty(q); }); },
   prepSup: el => { const k = el.dataset.k; UI.prep.sup[k] = Math.max(0, (UI.prep.sup[k] || 0) + +el.dataset.v); renderView(); },
-  prepPack: () => { const q = prepQuest(); if (q) { UI.prep.sup = Object.assign({}, PACK[q.len]); renderView(); } },
-  prepFit: () => { fitPack(UI.prep.sup, Store.S.osada.gold, party().length || 4); renderView(); toast('Plecak dopasowany do skarbca: ' + packCost(UI.prep.sup) + ' Z.'); },
+  prepClear: () => { UI.prep.sup = {}; renderView(); },
   depart: () => {
     const q = prepQuest(); if (!q) return; const sup = UI.prep.sup; const cost = packCost(sup); const pt = party();
     if (!pt.length) return toast('Drużyna jest pusta.');
@@ -909,14 +893,6 @@ Object.assign(ACT, {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 });
-
-/* przycina plecak do budżetu: najpierw drobiazgi, na końcu prowiant i pochodnie (zostawia minimum, jeśli się da) */
-function fitPack(sup, gold, n) {
-  const order = ['Klucze', 'Woda święcona', 'Zioła', 'Laudanum', 'Antidota', 'Bandaże', 'Łopaty', 'Pochodnie', 'Prowiant'];
-  const floor = { Prowiant: Math.max(2, n), Pochodnie: 1 };
-  for (const pass of [1, 0]) for (const k of order) { while (packCost(sup) > gold && (sup[k] || 0) > (pass ? (floor[k] || 0) : 0)) sup[k] -= k === 'Prowiant' ? Math.min(2, sup[k]) : 1; }
-  return sup;
-}
 
 /* do walki bez szukania przycisków: przejście na Stół i start walki */
 function goFight() {

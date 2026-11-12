@@ -44,7 +44,7 @@ function nextStep() {
     return { tab: 'stol', txt: 'Walka trwa — <b>Następna tura</b>.' };
   }
   if (st.enemies.some(e => !e.corpse)) return { tab: 'stol', sel: '[data-act=fightStart]', txt: 'Na stole stoją wrogowie: <b>Stół → Rozpocznij walkę</b>. Najpierw ustawcie szyk.', prz: P('Pozycja znaczy więcej niż siła. Kto stoi z przodu, ten krwawi pierwszy.') };
-  if (!w.quest && UI.wsub === 'prep' && typeof prepQuest === 'function' && prepQuest()) return { tab: 'wyprawa', sel: '[data-act=depart]', txt: 'Skompletujcie drużynę (do czterech, 1 = przód) i plecak, potem <b>Wyrusz</b>.', prz: P('Wybieraj tych, których stać na jeszcze jedno zejście.') };
+  if (!w.quest && UI.wsub === 'prep' && typeof prepQuest === 'function' && prepQuest()) return { tab: 'wyprawa', sel: '[data-act=depart]', txt: 'Skompletujcie drużynę (do czterech, 1 = przód) i sami spakujcie plecak, potem <b>Wyrusz</b>.', prz: P('Wybieraj tych, których stać na jeszcze jedno zejście.') };
   if (w.quest) {
     if (w.pending) return { tab: 'wyprawa', sel: '.eventbox', txt: 'Zdecydujcie: <b>' + esc(pendingTitle(w.pending)) + '</b> (na mapie wyprawy).' };
     if (w.camp) return { tab: 'wyprawa', sel: '.campp', txt: 'Obóz: rozdajcie <b>Punkty Odpoczynku</b> (zostało ' + w.camp.pts + '), potem <b>Noc</b>.', prz: P('Ogień trzyma ciemność na dystans. Na krótko.') };
@@ -55,16 +55,14 @@ function nextStep() {
     if (r && r.c === 'skrzynia' && !r.opened) return { tab: 'wyprawa', sel: '[data-act=chest]', txt: 'Skrzynia: <b>Otwórz</b>.' };
     if (r && r.item && !r.itemTaken) return { tab: 'wyprawa', sel: '[data-act=takeItem]', txt: 'Leży tu przedmiot zadania: <b>Zabierz</b>.' };
     const g = goalProgress(w); if (g.ok) return { tab: 'wyprawa', sel: '[data-act=endQuest][data-v=done]', txt: 'Cel wykonany (' + esc(g.txt) + '). Możecie wracać: <b>Zadanie wykonane</b> — albo szukać łupów dalej.', prz: P('Wiedz, kiedy odejść. Chciwość to też pułapka.') };
-    if (st.torch <= 3 && (w.sup.Pochodnie || 0) > 0) return { tab: 'wyprawa', sel: '[data-act=torchUse]', txt: 'Robi się ciemno (Pochodnia ' + st.torch + '). Zapalcie <b>Pochodnię +3</b> albo idźcie w mroku po lepsze łupy. Cel: ' + esc(g.txt) + '.' };
     return { tab: 'wyprawa', sel: '.scoutbar .scoutbtn, .room.reach', txt: 'Wybierzcie sąsiednią komnatę na mapie. <b>Zwiad</b> przed wejściem zdradza, co czeka. Cel: ' + esc(g.txt) + '.', prz: P('Każdy korytarz kosztuje światło. Światło to życie.') };
   }
   const ready = live.filter(h => canLevel(h) && h.status !== 'wyprawa');
   if (!w.quest && ready.length) return { tab: 'bohaterowie', hero: ready[0].id, sel: '[data-act=levelUp]', txt: 'Awans! ' + ready.map(h => '<b>' + esc(heroLabel(h)) + '</b>').join(', ') + ' ' + (ready.length > 1 ? 'mają' : 'ma') + ' dość doświadczenia — gracz klika „Awansuj” na karcie bohatera.', prz: P('Każdy Poziom to jedno zejście więcej, które przeżyli.') };
   const sick = live.filter(h => h.stress >= 8 && h.status === 'osada');
-  if (o.lastReturn && sick.length && !(o.svc && Object.keys(o.svc).length)) return { tab: 'bohaterowie', txt: 'Po wyprawie: ' + sick.map(h => esc(heroLabel(h))).join(', ') + ' ' + (sick.length > 1 ? 'mają' : 'ma') + ' dużo Stresu — wyślijcie do Opactwa albo Gospody (karta bohatera). Potem <b>Nowy tydzień</b>.' };
   if (o.decision) return { tab: 'osada', sel: '.hamdec', txt: 'W Osadzie czeka decyzja: <b>' + esc((HAMLET_DECISIONS.find(x => x.key === o.decision.key) || {}).title || '') + '</b>.' };
   if (!(o.board || []).length) return { tab: 'osada', sel: '[data-act=newWeek]', txt: 'Tablica zadań jest pusta: <b>Osada → Nowy tydzień</b> (albo MG losuje tablicę).' };
-  return { tab: 'wyprawa', sel: '.estate .hasq', txt: 'Wybierzcie zadanie: na <b>mapie posiadłości</b> świecą miejsca z zadaniem — kliknijcie jedno, złóżcie drużynę i <b>Wyrusz</b>.', prz: P('Kupuj pochodnie. I nie licz, ilu wróci.') };
+  return { tab: 'wyprawa', sel: '.estate .hasq', txt: 'Wybierzcie zadanie: na <b>mapie posiadłości</b> świecą miejsca z zadaniem — kliknijcie jedno, złóżcie drużynę i <b>Wyrusz</b>.', prz: P('Ród czeka na wieści. Ciemność też.') };
 }
 function renderGuide() {
   const el = $('#guide'); if (!el) return;
@@ -224,20 +222,31 @@ function dreamCheck(h, lines, ev) {
 /* ======================= zegar Ciemności ======================= */
 function threatTick(o, lines, ops) {
   const before = o.threat || 0;
+  if (o.week <= 1) return;
   const quested = (o.lastQuestWeek || 0) >= o.week - 1;
-  o.threat = clamp(before + (quested ? 0 : 1), 0, 10);
-  if (!quested && o.week > 2) lines.push('Nikt nie zszedł do lochu w zeszłym tygodniu — **Ciemność rośnie** (' + o.threat + '/10).');
-  if (o.threat >= 6 && o.threat < 10) {
-    const r = d(10); const lim = o.threat - 5;
-    if (r <= lim) { const g = d(6) * 2; o.gold = Math.max(0, o.gold - g); lines.push('**Napad na Osadę** (k10 = ' + r + ' ≤ ' + lim + '): stwory z lochu plądrują magazyny — tracicie ' + g + ' Złota.'); }
+  o.threat = clamp(before + 1 + (quested ? 0 : 1), 0, 10);
+  lines.push((quested ? 'Ciemność rośnie' : 'Nikt nie zszedł do lochu — **Ciemność rośnie podwójnie**') + ' (' + o.threat + '/10).');
+  if (o.threat >= 4 && o.threat < 10) {
+    const r = d(10); const lim = o.threat - 3;
+    if (r <= lim) raid(o, lines, 'k10 = ' + r + ' ≤ ' + lim);
     else lines.push('Ciemność krąży wokół palisady (k10 = ' + r + ', napad przy ≤ ' + lim + ').');
   }
   if (o.threat >= 10) { o.siege = true; lines.push('**Oblężenie!** Ciemność wylewa się z lochów prosto na Osadę. MG wystawia walkę na Stole — przegrana kosztuje stopień budynku.'); }
 }
+/* napad: k4 na to, co stwory zabiorą */
+function raid(o, lines, why) {
+  const r = d(4); const head = '**Napad na Osadę** (' + why + '), k4 = **' + r + '**: ';
+  const gold = () => { const g = d(6) * 2; o.gold = Math.max(0, o.gold - g); return 'stwory plądrują skarbiec — tracicie ' + g + ' Złota.'; };
+  if (r === 1) return lines.push(head + gold());
+  if (r === 2) { const b = d(2) === 1 ? 'Gospoda' : 'Opactwo'; o.raidClosed = { b, week: o.week }; return lines.push(head + b + ' w ogniu — w tym tygodniu nikt tam nie odpocznie.'); }
+  if (r === 3) { if ((o.recruits || []).length) { o.recruits = o.recruits.slice(1); return lines.push(head + 'jeden z rekrutów z dyliżansu ucieka, zanim ktoś go najmie.'); } return lines.push(head + gold()); }
+  if ((o.trinkets || []).length) { const i = d(o.trinkets.length) - 1; const t = o.trinkets[i]; o.trinkets = o.trinkets.filter((_, j) => j !== i); return lines.push(head + 'z magazynu znika błyskotka: ' + t.name + '.'); }
+  return lines.push(head + gold());
+}
 function threatBar() {
   const o = Store.S.osada; const t = o.threat || 0;
   return `<div class="threat"><span class="lbl">Ciemność</span><span class="tbar">${Array.from({ length: 10 }, (_, i) => `<i class="${i < t ? 'on' : ''} ${i >= 5 ? 'hi' : ''}"></i>`).join('')}</span><b class="num">${t}/10</b>
-    <span class="small muted">${t >= 10 ? 'oblężenie!' : t >= 6 ? 'napady na Osadę (k10 ≤ ' + (t - 5) + ' co tydzień)' : 'rośnie o 1 za każdy tydzień bez wyprawy, spada o 2 za wykonane zadanie'}</span>
+    <span class="small muted">${t >= 10 ? 'oblężenie!' : t >= 4 ? 'napady na Osadę (k10 ≤ ' + (t - 3) + ' co tydzień)' : 'rośnie o 1 co tydzień (o 2 bez wyprawy); spada za wykonane średnie i długie zadania oraz pokonanych bossów; od 4 — napady'}</span>
     ${o.siege && Store.isGM() ? `<button class="btn sm primary" data-act="siege">Wystaw oblężenie na Stole</button>` : ''}</div>`;
 }
 Object.assign(ACT, {

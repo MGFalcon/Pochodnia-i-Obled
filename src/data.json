@@ -1631,7 +1631,7 @@
     "line": "Zdrowie 42 · Unik 2 · Szybkość 4 · Człowiek · zaczyna na pozycji 3 za dwoma Kościanymi żołdakami",
     "moves": [
      "**Pocisk duszy:** W 1–4, Cel. 8, k8+1 i +1 Stres.",
-     "**Wezwanie kości:** przyzywa Kościanego żołdaka na przód szyku; gdy szyk jest pełny, używa Pocisku duszy.",
+     "**Wezwanie kości:** przyzywa Kościanego żołdaka na przód szyku; najwyżej 2 razy na walkę; gdy szyk jest pełny albo wezwał już dwa razy, używa Pocisku duszy.",
      "**Klątwa grobu:** W 1+2+3+4, Cel. 7, +2 Stres i groza 1.",
      "**Ucieczka w mrok:** jeśli zaczyna turę na pozycji 1–2 i ma kogoś za sobą, cofa się na tył zamiast ataku.",
      "**Wzór ruchów:** pierwsza tura — Pocisk duszy; druga — k6: 1–2 Wezwanie kości, 3–4 Pocisk duszy, 5–6 Klątwa grobu."

@@ -20,7 +20,7 @@ function pips(kind, n, max, bind, marks, opts = {}) {
 }
 function rankRow(h, key, label, building, cost) {
   const r = h.gear[key]; const mx = maxRank(h, Store.S.osada.b[building]); const can = canHero(h);
-  return `<div class="rank"><span class="rl">${label}</span><span class="rp">${[1, 2, 3, 4].map(i => `<button class="rk ${i <= r ? 'on' : ''} ${i > mx ? 'lock' : ''}" data-act="rankSet" data-k="${key}" data-v="${i}" ${can ? '' : 'disabled'} title="${i > mx ? 'Zablokowane: ranga najwyżej Poziom + 1 i stopień budynku + 1' : 'Ranga ' + i}">${i}</button>`).join('')}</span>
+  return `<div class="rank"><span class="rl">${label}</span><span class="rp">${[1, 2, 3, 4].map(i => `<button class="rk ${i <= r ? 'on' : ''} ${i > mx ? 'lock' : ''}" data-act="rankSet" data-k="${key}" data-v="${i}" ${Store.isGM() && UI.sheetEdit ? '' : 'disabled'} title="${i > mx ? 'Zablokowane: ranga najwyżej Poziom + 1 i stopień budynku + 1' : 'Ranga ' + i}">${i}</button>`).join('')}</span>
     ${can && r < 4 ? `<button class="btn sm ghost" data-act="rankBuy" data-k="${key}" data-b="${building}" data-c="${cost}" ${r + 1 > mx ? 'disabled' : ''}>${building}: ${cost * (r + 1)} Z</button>` : ''}</div>`;
 }
 function statCell(st, k, label, v) {
@@ -56,6 +56,7 @@ VIEWS.bohaterowie = {
   sheet(h) {
     const c = CLS[h.cls]; const st = heroStats(h); const can = canHero(h); const P = 'heroes.' + h.id;
     const dis = can ? '' : 'disabled';
+    const ed = Store.isGM() && !!UI.sheetEdit;
     const nChosen = h.skills.length;
     const affl = h.state ? h.state.kind + ':' + h.state.name : '';
     return `<section class="sheet panel" aria-label="Karta bohatera">
@@ -65,15 +66,16 @@ VIEWS.bohaterowie = {
         <div class="sh-id">
           <input type="text" class="hname" id="hn-${h.id}" data-bind="${P}.name" value="${esc(h.name)}" placeholder="Imię bohatera" ${dis} aria-label="Imię bohatera">
           <div class="hcls">${esc(c.name)} <span class="muted">· ${esc(c.role || '')}</span></div>
-          ${h.story ? `<div class="hstory small"><span class="muted">${esc(h.story.origin)}.</span> Marzenie: ${esc(h.story.dreamText)} <span class="muted">(${h.story.done ? '<b>spełnione</b>' : 'cel: ' + esc(h.story.goal) + ' → pozytywne dziwactwo'})</span></div>` : can ? `<button class="btn sm ghost" data-act="storyRoll">Nadaj historię (pochodzenie i marzenie)</button>` : ''}
+          ${h.story ? `<div class="hstory small"><span class="muted">${esc(h.story.origin)}.</span> Marzenie: ${esc(h.story.dreamText)} <span class="muted">(${h.story.done ? '<b>spełnione</b>' : 'cel: ' + esc(h.story.goal) + ' → pozytywne dziwactwo'})</span></div>` : ed ? `<button class="btn sm ghost" data-act="storyRoll">Nadaj historię (pochodzenie i marzenie)</button>` : ''}
           ${Object.entries(h.bonds || {}).filter(([id, n]) => n && H(id) && !H(id).dead).length ? `<div class="hbonds small">${Object.entries(h.bonds).filter(([id, n]) => n && H(id) && !H(id).dead).map(([id, n]) => `<span class="chip sm ${n >= 2 ? 'gold' : n <= -2 ? 'red' : ''}">${esc(heroLabel(H(id)))}: ${bondName(n)}</span>`).join('')}</div>` : ''}
           <div class="row lvl"><span class="lbl">Poziom</span><b class="lvnum num">${h.level}</b>${h.level < 6 ? `<span class="lbl">doświadczenie</span><span class="xpbar" title="${h.xp || 0} z ${xpNeed(h.level)} do Poziomu ${h.level + 1}">${Array.from({ length: xpNeed(h.level) }, (_, i) => `<i class="xp ${i < (h.xp || 0) ? 'on' : ''}"></i>`).join('')}</span><span class="num small">${h.xp || 0} / ${xpNeed(h.level)} do Poziomu ${h.level + 1}</span>` : '<span class="chip sm gold">Poziom maksymalny</span>'}
             ${can && canLevel(h) ? `<button class="btn sm gold lvup" data-act="levelUp" ${h.status === 'wyprawa' ? 'disabled title="Awans po powrocie do Osady"' : ''}>Awansuj na Poziom ${h.level + 1}</button>` : ''}
-            ${Store.isGM() ? `<span class="gmfix"><button class="btn sm ghost" data-act="addXp" data-v="-1" title="Poprawka MG: −1 doświadczenia">−1</button><button class="btn sm ghost" data-act="addXp" data-v="1" title="Poprawka MG: +1 doświadczenia">+1</button></span>` : ''}</div>
+            ${ed ? `<span class="gmfix"><button class="btn sm ghost" data-act="addXp" data-v="-1" title="Poprawka MG: −1 doświadczenia">−1</button><button class="btn sm ghost" data-act="addXp" data-v="1" title="Poprawka MG: +1 doświadczenia">+1</button></span>` : ''}</div>
           <div class="row"><span class="chip">${esc(ownerName(h))}</span>
             ${Store.canWrite() && h.owner !== Store.me.id && (Store.isGM() || !h.owner) ? `<button class="btn sm ghost" data-act="claim">Przypisz do mnie</button>` : ''}
             ${Store.isGM() && h.owner ? `<button class="btn sm ghost" data-act="unclaim">Zwolnij</button>` : ''}
-            <label class="lbl" for="hs-${h.id}">gdzie</label><select id="hs-${h.id}" data-bind="${P}.status" ${dis}>${['osada', 'wyprawa', 'leczenie'].map(s => `<option ${h.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>
+            ${ed ? `<label class="lbl" for="hs-${h.id}">gdzie</label><select id="hs-${h.id}" data-bind="${P}.status">${['osada', 'wyprawa', 'leczenie'].map(s => `<option ${h.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>` : `<span class="chip sm">${h.dead ? 'na cmentarzu' : esc(heroAway(h) || (h.status === 'wyprawa' ? 'na wyprawie' : 'w Osadzie'))}</span>`}
+            ${Store.isGM() ? `<span class="sp"></span><button class="btn sm ${ed ? 'gold' : 'ghost'}" data-act="sheetEdit" aria-pressed="${ed}" title="Ręczne poprawki MG: Zdrowie, Stres, stany, dziwactwa, choroby, rangi">${ed ? 'Edycja MG: włączona' : 'Edycja MG'}</button>` : ''}
           </div>
         </div>
         <div class="sh-desc dim">${esc(c.desc)}</div>
@@ -81,14 +83,14 @@ VIEWS.bohaterowie = {
       ${h.dead ? `<p class="deadnote">☩ Poległ: ${esc(h.deathCause || '')}${h.deathWeek ? ', tydzień ' + h.deathWeek : ''}.</p>` : ''}
       <div class="sh-grid">
         <div class="col">
-          <div class="box"><div class="ph">Zdrowie <span class="hint num">${h.hp} / ${st.maxhp}</span></div>${pips('hp', h.hp, st.maxhp, 'hp', null, { dis: !can })}
-            <div class="row"><label class="chk"><input type="checkbox" data-bind="${P}.dd" ${h.dd ? 'checked' : ''} ${dis}> Próg Śmierci</label><label class="chk"><input type="checkbox" data-bind="${P}.exhausted" ${h.exhausted ? 'checked' : ''} ${dis}> Wyczerpanie</label>${h.dd && can ? `<button class="btn sm primary" data-act="sheetDeath">Rzut Śmierci (≤ ${st.death})</button>` : ''}</div></div>
-          <div class="box"><div class="ph">Stres <span class="hint num">${h.stress} / 20${st.heart < 20 ? ' · zawał przy ' + st.heart : ''}</span></div>${pips('st', h.stress, 20, 'stress', [10, 20], { hi: 10, dis: !can })}
-            <div class="row"><select data-act-change="state" id="hst-${h.id}" ${dis} aria-label="Cnota albo Przypadłość">
+          <div class="box"><div class="ph">Zdrowie <span class="hint num">${h.hp} / ${st.maxhp}</span></div>${pips('hp', h.hp, st.maxhp, 'hp', null, { dis: !ed })}
+            ${ed ? `<div class="row"><label class="chk"><input type="checkbox" data-bind="${P}.dd" ${h.dd ? 'checked' : ''}> Próg Śmierci</label><label class="chk"><input type="checkbox" data-bind="${P}.exhausted" ${h.exhausted ? 'checked' : ''}> Wyczerpanie</label>${h.dd ? `<button class="btn sm primary" data-act="sheetDeath">Rzut Śmierci (≤ ${st.death})</button>` : ''}</div>` : h.dd || h.exhausted ? `<div class="row">${h.dd ? '<span class="chip sm red">Próg Śmierci</span>' : ''}${h.exhausted ? '<span class="chip sm">Wyczerpanie</span>' : ''}</div>` : ''}</div>
+          <div class="box"><div class="ph">Stres <span class="hint num">${h.stress} / 20${st.heart < 20 ? ' · zawał przy ' + st.heart : ''}</span></div>${pips('st', h.stress, 20, 'stress', [10, 20], { hi: 10, dis: !ed })}
+            ${ed ? `<div class="row"><select data-act-change="state" id="hst-${h.id}" aria-label="Cnota albo Przypadłość">
               <option value="">— bez Cnoty i Przypadłości —</option>
               <optgroup label="Cnoty">${DATA.virtues.map(v => `<option value="virtue:${v.name}" ${affl === 'virtue:' + v.name ? 'selected' : ''}>${v.name}</option>`).join('')}</optgroup>
               <optgroup label="Przypadłości">${DATA.afflictions.map(v => `<option value="affliction:${v.name}" ${affl === 'affliction:' + v.name ? 'selected' : ''}>${v.name}</option>`).join('')}${c.name === 'Biczownik' ? `<option value="ekstaza:Ekstaza bólu" ${affl === 'ekstaza:Ekstaza bólu' ? 'selected' : ''}>Ekstaza bólu</option>` : ''}</optgroup></select>
-              ${can ? `<button class="btn sm" data-act="sheetTest">Próba Charakteru (≤ ${st.virtue})</button>` : ''}</div>
+              <button class="btn sm" data-act="sheetTest">Próba Charakteru (≤ ${st.virtue})</button></div>` : h.state ? `<div class="row"><span class="chip sm ${h.state.kind === 'virtue' ? 'gold' : 'red'}">${h.state.kind === 'virtue' ? 'Cnota' : 'Przypadłość'}: ${esc(h.state.name)}</span></div>` : ''}
             ${h.state ? `<p class="small ${h.state.kind === 'virtue' ? 'virtue-t' : 'affl-t'}">${esc(h.state.kind === 'virtue' ? (DATA.virtues.find(v => v.name === h.state.name) || {}).perm + '; przy 1–3 na początku tury: ' + (DATA.virtues.find(v => v.name === h.state.name) || {}).proc : h.state.kind === 'ekstaza' ? 'Co turę musi atakować, nie leczy innych, traci 1 Zdrowia na początku tury; Stres z ataków wrogów go nie dotyczy.' : 'Przy 1–3 na początku tury: ' + ((DATA.afflictions.find(v => v.name === h.state.name) || {}).combat || ''))}</p>` : ''}
           </div>
           <div class="box"><div class="ph">Statystyki <span class="hint">najedź albo dotknij, by zobaczyć skąd</span></div>
@@ -128,12 +130,12 @@ VIEWS.bohaterowie = {
           <div class="box qbox">
             <div class="ph">Dziwactwa <span class="hint">do 5 pozytywnych i 5 negatywnych</span></div>
             ${['qp', 'qn'].map(k => `<div class="qcol ${k}"><span class="lbl">${k === 'qp' ? 'Pozytywne' : 'Negatywne'}</span>
-              ${h[k].map((q, i) => `<div class="q"><span>${esc(q.t)}</span><label class="chk small" title="Utrwalone w Sanatorium — nowe go nie wyprze"><input type="checkbox" data-act-change="qlock" data-k="${k}" data-i="${i}" ${q.lock ? 'checked' : ''} ${dis}> utrwalone</label>${can ? `<button class="x" data-act="qdel" data-k="${k}" data-i="${i}" aria-label="Usuń">×</button>` : ''}</div>`).join('') || '<p class="muted small">brak</p>'}
-              ${can && h[k].length < 5 ? `<select data-act-change="qadd" data-k="${k}" aria-label="Dodaj dziwactwo"><option value="">+ dodaj…</option>${(k === 'qp' ? DATA.quirks_pos : DATA.quirks_neg).map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}</div>`).join('')}
-            ${can ? `<button class="btn sm" data-act="quirkRoll">Rzut po wyprawie (k10)</button>` : ''}
+              ${h[k].map((q, i) => `<div class="q"><span>${esc(q.t)}</span>${ed ? `<label class="chk small" title="Utrwalone w Sanatorium — nowe go nie wyprze"><input type="checkbox" data-act-change="qlock" data-k="${k}" data-i="${i}" ${q.lock ? 'checked' : ''}> utrwalone</label><button class="x" data-act="qdel" data-k="${k}" data-i="${i}" aria-label="Usuń">×</button>` : q.lock ? '<span class="chip sm" title="Utrwalone w Sanatorium — nowe go nie wyprze">utrwalone</span>' : ''}</div>`).join('') || '<p class="muted small">brak</p>'}
+              ${ed && h[k].length < 5 ? `<select data-act-change="qadd" data-k="${k}" aria-label="Dodaj dziwactwo"><option value="">+ dodaj…</option>${(k === 'qp' ? DATA.quirks_pos : DATA.quirks_neg).map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}</div>`).join('')}
+            ${ed ? `<button class="btn sm" data-act="quirkRoll">Rzut po wyprawie (k10)</button>` : ''}
             <div class="ph">Choroby</div>
-            ${h.diseases.map((x, i) => `<div class="q"><span>${esc(x)}</span>${can ? `<button class="x" data-act="ddel" data-i="${i}" aria-label="Usuń">×</button>` : ''}</div>`).join('') || '<p class="muted small">zdrowy</p>'}
-            ${can ? `<select data-act-change="dadd" aria-label="Dodaj chorobę"><option value="">+ choroba…</option>${DATA.diseases.map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}
+            ${h.diseases.map((x, i) => `<div class="q"><span>${esc(x)}</span>${ed ? `<button class="x" data-act="ddel" data-i="${i}" aria-label="Usuń">×</button>` : ''}</div>`).join('') || '<p class="muted small">zdrowy</p>'}
+            ${ed ? `<select data-act-change="dadd" aria-label="Dodaj chorobę"><option value="">+ choroba…</option>${DATA.diseases.map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}
           </div>
           ${can && !h.dead ? this.services(h) : ''}
           <div class="box"><div class="ph">Notatki</div><textarea id="hnote-${h.id}" data-bind="${P}.notes" ${dis} placeholder="Historia, blizny, długi, komu ufa…">${esc(h.notes || '')}</textarea></div>
@@ -176,6 +178,7 @@ function svcState(h, b, sub) {
   const r = (why) => ({ ok: false, why, cost, slots, left });
   const busy = heroBusy(h); if (busy) return r(busy);
   if (b === 'Gospoda' && o.eventR === 5) return r('Gospoda zamknięta w tym tygodniu (pożar).');
+  if (o.raidClosed && o.raidClosed.week === o.week && o.raidClosed.b === b) return r(b + ' spalone w napadzie — zamknięte do końca tygodnia.');
   if (h.ban && h.ban.b === b && h.ban.until > o.week) return r('Zakaz wstępu do: ' + b + ' do tygodnia ' + h.ban.until + ' (awantura).');
   if (b === 'Opactwo' && (qn.includes('Bezbożnik') || cn === 'Ohyda')) return r(qn.includes('Bezbożnik') ? 'Bezbożnik nie wejdzie do Opactwa.' : 'Ohyda nie wejdzie do Opactwa.');
   if (b === 'Gospoda' && (qn.includes('Fanatyk') || cn === 'Biczownik')) return r(qn.includes('Fanatyk') ? 'Fanatyk leczy Stres tylko w Opactwie.' : 'Biczownik nie leczy się w Gospodzie.');
@@ -247,6 +250,7 @@ Object.assign(ACT, {
     const h = curHero(); h.xp = Math.max(0, (h.xp || 0) + +el.dataset.v);
     saveHero(h); rollLog('MG poprawia doświadczenie: ' + heroLabel(h) + ' — ' + h.xp + ' / ' + xpNeed(h.level) + '.', '', 'sys');
   },
+  sheetEdit: () => { if (!Store.isGM()) return; UI.sheetEdit = !UI.sheetEdit; renderView(); },
   levelUp: () => {
     const h = curHero(); if (!canHero(h)) return toast('To bohater innego gracza.');
     if (!canLevel(h)) return toast(h.level >= 6 ? 'To już Poziom maksymalny.' : 'Za mało doświadczenia: ' + (h.xp || 0) + ' z ' + xpNeed(h.level) + '.');

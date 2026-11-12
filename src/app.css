@@ -461,3 +461,12 @@ label.chk.sick { opacity: .45; filter: grayscale(.8); cursor: not-allowed; }
 @media (prefers-reduced-motion: reduce) { .lvup { animation: none; } }
 .lvbadge { color: var(--gold); font-weight: 700; }
 .gmfix { margin-left: 6px; opacity: .8; }
+
+/* dziennik dwuwarstwowy */
+.log details.e > summary { cursor: pointer; list-style: none; }
+.log details.e > summary::-webkit-details-marker { display: none; }
+.log details.e > summary::after { content: ' ▸'; color: var(--gold2); font-size: 12px; }
+.log details.e[open] > summary::after { content: ' ▾'; }
+.log details.e .lfull { margin-top: 4px; padding-top: 4px; border-top: 1px dashed var(--rule2); color: var(--dim, #b9ab92); font-size: 13px; }
+.loghead { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 8px; }
+.loghead h2 { margin: 0; }

@@ -649,7 +649,8 @@ function enemySpecial(e0, name) {
   const lines = ['**' + e.name + '**: **' + name + '**.']; const ev = [{ id: e.id, k: 'act', txt: name }]; const sum = [];
   const dl = +stol.dl || 0;
   if (name === 'Wezwanie kości') {
-    if (freeEnemySlots(stol) <= 0) return null;
+    if (freeEnemySlots(stol) <= 0 || (e.summoned || 0) >= 2) return null;
+    e.summoned = (e.summoned || 0) + 1;
     const z = makeSummon('Kościany żołdak', dl); stol.enemies.unshift(z); sum.push('Na przód szyku wstaje Kościany żołdak.'); ev.push({ id: z.id, k: 'fx', txt: 'PRZYZWANY' });
   }
   if (name === 'Przyzwanie macek') {
@@ -707,6 +708,7 @@ function enemyAuto(e0, entry) {
     else { const r = d(6); const row = ai.table.find(([a, b]) => r >= a && r <= b); want = row[2]; pre.push('Druga tura: k6 = **' + r + '** → **' + want + '**.'); }
     if (want === 'Do kotła!' && stol.cauldron && s.heroes[stol.cauldron] && !s.heroes[stol.cauldron].dead) { want = 'Chochla'; pre.push('Kocioł jest zajęty — Chochla.'); }
     if (want === 'Pieśń syreny' && stol.heroes.some(id => ((s.heroes[id] || {}).fx || {}).charm)) { want = 'Fala'; pre.push('Ktoś już jest zauroczony — Fala.'); }
+    if (want === 'Wezwanie kości' && (e.summoned || 0) >= 2) { want = 'Pocisk duszy'; pre.push('Wezwał już dwa razy w tej walce — Pocisk duszy.'); }
     if (want === 'Wezwanie kości' && freeEnemySlots(stol) <= 0) { want = 'Pocisk duszy'; pre.push('Szyk pełny — Pocisk duszy.'); }
     if (want === 'Przyzwanie macek' && freeEnemySlots(stol) <= 0) { want = 'Uderzenie zewsząd'; pre.push('Nie ma wolnych pozycji — Uderzenie zewsząd.'); }
     if (want === 'Porodzenie' && freeEnemySlots(stol) <= 0) { want = 'Wyrzut ochłapu'; pre.push('Nie ma wolnej pozycji — Wyrzut ochłapu.'); }

@@ -66,7 +66,7 @@ const QUEST_LEN = {
   dluga: { name: 'Długa', rooms: '12–16', camps: 2, gold: 60, mem: 4, xp: 3, pack: '32 prowianty, 6 pochodni, 2 łopaty, 4 bandaże, 2 antidota (32 Z)' }
 };
 const TORCH = [
-  { min: 9, name: 'Jasno', surprise: '1–3 wrogowie zaskoczeni, 10 drużyna', enemy: 'Celność −1', loot: '−1 rzut na łup', stress: '—', scout: 4, accMod: -1, dmgMod: 0, critMod: 0 },
+  { min: 9, name: 'Jasno', surprise: '1–3 wrogowie zaskoczeni, 10 drużyna', enemy: 'Celność −1', loot: '−1 rzut na łup (zawsze co najmniej 1 — wtedy gorszy z dwóch k10)', stress: '—', scout: 4, accMod: -1, dmgMod: 0, critMod: 0 },
   { min: 6, name: 'Półmrok', surprise: '1–2 wrogowie, 9–10 drużyna', enemy: '—', loot: 'normalnie', stress: '—', scout: 3, accMod: 0, dmgMod: 0, critMod: 0 },
   { min: 3, name: 'Cienie', surprise: '1 wrogowie, 8–10 drużyna', enemy: 'Celność +1', loot: '+1 rzut na łup', stress: '—', scout: 2, accMod: 1, dmgMod: 0, critMod: 0 },
   { min: 1, name: 'Mrok', surprise: '7–10 drużyna', enemy: 'Celność +1, obrażenia +1', loot: '+1 rzut na łup', stress: '+1 za korytarz', scout: 1, accMod: 1, dmgMod: 1, critMod: 0 },

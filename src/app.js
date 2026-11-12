@@ -94,8 +94,9 @@ function roomInfo() {
 /* ---------- render ---------- */
 function renderTabs() {
   $('#tabs').innerHTML = TABS.filter(([k]) => k !== 'mg' || Store.isGM()).map(([k, t]) => `<a href="#${k}" class="tab ${UI.view === k ? 'on' : ''}" ${UI.view === k ? 'aria-current="page"' : ''}>${t}</a>`).join('');
-  const role = { mg: 'MG', gracz: 'gracz', widz: 'widz' }[Store.role];
-  $('#who').innerHTML = `<span class="chip ${Store.role === 'mg' ? 'gold' : ''}" title="Twoja rola przy stole">${esc(Store.me.name)} · ${role}</span>` +
+  const role = { mg: 'Mistrz Gry', gracz: 'gracz', widz: 'widz (tylko ogląda)' }[Store.role] || Store.role;
+  const nm = (Store.me.name || '').trim(); const named = nm && !/^(gracz|mg|mistrz gry)$/i.test(nm);
+  $('#who').innerHTML = `<span class="chip ${Store.role === 'mg' ? 'gold' : ''}" title="Twoja rola przy stole">${named ? esc(nm) + ' — ' + role : 'Grasz jako: ' + role}</span>` +
     (Store.peers.length ? `<span class="chip" title="${esc(Store.peers.map(p => p.name).join(', '))}">przy stole: ${Store.peers.length}</span>` : '') +
     ` <button class="btn sm ghost" data-act="gloss" title="Wyjaśnienia stanów, efektów, Przypadłości i Cnót">Słownik</button>` +
     (Store.mode === 'host' ? ` <button class="btn sm ghost" data-act="roominfo">Pokój ${esc(Room.code)}</button>` : '') +
@@ -103,7 +104,10 @@ function renderTabs() {
 }
 function renderTorch() {
   const t = Store.S.stol.torch; const ti = torchInfo(t);
-  document.documentElement.style.setProperty('--dark', String((10 - t) / 10));
+  /* pochodnia liczy się tylko w lochu: na wyprawie albo przy walce na Stole */
+  const inDark = !!Store.S.wyprawa.quest || !!Store.S.stol.fight;
+  document.documentElement.style.setProperty('--dark', inDark ? String((10 - t) / 10) : '0');
+  $('#torchbar').hidden = !inDark; if (!inDark) { $('#torchbar').innerHTML = ''; return; }
   $('#torchbar').innerHTML = `<div class="torch" role="group" aria-label="Pochodnia">
     <span class="lbl">Pochodnia</span>
     <div class="flames">${Array.from({ length: 10 }, (_, i) => `<button class="fl ${i < t ? 'on' : ''}" data-act="torch" data-v="${i + 1}" aria-label="Pochodnia ${i + 1}" title="Ustaw Pochodnię na ${i + 1}"></button>`).join('')}</div>
@@ -131,9 +135,25 @@ Store.onChange(what => {
 });
 
 /* ---------- dziennik, czat i kości ---------- */
+/* krótka linijka: sam przebieg i kości; wyjaśnienia (Celność − Unik, premie, kwestie) zostają w rozwinięciu */
+function logShort(t) {
+  return t.replace(/Cel losowany spośród [^:]+: (k\d+ = \*\*\d+\*\*) → ([^.]+)\./g, 'cel $1 → $2.')
+    .replace(/Wybór ataku: (k\d+ = \*\*\d+\*\*) → /g, 'atak $1 → ')
+    .replace(/, trafia ≤ -?\d+/g, '').replace(/ \((?:Celność|Cel\.)[^)]*\)/g, '').replace(/ \[[^\]]*\]/g, '')
+    .replace(/unik: [^*]+? uchyla się/g, 'unik').replace(/\*„[^”]*”\* — [^.]+\./g, '')
+    .replace(/\s{2,}/g, ' ').trim();
+}
+function logCut(t, n) {
+  if (t.length <= n) return t;
+  const i = t.lastIndexOf('. ', n); return (i > 40 ? t.slice(0, i + 1) : t.slice(0, n).replace(/\s+\S*$/, '')) + ' …';
+}
 function logLine(e) {
   const tm = new Date(e.t); const hh = String(tm.getHours()).padStart(2, '0') + ':' + String(tm.getMinutes()).padStart(2, '0');
-  return `<div class="e ${e.cls || ''} k-${e.kind || 'sys'}"><span class="lt">${hh}</span> <span class="lb">${esc(e.by || '')}</span> ${diceBadges(md(e.text || ''))}</div>`;
+  const text = e.text || ''; const pre = `<span class="lt">${hh}</span> <span class="lb">${esc(e.by || '')}</span> `;
+  const cls = `e ${e.cls || ''} k-${e.kind || 'sys'}`;
+  const short = e.kind === 'chat' || e.kind === 'przodek' ? text : logCut(logShort(text), 200);
+  if (UI.logFull || short === text) return `<div class="${cls}">${pre}${diceBadges(md(text))}</div>`;
+  return `<details class="${cls}" data-lid="${e.id}" ${(UI.logOpen || {})[e.id] ? 'open' : ''}><summary>${pre}${diceBadges(md(short))}</summary><div class="lfull">${diceBadges(md(text))}</div></details>`;
 }
 function renderSide() {
   const side = $('#side');
@@ -142,13 +162,14 @@ function renderSide() {
   const box = $('#logbox');
   const atBottom = !box || box.scrollTop + box.clientHeight >= box.scrollHeight - 30 || Date.now() - (UI.logScrollT || 0) > 15000;
   renderInto(side, `<div class="panel logpanel">
-    <h2>Dziennik <span class="hint">rzuty, czat i Przodek</span></h2>
+    <div class="loghead"><h2>Dziennik</h2><button class="btn sm ghost" data-act="logFull" aria-pressed="${!!UI.logFull}" title="Wpisy ze strzałką ▸ można kliknąć, by zobaczyć pełne wyliczenie">${UI.logFull ? 'Zwiń wyliczenia' : 'Rozwiń wyliczenia'}</button></div>
     <div class="log" id="logbox" aria-live="polite">${L.slice(-120).map(logLine).join('') || '<p class="muted">Tu pojawią się rzuty kośćmi, wyniki ataków i wiadomości.</p>'}</div>
     <div class="dice">${[2, 4, 6, 8, 10, 20].map(n => `<button class="btn sm" data-act="die" data-n="${n}">k${n}</button>`).join('')}
       <button class="btn sm" data-act="dieChance" title="Rzut na Szansę: k10 ≤ Szansa">Szansa…</button></div>
     <form class="chat" id="chatf"><input type="text" id="chatin" placeholder="${Store.canWrite() ? 'Napisz do stołu…' : 'Oglądasz — czat dla graczy z prawem edycji'}" ${Store.canWrite() ? '' : 'disabled'} autocomplete="off"><button class="btn sm" ${Store.canWrite() ? '' : 'disabled'}>Wyślij</button></form>
   </div>`);
-  const nb = $('#logbox'); if (nb) { if (atBottom) nb.scrollTop = nb.scrollHeight; else if (box) nb.scrollTop = box.scrollTop; nb.addEventListener('wheel', () => { UI.logScrollT = Date.now(); }, { passive: true }); nb.addEventListener('touchmove', () => { UI.logScrollT = Date.now(); }, { passive: true }); }
+  const nb = $('#logbox'); if (nb) nb.addEventListener('toggle', ev => { const d = ev.target; if (d.dataset && d.dataset.lid) { UI.logOpen = UI.logOpen || {}; if (d.open) UI.logOpen[d.dataset.lid] = 1; else delete UI.logOpen[d.dataset.lid]; } }, true);
+  if (nb) { if (atBottom) nb.scrollTop = nb.scrollHeight; else if (box) nb.scrollTop = box.scrollTop; nb.addEventListener('wheel', () => { UI.logScrollT = Date.now(); }, { passive: true }); nb.addEventListener('touchmove', () => { UI.logScrollT = Date.now(); }, { passive: true }); }
 }
 function rollLog(text, cls, kind) { return Store.log({ text, cls: cls || '', kind: kind || 'roll' }); }
 let _lastCap = null, _lastRoll = null;
@@ -170,7 +191,7 @@ function checkCaption() {
 }
 
 /* ---------- zdarzenia globalne ---------- */
-const ACT = {};
+const ACT = { logFull: () => { UI.logFull = !UI.logFull; renderSide(); } };
 function wireGlobal() {
   document.addEventListener('click', ev => {
     const el = ev.target.closest('[data-act]'); if (!el) return;

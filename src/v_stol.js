@@ -549,23 +549,24 @@ Object.assign(ACT, {
     const ti = torchInfo(s.torch); const extra = { 'Jasno': -1, 'Półmrok': 0, 'Cienie': 1, 'Mrok': 1, 'Ciemność': 2 }[ti.name];
     const bonus = s.lootBonus || 0;
     Store.act([opSet('stol.looted', true)], { quiet: true });
-    const n = Math.max(0, (boss ? 4 : 1) + extra + bonus);
-    rollLoot(n, 'wygrana walka' + (boss ? ', boss' : '') + ', Pochodnia ' + ti.name + (bonus ? ', +' + bonus + ' za zgaszone ognisko' : ''));
+    const raw = (boss ? 4 : 1) + extra + bonus; const n = Math.max(1, raw);
+    rollLoot(n, 'wygrana walka' + (boss ? ', boss' : '') + ', Pochodnia ' + ti.name + (bonus ? ', +' + bonus + ' za zgaszone ognisko' : '') + (raw < 1 ? ', w jasnym świetle gorszy z dwóch k10' : ''), raw < 1);
   }
 });
 const MEM_TYPES = ['Popiersie', 'Portret', 'Akt', 'Herb'];
 const SUP_KEYS = ['Prowiant', 'Pochodnie', 'Łopaty', 'Bandaże', 'Antidota', 'Laudanum', 'Zioła', 'Woda święcona', 'Klucze'];
 const lootMult = () => [1, 1.5, 2][+(Store.S.wyprawa.quest ? Store.S.wyprawa.quest.dl : Store.S.stol.dl) || 0];
 /* łup trafia do plecaka wyprawy (albo prosto do skarbca, gdy nie ma wyprawy) i jest pokazywany wszystkim jako karta */
-function rollLoot(n, why) {
+function rollLoot(n, why, worse) {
   if (Store.S.wyprawa.quest && Store.S.wyprawa.rumor) { n += 1; why += ', +1 za plotkę z Osady'; Store.act([opSet('wyprawa.rumor', false)], { quiet: true }); }
   const items = []; let gold = 0, gems = 0; const mem = {}; const sup = {}; const mult = lootMult();
   for (let i = 0; i < n; i++) {
-    const r = rollTable('lup');
-    if (r.r <= 4) { const g = d(6); gold += g; items.push('k10 = **' + r.r + '** → ' + g + ' Złota (k6 = **' + g + '**)'); }
-    else if (r.r <= 6) { const pm = pickD(MEM_TYPES); mem[pm.v] = (mem[pm.v] || 0) + 1; items.push('k10 = **' + r.r + '** → pamiątka: ' + pm.v + ' (k4 = **' + pm.r + '**)'); }
-    else if (r.r === 7) { const a = pickD(SUP_KEYS), b2 = pickD(SUP_KEYS); [a, b2].forEach(x => { sup[x.v] = (sup[x.v] || 0) + (x.v === 'Prowiant' ? 2 : 1); }); items.push('k10 = **' + r.r + '** → zapasy: ' + a.v.toLowerCase() + ' (k9 = **' + a.r + '**) i ' + b2.v.toLowerCase() + ' (k9 = **' + b2.r + '**)'); }
-    else { gems++; items.push('k10 = **' + r.r + '** → klejnot (10 Złota)'); }
+    let r = rollTable('lup'); let pre = '';
+    if (worse) { const r2 = rollTable('lup'); pre = 'k10 = **' + r.r + '** i k10 = **' + r2.r + '**, gorszy: '; if (r2.r < r.r) r = r2; }
+    if (r.r <= 4) { const g = d(6); gold += g; items.push(pre + 'k10 = **' + r.r + '** → ' + g + ' Złota (k6 = **' + g + '**)'); }
+    else if (r.r <= 6) { const pm = pickD(MEM_TYPES); mem[pm.v] = (mem[pm.v] || 0) + 1; items.push(pre + 'k10 = **' + r.r + '** → pamiątka: ' + pm.v + ' (k4 = **' + pm.r + '**)'); }
+    else if (r.r === 7) { const a = pickD(SUP_KEYS), b2 = pickD(SUP_KEYS); [a, b2].forEach(x => { sup[x.v] = (sup[x.v] || 0) + (x.v === 'Prowiant' ? 2 : 1); }); items.push(pre + 'k10 = **' + r.r + '** → zapasy: ' + a.v.toLowerCase() + ' (k9 = **' + a.r + '**) i ' + b2.v.toLowerCase() + ' (k9 = **' + b2.r + '**)'); }
+    else { gems++; items.push(pre + 'k10 = **' + r.r + '** → klejnot (10 Złota)'); }
   }
   giveLoot({ gold: Math.ceil(gold * mult), gems, mem, sup, trinkets: [] }, why, items, n);
 }
