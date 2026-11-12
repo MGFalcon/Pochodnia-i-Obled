@@ -589,7 +589,7 @@ label.chk.sick { opacity: .45; filter: grayscale(.8); cursor: not-allowed; }
 <div id="dark" aria-hidden="true"></div>
 <div class="wrap" id="app">
   <header class="top" id="top">
-    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 12.11 · 21:10</span></small><h1>Stół <em>rodu</em></h1></div>
+    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 12.11 · 21:15</span></small><h1>Stół <em>rodu</em></h1></div>
     <nav class="tabs" id="tabs" aria-label="Widoki stołu"></nav>
     <div class="toolbar"><span class="sync" data-s="local">gra na jednym urządzeniu</span><span id="who" class="who"></span></div>
   </header>
@@ -1034,7 +1034,7 @@ function parseEffects(eff) {
   if (/ogłuszenie/.test(eff)) out.push({ k: 'stun', res: 'krzepa' });
   if (/Znak/.test(eff) && !/ze Znakiem/.test(eff.replace(/Znak,|Znak$/, ''))) { if (/(^|, )Znak(,|$| )/.test(eff)) out.push({ k: 'mark' }); }
   if ((m = eff.match(/odrzut (\d)/))) out.push({ k: 'push', x: +m[1], res: 'krzepa' });
-  if ((m = eff.match(/przyciągnięcie (\d)/))) out.push({ k: 'pull', x: +m[1], res: 'krzepa' });
+  if ((m = eff.match(/przyciągnięcie (\d)/)) || (m = eff.match(/przyciąga o (\d)/))) out.push({ k: 'pull', x: +m[1], res: 'krzepa' });
   if ((m = eff.match(/[^,;:]*cel(?:u|ów) −\d[^,;]*/))) { const tm = m[0].match(/na (\d) tury/); out.push({ k: 'debuff', txt: m[0].trim().replace(/ na \d tury/, ''), turns: tm ? +tm[1] : 3, res: 'krzepa' }); }
   if (/^cel: obrażenia −1 i Celność −1/.test(eff)) out.push({ k: 'debuff', txt: 'obrażenia −1, Celność −1', turns: 3, res: 'krzepa' });
   return out;
@@ -1653,6 +1653,8 @@ function fxChips(fx, h) {
   if (fx.stun) out.push(['gold', 'ogłuszony']);
   if (fx.mark) out.push(['red', 'Znak ' + fx.mark]);
   if (fx.guard) out.push(['', 'Ochrona ' + fx.guard]);
+  if (fx.cauldron) out.push(['red', 'w kotle (' + fx.cauldron + ')']);
+  if (fx.charm) out.push(['affl', 'zauroczony (' + fx.charm + ')']);
   if (fx.riposte != null && fx.riposte === (Store.S.stol.round || 0) && Store.S.stol.fight) out.push(['gold', 'Odwet']);
   const rd = Store.S.stol.round || 0;
   if (fx.refuseHeal != null && fx.refuseHeal >= rd && Store.S.stol.fight) out.push(['affl', 'odmawia leczenia']);
@@ -1693,7 +1695,8 @@ function heroUse(h0, idx, targetIds) {
     stol.atk = { r: stol.round || 0, ids: ((stol.atk && stol.atk.r === (stol.round || 0)) ? stol.atk.ids : []).concat(targetIds) };
     const eps = enemyPositions(tlist);
     targetIds.forEach(tid => {
-      const e = tlist.find(x => x.id === tid); if (!e) return;
+      let e = tlist.find(x => x.id === tid); if (!e) return;
+      if (e.fx && e.fx.guard && e.fx.guardBy) { const gd = tlist.find(x => x.id === e.fx.guardBy && !x.corpse); if (gd) { lines.push('Ochrona: atak w ' + e.name + ' przejmuje ' + gd.name + '.'); e = gd; } }
       /* Celność zależna od sytuacji: Nocny marek, Celne oko, Kompas ślepca */
       const ep = eps.find(x => x.e.id === tid); let sit = 0; const sitWhy = [];
       if (stol.torch <= 2 && h.qp.some(q => qname(q.t) === 'Nocny marek')) { sit++; sitWhy.push('Nocny marek +1'); }
@@ -1719,7 +1722,7 @@ function heroUse(h0, idx, targetIds) {
         const ign = /ignoruje Pancerz/.test(sk.eff);
         const prot = ign ? 0 : enemyProt(e);
         dmg = Math.max(1, dmg - prot);
-        e.hp -= dmg;
+        e.hp -= dmg; witchDamage(stol, e, dmg, lines, getH);
         txt += ' → **' + (crit ? 'KRYTYK' : 'trafienie') + '**, ' + obrN(dmg) + (prot ? ' (po Pancerzu ' + prot + ')' : '') + (tb ? ' (w tym +' + tb + ' premii)' : '');
       } else txt += ' → **' + (crit ? 'KRYTYK' : 'trafienie') + '**';
       ev.push({ id: e.id, k: crit ? 'crit' : 'hit', txt: (crit ? 'KRYTYK ' : '') + (dmg ? '−' + dmg : 'TRAFIENIE') });
@@ -1804,6 +1807,7 @@ function heroUse(h0, idx, targetIds) {
   if (/potem Zmęczenie/.test(sk.eff)) { h.fatigue = (h.fatigue || 0) + 1; lines.push(heroLabel(h) + ': Zmęczenie (' + h.fatigue + ').'); }
   const rest = sk.eff.replace(/krwawienie \d|zaraza \d|ogłuszenie|odrzut \d|przyciągnięcie \d/g, '').trim();
   if (rest && /raz na walkę|2 razy na walkę/.test(sk.eff)) lines.push('Pamiętaj: ' + sk.eff + '.');
+  heartCheck(stol, lines, getH);
   return { lines, stol, touched, ev, sum, head: heroLabel(h) + ' — ' + sk.name };
 }
 function applyEnemyFx(stol, e, ef, crit) {
@@ -1827,6 +1831,8 @@ function applyEnemyFx(stol, e, ef, crit) {
 function killEnemy(stol, e, how) {
   const i = stol.enemies.indexOf(e);
   if (i < 0) return;
+  if (e.name === 'Giermek') { const p = stol.enemies.find(x => x.name === 'Świński Książę' && !x.corpse); if (p) { p.fx = Object.assign({}, p.fx); p.fx.buffs = (p.fx.buffs || []).concat([['obrażenia +2 (szał)', 999]]); stol.notes = (stol.notes || []).concat('**Giermek ginie — Świński Książę wpada w szał:** obrażenia +2 do końca walki.'); } }
+  if (e.name === 'Wiedźma z kotłem' && stol.cauldron) stol.notes = (stol.notes || []).concat('Wiedźma pada, kocioł się przewraca — uwięziony bohater wychodzi na początku swojej tury.');
   stol.init = (stol.init || []).filter(x => x.id !== e.id);
   if (how === 'hit' && !e.boss && !e.corpse && e.name !== 'Macka') stol.enemies[i] = { id: e.id, name: 'Zwłoki', corpse: true, hp: 3, maxhp: 3, dodge: 0, prot: 0, speed: 0, attacks: [], fx: {}, size: e.size || 1, type: '', krzepa: 0, odp: 0 };
   else stol.enemies.splice(i, 1);
@@ -1874,6 +1880,18 @@ function enemyAttack(e0, aIdx, heroIds) {
     let stress = a.stressS || 0;
     if (crit) stress += 2 + (st.critStress || 0);
     if (stress && !h.dead) { heroStress(h, stress, sub, { enemy: true }); sub.unshift(heroLabel(h) + ' +' + stress + ' Stresu' + (crit ? ' (krytyk)' : '') + '.'); }
+    if (!h.dead && a.name === 'Do kotła!') {
+      if (!stol.cauldron || !s.heroes[stol.cauldron] || s.heroes[stol.cauldron].dead || !((touched[stol.cauldron] || s.heroes[stol.cauldron]).fx || {}).cauldron) {
+        h.fx = Object.assign({}, h.fx, { cauldron: 3 }); stol.cauldron = h.id; stol.witchDmg = { r: stol.round || 0, n: 0 };
+        sub.push('**' + heroLabel(h) + ' ląduje w kotle**: nie działa, wrogowie nie mogą go atakować, a na początku każdej swojej tury traci k4+1 Zdrowia. Wyjdzie po 3 swoich turach albo gdy drużyna zada Wiedźmie 12 obrażeń w jednej rundzie.');
+        ev.push({ id: h.id, k: 'fx', txt: 'DO KOTŁA' });
+      }
+    }
+    if (!h.dead && a.name === 'Pieśń syreny') {
+      const rs = resist(st.krzepa, crit);
+      if (rs.ok) sub.push(heroLabel(h) + ' odpiera urok Krzepą (k10 = ' + rs.r + ' ≤ ' + st.krzepa + ').');
+      else { h.fx = Object.assign({}, h.fx, { charm: 2 }); sub.push('**' + heroLabel(h) + ' jest zauroczony** ' + (crit ? '(krytyk — bez rzutu)' : '(k10 = ' + rs.r + ' > Krzepa ' + st.krzepa + ')') + ': przez 2 swoje tury atakuje losowego sojusznika swoją najmocniejszą umiejętnością.'); ev.push({ id: h.id, k: 'fx', txt: 'ZAUROCZONY' }); }
+    }
     if (!h.dead) {
       const rest = a.rest || '';
       const effs = parseEffects(rest);
@@ -1907,12 +1925,13 @@ function enemyAttack(e0, aIdx, heroIds) {
   rip.forEach(h => {
     if (h.dead || e.hp <= 0 || !stol.enemies.includes(e)) return;
     const r = d(4); const prot = enemyProt(e); const dmg = Math.max(1, r - prot);
-    e.hp -= dmg;
+    e.hp -= dmg; witchDamage(stol, e, dmg, lines, id => touched[id] || (touched[id] = clone(s.heroes[id])));
     let t = '**Odwet** ' + heroLabel(h) + ': k4 = ' + r + (prot ? ' − Pancerz ' + prot : '') + ' → ' + e.name + ' traci ' + dmg + '.';
     ev.push({ id: e.id, k: 'hit', txt: 'ODWET −' + dmg });
     if (e.hp <= 0) { t += ' **' + e.name + ' pada.**'; ev.push({ id: e.id, k: 'kill', txt: 'PADA' }); killEnemy(stol, e, 'hit'); }
     lines.push(t); sum.push(t);
   });
+  heartCheck(stol, lines, id => touched[id] || (touched[id] = clone(s.heroes[id])));
   return { lines, stol, touched, ev, sum, head: e.name + ' — ' + a.name };
 }
 /* po śmierci bohatera: wypada z szyku, reszta +3 Stres, cmentarz */
@@ -1945,6 +1964,7 @@ function afterDeaths(res) {
 }
 function commit(res, cls) {
   if (!res) return;
+  if (res.stol && res.stol.notes && res.stol.notes.length) { res.stol.notes.forEach(n => res.lines.push(n)); res.sum = (res.sum || []).concat(res.stol.notes); res.stol.notes = []; }
   const ops = afterDeaths(res);
   if (res.ev && res.ev.length) {
     res.stol = res.stol || clone(Store.S.stol);
@@ -2029,7 +2049,7 @@ function startTurn(entry) {
     const e = stol.enemies.find(x => x.id === entry.id); if (!e) return null;
     e.fx = e.fx || {};
     const { dot } = tick(e.fx);
-    if (dot) { e.hp -= dot; lines.push(e.name + ': ' + obrN(dot) + ' od krwawienia i zarazy.'); if (e.hp <= 0) { lines.push('**' + e.name + ' pada.**'); killEnemy(stol, e, 'dot'); } }
+    if (dot) { e.hp -= dot; lines.push(e.name + ': ' + obrN(dot) + ' od krwawienia i zarazy.'); witchDamage(stol, e, dot, lines, id => touched[id] || (touched[id] = clone(s.heroes[id]))); heartCheck(stol, lines, id => touched[id] || (touched[id] = clone(s.heroes[id]))); if (e.hp <= 0) { lines.push('**' + e.name + ' pada.**'); killEnemy(stol, e, 'dot'); } }
     if (e.fx.stun && !e.corpse && e.hp > 0) {
       e.fx.stun = 0; e.fx.stunImm = (stol.round || 0) + 1; e.fx.lostTurn = stol.round || 0; e.fx.lostWhy = 'stun';
       lines.push('**' + e.name + ' jest ogłuszony i traci turę.**');
@@ -2064,6 +2084,22 @@ function heroTurnStart(h, entry, stol, lines, touched) {
   if (dot) { lines.push(heroLabel(h) + ': ' + obrN(dot) + ' od krwawienia i zarazy.'); heroDamage(h, dot, lines, 'krwawienie/zaraza'); }
   if (hor && !h.dead) { lines.push(heroLabel(h) + ': groza +' + hor + ' Stresu.'); heroStress(h, hor, lines); }
   if (h.state && h.state.kind === 'ekstaza' && !h.dead && h.hp > 1) { h.hp -= 1; lines.push(heroLabel(h) + ' traci 1 Zdrowia (Ekstaza bólu).'); }
+  if (h.fx.cauldron && !h.dead) {
+    if (!stol.enemies.some(x => x.name === 'Wiedźma z kotłem' && !x.corpse)) { delete h.fx.cauldron; stol.cauldron = null; lines.push(heroLabel(h) + ' wychodzi z przewróconego kotła.'); }
+    else {
+      const r = d(4); lines.push('**' + heroLabel(h) + ' w kotle:** k4+1 = **' + (r + 1) + '** (k4 = ' + r + ').'); heroDamage(h, r + 1, lines, 'kocioł Wiedźmy');
+      h.fx.cauldron--; h.fx.lostTurn = stol.round || 0; h.fx.lostWhy = 'kocioł';
+      if (h.fx.cauldron <= 0 && !h.dead) { delete h.fx.cauldron; stol.cauldron = null; lines.push(heroLabel(h) + ' po 3 turach wydostaje się z kotła (ta tura i tak przepada).'); }
+      if (h.dead) stol.cauldron = null;
+      return { lines, stol, touched, ev: [{ id: h.id, k: 'fx', txt: 'KOCIOŁ' }], sum: lines.slice(), head: heroLabel(h) + ' — kocioł', skip: true };
+    }
+  }
+  if (h.fx.charm && !h.dead && !h.fx.stun) {
+    const ev = [{ id: h.id, k: 'fx', txt: 'ZAUROCZONY' }]; charmAct(h, stol, touched, lines, ev);
+    h.fx.charm--; h.fx.lostTurn = stol.round || 0; h.fx.lostWhy = 'urok';
+    if (!h.fx.charm) { delete h.fx.charm; lines.push('Urok Syreny mija — ' + heroLabel(h) + ' odzyskuje wolę.'); }
+    return { lines, stol, touched, ev, sum: lines.slice(), head: heroLabel(h) + ' — urok Syreny', skip: true };
+  }
   if (h.fx.stun && !h.dead) { h.fx.stun = 0; h.fx.stunImm = (stol.round || 0) + 1; h.fx.lostTurn = stol.round || 0; h.fx.lostWhy = 'stun'; lines.push('**' + heroLabel(h) + ' jest ogłuszony i traci turę.**'); return { lines, stol, touched, ev: [{ id: h.id, k: 'fx', txt: 'OGŁUSZONY' }], sum: [heroLabel(h) + ' jest ogłuszony i traci turę.'], head: heroLabel(h) + ' — ogłuszenie', skip: true }; }
   else if (h.state && !h.dead && (h.state.kind === 'affliction' || h.state.kind === 'virtue')) {
     const r = d(10);
@@ -2083,6 +2119,181 @@ function heroTurnStart(h, entry, stol, lines, touched) {
   }
   if (!lines.length) return { lines: [], stol, touched, quiet: true };
   return { lines, stol, touched };
+}
+
+/* ======================= bossowie i tura wroga ======================= */
+/* wzór ruchów: pierwsza tura w rundzie — atak sygnaturowy, druga — k6 z wpisu */
+const BOSS_AI = {
+  'Uczeń Nekromanty': { first: 'Pocisk duszy', table: [[1, 2, 'Wezwanie kości'], [3, 4, 'Pocisk duszy'], [5, 6, 'Klątwa grobu']] },
+  'Świński Książę': { first: 'Zgniecenie', table: [[1, 3, 'Zamach cielskiem'], [4, 5, 'Rzut ochłapem'], [6, 6, 'Ryk świni']] },
+  'Wiedźma z kotłem': { first: 'Do kotła!', table: [[1, 3, 'Chochla'], [4, 5, 'Złe oko'], [6, 6, 'Chochla']] },
+  'Syrena': { first: 'Pieśń syreny', table: [[1, 3, 'Fala'], [4, 5, 'Szept otchłani'], [6, 6, 'Fala']] },
+  'Shambler': { first: 'Uderzenie zewsząd', table: [[1, 2, 'Przyzwanie macek'], [3, 4, 'Uderzenie zewsząd'], [5, 6, 'Spojrzenie spoza gwiazd']] },
+  'Arcykapłan': { first: 'Ofiara krwi', table: [[1, 2, 'Litania'], [3, 4, 'Ofiara krwi'], [5, 6, 'Mroczne zszycie']] },
+  'Templariusz-Wódz': { first: 'Miażdżący cios', table: [[1, 3, 'Przygwożdżenie'], [4, 5, 'Miażdżący cios'], [6, 6, 'Okrzyk wojenny']] },
+  'Matka Mięsa': { first: 'Wyrzut ochłapu', table: [[1, 1, 'Porodzenie'], [2, 3, 'Wymiot'], [4, 6, 'Wyrzut ochłapu']] },
+  'Serce Ciemności': { first: 'Puls', table: [[1, 2, 'Puls'], [3, 4, 'Spojrzenie pustki'], [5, 5, 'Puls'], [6, 6, 'Spojrzenie pustki']] }
+};
+/* ruchy bez rzutu na trafienie, które wykonuje się automatycznie */
+const SPECIAL_MOVES = ['Wezwanie kości', 'Przyzwanie macek', 'Mroczne zszycie', 'Porodzenie', 'Proporzec', 'Osłona'];
+const specialName = n => SPECIAL_MOVES.find(x => n && n.indexOf(x) === 0) || null;
+function enemySpecials(e) {
+  const out = [];
+  (e.attacks || []).forEach(a => { const n = specialName(a.name); if (n && !a.w) out.push(n); });
+  (e.notes || []).forEach(t => { const n = specialName(String(t).replace(/\*\*/g, '')); if (n && !out.includes(n)) out.push(n); });
+  return out;
+}
+/* bohaterowie, w których wróg może uderzyć tym atakiem */
+function enemyTargets(stol, a) {
+  const allowed = posList(a.w) || [1, 2, 3, 4];
+  return stol.heroes.map((id, k) => ({ id, pos: k + 1 })).filter(x => allowed.includes(x.pos) && Store.S.heroes[x.id] && !Store.S.heroes[x.id].dead && !((Store.S.heroes[x.id].fx || {}).cauldron)).map(x => x.id);
+}
+const freeEnemySlots = stol => 4 - stol.enemies.reduce((a, x) => a + (x.size || 1), 0);
+/* ruch specjalny wroga: przyzwania, leczenie, Proporzec, Osłona */
+function enemySpecial(e0, name) {
+  const s = Store.S; const stol = clone(s.stol); const e = stol.enemies.find(x => x.id === e0.id); if (!e) return null;
+  const lines = ['**' + e.name + '**: **' + name + '**.']; const ev = [{ id: e.id, k: 'act', txt: name }]; const sum = [];
+  const dl = +stol.dl || 0;
+  if (name === 'Wezwanie kości') {
+    if (freeEnemySlots(stol) <= 0) return null;
+    const z = makeSummon('Kościany żołdak', dl); stol.enemies.unshift(z); sum.push('Na przód szyku wstaje Kościany żołdak.'); ev.push({ id: z.id, k: 'fx', txt: 'PRZYZWANY' });
+  }
+  if (name === 'Przyzwanie macek') {
+    const n = freeEnemySlots(stol); if (n <= 0) return null;
+    for (let i = 0; i < n; i++) stol.enemies.push(makeSummon('Macka'));
+    sum.push('Wolne pozycje zajmują Macki (' + n + ').');
+  }
+  if (name === 'Porodzenie') {
+    if (freeEnemySlots(stol) <= 0) return null;
+    const o = makeEnemy('Ochłap', 0, { summon: true }); stol.enemies.unshift(o); sum.push('Z przodu staje nowy Ochłap.'); ev.push({ id: o.id, k: 'fx', txt: 'PRZYZWANY' });
+  }
+  if (name === 'Mroczne zszycie') {
+    const living = stol.enemies.filter(x => !x.corpse && x.hp < x.maxhp);
+    if (!living.length) return null;
+    const t = living.sort((a, b) => (b.maxhp - b.hp) - (a.maxhp - a.hp))[0];
+    const big = e.boss; const r = d(big ? 6 : 4); const heal = Math.min(t.maxhp - t.hp, r + (big ? 3 : 2));
+    t.hp += heal; sum.push('Najbardziej ranny: ' + t.name + ' odzyskuje ' + heal + ' Zdrowia (k' + (big ? 6 : 4) + ' = **' + r + '** + ' + (big ? 3 : 2) + ').'); ev.push({ id: t.id, k: 'heal', txt: '+' + heal });
+  }
+  if (name === 'Proporzec') {
+    const p = stol.enemies.find(x => x.boss && !x.corpse); if (!p) return null;
+    p.fx = Object.assign({}, p.fx); p.fx.buffs = (p.fx.buffs || []).filter(b => !/Proporzec/.test(b[0])).concat([['Celność +1, obrażenia +1 (Proporzec)', 2]]);
+    sum.push(p.name + ': Celność +1 i obrażenia +1 na 2 tury.'); ev.push({ id: p.id, k: 'fx', txt: 'PROPORZEC' });
+  }
+  if (name === 'Osłona') {
+    const i = stol.enemies.indexOf(e); const back = stol.enemies.slice(i + 1).filter(x => !x.corpse);
+    if (!back.length) return null;
+    const t = back[0]; t.fx = Object.assign({}, t.fx, { guard: 2, guardBy: e.id }); sum.push(t.name + ' pod Ochroną (' + e.name + ') przez 2 rundy.'); ev.push({ id: t.id, k: 'fx', txt: 'OCHRONA' });
+  }
+  sum.forEach(x => lines.push(x));
+  return { lines, stol, touched: {}, ev, sum, head: e.name + ' — ' + name };
+}
+/* cała tura wroga według zasad: wybór ataku kością (boss: wzór ruchów), cel, ruchy specjalne */
+function enemyAuto(e0, entry) {
+  const s = Store.S; const stol = s.stol; const e = stol.enemies.find(x => x.id === e0.id); if (!e || e.corpse) return null;
+  const pre = []; const eps = enemyPositions(stol.enemies); const me = eps.find(x => x.e.id === e.id);
+  const atkByName = n => e.attacks.findIndex(a => a.name === n && a.w);
+  const usable = idx => idx >= 0 && enemyTargets(stol, e.attacks[idx]).length > 0;
+  /* Ucieczka w mrok */
+  if (e.name === 'Uczeń Nekromanty' && me && me.pos <= 2 && stol.enemies.indexOf(e) < stol.enemies.length - 1) {
+    const st = clone(stol); const i = st.enemies.findIndex(x => x.id === e.id); const [b] = st.enemies.splice(i, 1); st.enemies.push(b);
+    return { lines: ['**' + e.name + '**: **Ucieczka w mrok** — zaczyna turę z przodu, więc cofa się na tył zamiast ataku.'], stol: st, touched: {}, ev: [{ id: e.id, k: 'act', txt: 'Ucieczka w mrok' }], sum: ['Cofa się na tył szyku.'], head: e.name + ' — Ucieczka w mrok' };
+  }
+  /* wróg wypchnięty poza swoje pozycje wraca o 1 */
+  const okPos = posList(e.pos);
+  if (!e.boss && okPos && me && !okPos.includes(me.pos)) {
+    const dir = me.pos > Math.max(...okPos) ? -1 : 1; const i = stol.enemies.indexOf(e); const j = i + dir;
+    if (j >= 0 && j < stol.enemies.length) { const st = clone(stol); moveInList(st.enemies, i, dir); return { lines: ['**' + e.name + '** stoi poza swoimi pozycjami (' + e.pos + ') — wraca o 1 miejsce zamiast ataku.'], stol: st, touched: {}, ev: [{ id: e.id, k: 'act', txt: 'powrót na pozycję' }], sum: ['Wraca na swoją pozycję.'], head: e.name + ' — ruch' }; }
+  }
+  let choice = null; /* {special} albo {idx} */
+  if (e.boss && BOSS_AI[e.name]) {
+    const ai = BOSS_AI[e.name]; let want;
+    const firstNow = !(stol.init || []).slice(0, Math.max(0, stol.turn)).some(x => x.id === e.id);
+    if (!entry || firstNow) { want = ai.first; pre.push('Pierwsza tura w rundzie: atak sygnaturowy — **' + want + '**.'); }
+    else { const r = d(6); const row = ai.table.find(([a, b]) => r >= a && r <= b); want = row[2]; pre.push('Druga tura: k6 = **' + r + '** → **' + want + '**.'); }
+    if (want === 'Do kotła!' && stol.cauldron && s.heroes[stol.cauldron] && !s.heroes[stol.cauldron].dead) { want = 'Chochla'; pre.push('Kocioł jest zajęty — Chochla.'); }
+    if (want === 'Pieśń syreny' && stol.heroes.some(id => ((s.heroes[id] || {}).fx || {}).charm)) { want = 'Fala'; pre.push('Ktoś już jest zauroczony — Fala.'); }
+    if (want === 'Wezwanie kości' && freeEnemySlots(stol) <= 0) { want = 'Pocisk duszy'; pre.push('Szyk pełny — Pocisk duszy.'); }
+    if (want === 'Przyzwanie macek' && freeEnemySlots(stol) <= 0) { want = 'Uderzenie zewsząd'; pre.push('Nie ma wolnych pozycji — Uderzenie zewsząd.'); }
+    if (want === 'Porodzenie' && freeEnemySlots(stol) <= 0) { want = 'Wyrzut ochłapu'; pre.push('Nie ma wolnej pozycji — Wyrzut ochłapu.'); }
+    if (want === 'Mroczne zszycie' && !stol.enemies.some(x => !x.corpse && x.hp < x.maxhp)) { want = 'Ofiara krwi'; pre.push('Nikt nie jest ranny — Ofiara krwi.'); }
+    if (SPECIAL_MOVES.includes(want)) choice = { special: want };
+    else {
+      let idx = atkByName(want);
+      if (!usable(idx)) { const f = atkByName(ai.first); const alt = usable(f) ? f : e.attacks.findIndex((a, k) => a.w && usable(k)); if (alt >= 0) pre.push(want + ' nie ma kogo dosięgnąć — ' + e.attacks[alt].name + '.'); idx = alt; }
+      if (idx >= 0) choice = { idx };
+    }
+  } else {
+    const opts = [];
+    e.attacks.forEach((a, k) => { if (a.w && usable(k)) opts.push({ idx: k, name: a.name }); });
+    enemySpecials(e).forEach(n => {
+      if (n === 'Osłona' && !stol.enemies.slice(stol.enemies.indexOf(e) + 1).some(x => !x.corpse && !(x.fx || {}).guard)) return;
+      if (n === 'Mroczne zszycie' && !stol.enemies.some(x => !x.corpse && x.hp < x.maxhp)) return;
+      if (n === 'Proporzec' && !stol.enemies.some(x => x.boss && !x.corpse)) return;
+      opts.push({ special: n, name: n });
+    });
+    if (!opts.length) return { lines: ['**' + e.name + '** nie ma kogo zaatakować — pasuje.'], stol: clone(stol), touched: {}, ev: [], sum: [], head: e.name };
+    if (opts.length === 1) choice = opts[0];
+    else { const pk = pickD(opts); choice = pk.v; pre.push('Wybór ataku: ' + pk.t + ' → **' + pk.v.name + '**.'); }
+  }
+  if (!choice) return { lines: ['**' + e.name + '** nie ma czego użyć — pasuje.'], stol: clone(stol), touched: {}, ev: [], sum: [], head: e.name };
+  let res;
+  if (choice.special) { res = enemySpecial(e, choice.special); if (!res) return { lines: pre.concat(['**' + e.name + '**: ' + choice.special + ' nie ma skutku.']), stol: clone(stol), touched: {}, ev: [], sum: [], head: e.name }; }
+  else {
+    const a = e.attacks[choice.idx]; const inRange = enemyTargets(stol, a);
+    let targets, note = '';
+    if (a.aoe) targets = inRange;
+    else {
+      const marked = inRange.filter(id => (s.heroes[id].fx || {}).mark);
+      let pool = marked.length ? marked : inRange;
+      if (!marked.length && /woli cele z tyłu/.test(a.rest || '')) { const back = pool.filter(id => stol.heroes.indexOf(id) >= 2); if (back.length) pool = back; }
+      const pt = pickD(pool); let t = pt.v;
+      note = pool.length > 1 ? 'Cel losowany spośród ' + pool.map(x => heroLabel(s.heroes[x])).join(', ') + ': ' + pt.t + ' → ' + heroLabel(s.heroes[t]) + '.' : marked.length ? 'Cel: ' + heroLabel(s.heroes[t]) + ' (Znak).' : '';
+      const g = (s.heroes[t].fx || {}); if (g.guard && g.guardBy && stol.heroes.includes(g.guardBy) && s.heroes[g.guardBy] && !s.heroes[g.guardBy].dead) { t = g.guardBy; note += ' Ochrona: atak przejmuje ' + heroLabel(s.heroes[t]) + '.'; }
+      targets = [t];
+    }
+    res = enemyAttack(e, choice.idx, targets);
+    if (res && note) { res.lines.splice(1, 0, note); res.sum && res.sum.unshift(note); }
+  }
+  if (res && pre.length) { res.lines.splice(1, 0, ...pre); res.sum = pre.concat(res.sum || []); }
+  return res;
+}
+/* Wiedźma: 12 obrażeń w jednej rundzie uwalnia z kotła */
+function witchDamage(stol, e, dmg, lines, getH) {
+  if (e.name !== 'Wiedźma z kotłem' || dmg <= 0) return;
+  const r = stol.round || 0; if (!stol.witchDmg || stol.witchDmg.r !== r) stol.witchDmg = { r, n: 0 };
+  stol.witchDmg.n += dmg;
+  if (stol.cauldron && stol.witchDmg.n >= 12) { const h = getH(stol.cauldron); if (h && h.fx && h.fx.cauldron) { h.fx = Object.assign({}, h.fx); delete h.fx.cauldron; lines.push('Drużyna zadała Wiedźmie ' + stol.witchDmg.n + ' obrażeń w tej rundzie — **' + heroLabel(h) + ' wyrywa się z kotła**.'); } stol.cauldron = null; }
+}
+/* Serce Ciemności: przy pierwszym spadku do połowy Zdrowia zabiera bohatera */
+function heartCheck(stol, lines, getH) {
+  const heart = stol.enemies.find(x => x.name === 'Serce Ciemności' && !x.corpse);
+  if (!heart || stol.heartTaken || heart.hp > heart.maxhp / 2) return;
+  stol.heartTaken = true;
+  const alive = stol.heroes.map(id => getH(id)).filter(h => h && !h.dead);
+  if (!alive.length) return;
+  alive.sort((a, b) => (a.level - b.level) || (a.hp - b.hp));
+  const v = alive[0];
+  lines.push('**Przyjdź do mnie.** Serce Ciemności spada do połowy Zdrowia i woła — drużyna oddaje mu bohatera z najniższym Poziomem' + (alive[1] && alive[1].level === v.level ? ' (przy remisie: najmniej Zdrowia)' : '') + ': **' + heroLabel(v) + '**.');
+  heroDies(v, 'Serce Ciemności', lines);
+}
+
+/* zauroczony bohater atakuje losowego sojusznika najmocniejszą umiejętnością */
+function charmAct(h, stol, touched, lines, ev) {
+  const s = Store.S; const c = CLS[h.cls]; const pos = stol.heroes.indexOf(h.id) + 1;
+  const T = id => id === h.id ? h : (touched[id] || (touched[id] = clone(s.heroes[id])));
+  const atk = h.skills.map(i => [i, skillView(h, i)]).filter(([i, v]) => v.inf.attack && v.inf.dice && (c.name !== 'Ohyda' || c.skills[i].form === (h.form === 'beast' ? 'bestia' : 'człowiek')));
+  const from = atk.filter(([i, v]) => v.inf.from.includes(pos)); const pool = from.length ? from : atk;
+  const allies = stol.heroes.filter(id => id !== h.id && s.heroes[id] && !s.heroes[id].dead && !((s.heroes[id].fx || {}).cauldron));
+  if (!pool.length || !allies.length) { lines.push('**' + heroLabel(h) + '** (urok Syreny) błądzi wzrokiem i traci turę.'); return; }
+  pool.sort((a, b) => diceMax(b[1].inf.dice, b[1].dmgBonus) - diceMax(a[1].inf.dice, a[1].dmgBonus));
+  const [idx, v] = pool[0]; const pt = pickD(allies); const t = T(pt.v); const ts = heroStats(t);
+  const roll = hitRoll(v.cel - ts.dodge, v.crit);
+  let txt = '**' + heroLabel(h) + '** (urok Syreny) atakuje sojusznika — losowanie ' + pt.t + ' → **' + heroLabel(t) + '**, umiejętnością **' + v.s.name + '**: ' + needTxt(roll.r, v.cel, ts.dodge);
+  if (roll.res === 'miss') { lines.push(txt + ' → **' + (missKind(roll.r, v.cel) === 'miss' ? 'pudło' : 'unik') + '**.'); ev.push({ id: t.id, k: 'miss', txt: 'PUDŁO' }); return; }
+  const crit = roll.res === 'crit'; let dmg = crit ? Math.ceil(diceMax(v.inf.dice, v.dmgBonus) * 1.5) : rollDice(v.inf.dice, v.dmgBonus).total;
+  dmg = Math.max(1, dmg - Math.max(0, ts.prot));
+  lines.push(txt + ' → **' + (crit ? 'KRYTYK' : 'trafienie') + '**, ' + obrN(dmg) + '.'); ev.push({ id: t.id, k: crit ? 'crit' : 'hit', txt: '−' + dmg });
+  heroDamage(t, dmg, lines, 'urok Syreny (' + heroLabel(h) + ')');
 }
 
 /* Szkielet stołu: start, widoki, Pochodnia, dziennik z kośćmi i czatem. */
@@ -2523,7 +2734,7 @@ VIEWS.stol = {
         <button class="btn sm" data-act="heroMove" data-d="-1" ${pos > 1 && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z przodu (bliżej wrogów)">do przodu ▶</button>
         <button class="btn sm" data-act="heroPass" ${busy ? 'disabled' : ''}>Pas</button>
         ${ohyda ? `<button class="btn sm gold" data-act="transform" ${busy ? 'disabled' : ''}>${h.form === 'beast' ? 'Wróć do ludzkiej postaci' : 'Przemiana w bestię'}</button>` : ''}
-        <button class="btn sm" data-act="retreat" ${busy || !Store.S.stol.fight || Store.S.stol.enemies.some(e => e.boss && !e.corpse) ? 'disabled' : ''} ${Store.S.stol.enemies.some(e => e.boss && !e.corpse) ? 'title="Z walki z bossem nie ma odwrotu"' : ''}>Odwrót</button>
+        <button class="btn sm" data-act="retreat" ${busy || !Store.S.stol.fight || Store.S.stol.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler') ? 'disabled' : ''} ${Store.S.stol.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler') ? 'title="Z walki z bossem nie ma odwrotu"' : ''}>Odwrót</button>
       </div>
       <div class="row acts items">
         <span class="lbl">Plecak</span>
@@ -2548,12 +2759,10 @@ VIEWS.stol = {
       <div class="atks">${(e.attacks || []).map((a, i) => `<div class="atk"><div>${a.w ? `<span class="sp2">${posDots(posList(a.w), a.aoe ? 'to multi' : 'to', 'hero')}<span class="ptxt">w bohaterów ${esc(a.w)}</span></span> ` : ''}${attackText(a)}</div>${gm && a.w ? `<div class="row">
         ${a.aoe ? `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="all" ${eoff ? 'disabled' : ''}>Atakuj pozycje ${esc(a.w)}</button>` : `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="rand" ${eoff ? 'disabled' : ''}>Losowy cel</button><button class="btn sm" data-act="eAtk" data-i="${i}" data-m="pick" ${eoff ? 'disabled' : ''}>Wybierz cel</button>`}
       </div>` : gm ? `<div class="row"><button class="btn sm" data-act="eSay" data-i="${i}">Ogłoś</button></div>` : ''}</div>`).join('') || '<p class="muted">Zwłoki nic nie robią.</p>'}</div>
+      ${gm && !e.corpse ? `<div class="row eauto"><button class="btn primary" data-act="eAuto" ${eoff ? 'disabled' : ''} title="Wróg działa według zasad: wybór ataku kością${e.boss ? ', wzór ruchów bossa' : ''}, cel losowany (Znak ma pierwszeństwo)">Tura wroga — według zasad</button>${enemySpecials(e).map(n => `<button class="btn sm gold" data-act="eSpec" data-n="${esc(n)}" ${eoff ? 'disabled' : ''}>${esc(n)}</button>`).join('')}</div>
+        ${e.boss && BOSS_AI[e.name] ? `<p class="small dim">Wzór ruchów: pierwsza tura w rundzie — ${esc(BOSS_AI[e.name].first)}; druga — k6: ${BOSS_AI[e.name].table.map(([a, b, n]) => (a === b ? a : a + '–' + b) + ' ' + esc(n)).join(', ')}.${(curEntry() || {}).id === e.id ? ' Teraz: <b>' + ((Store.S.stol.init || []).slice(0, Math.max(0, Store.S.stol.turn)).some(x => x.id === e.id) ? 'druga tura (k6)' : 'pierwsza tura (sygnatura)') + '</b>.' : ''}</p>` : ''}` : ''}
       ${e.notes && e.notes.length ? `<div class="bnotes">${e.notes.map(n => `<p>${md(n.replace(/^([^:]+):/, '**$1:**'))}</p>`).join('')}</div>` : ''}
       ${gm ? `<div class="row acts">
-        ${e.boss ? `<button class="btn sm gold" data-act="bossMove">Druga tura: rzuć k6</button>` : ''}
-        ${/Wezwanie kości/.test((e.notes || []).join()) ? `<button class="btn sm" data-act="summon" data-n="Kościany żołdak">Przyzwij żołdaka</button>` : ''}
-        ${e.name === 'Shambler' ? `<button class="btn sm" data-act="summon" data-n="Macka">Przyzwij mackę</button>` : ''}
-        ${e.name === 'Matka Mięsa' ? `<button class="btn sm" data-act="summon" data-n="Ochłap">Porodzenie</button>` : ''}
         <button class="btn sm ghost" data-act="adjE" data-v="-1">Zdr −1</button><button class="btn sm ghost" data-act="adjE" data-v="-5">−5</button><button class="btn sm ghost" data-act="adjE" data-v="1">+1</button>
         <button class="btn sm ghost" data-act="eMove" data-d="-1">◀</button><button class="btn sm ghost" data-act="eMove" data-d="1">▶</button>
         <button class="btn sm ghost" data-act="eRemove">Usuń</button>
@@ -2677,7 +2886,7 @@ Object.assign(ACT, {
     actedCommit({ lines, stol: null, touched: { [h.id]: h } });
   },
   retreat: () => {
-    if (Store.S.stol.enemies.some(e => e.boss && !e.corpse)) return toast('Z walki z bossem nie ma odwrotu.');
+    if (Store.S.stol.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler')) return toast('Z walki z bossem nie ma odwrotu.');
     { const g = heroTurn(H(UI.sel.id)); if (!g.ok) return toast(g.why); }
     const r = d(10); const ok = r <= 7 && r !== 10;
     const lines = ['Odwrót: k10 = **' + r + '** przy Szansie 7 → **' + (ok ? 'udany' : 'nieudany, tura stracona') + '**.'];
@@ -2748,7 +2957,7 @@ Object.assign(ACT, {
     const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id); const i = +el.dataset.i; const a = e.attacks[i]; const m = el.dataset.m;
     { const g = enemyTurn(e); if (!g.ok) return toast(g.why); }
     const order = Store.S.stol.heroes; const allowed = posList(a.w) || [1, 2, 3, 4];
-    const inRange = order.map((id, k) => ({ id, pos: k + 1 })).filter(x => allowed.includes(x.pos) && H(x.id) && !H(x.id).dead).map(x => x.id);
+    const inRange = order.map((id, k) => ({ id, pos: k + 1 })).filter(x => allowed.includes(x.pos) && H(x.id) && !H(x.id).dead && !((H(x.id).fx || {}).cauldron)).map(x => x.id);
     if (!inRange.length) return toast('Na pozycjach ' + a.w + ' nikogo nie ma.');
     if (m === 'all') return actedCommit(enemyAttack(e, i, inRange));
     if (m === 'pick') { UI.epend = { eid: e.id, idx: i, valid: inRange, label: 'uderza ' + a.name }; return renderView(); }
@@ -2757,6 +2966,18 @@ Object.assign(ACT, {
     let note = pool.length > 1 ? 'Cel losowany spośród ' + pool.map(x => heroLabel(H(x))).join(', ') + ': ' + pt.t + ' → ' + heroLabel(H(t)) + '.' : marked.length ? 'Cel: ' + heroLabel(H(t)) + ' (Znak).' : '';
     const g = (H(t).fx || {}); if (g.guard && g.guardBy && order.includes(g.guardBy) && !H(g.guardBy).dead) { t = g.guardBy; note += ' Ochrona: atak przejmuje ' + heroLabel(H(t)) + '.'; }
     const res = enemyAttack(e, i, [t]); if (note && res) { res.lines.splice(1, 0, note); res.sum && res.sum.unshift(note); } actedCommit(res);
+  },
+  eAuto: () => {
+    const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id); if (!e) return;
+    { const g = enemyTurn(e); if (!g.ok) return toast(g.why); }
+    const res = enemyAuto(e, inTurns() ? curEntry() : null); if (!res) return toast('Ten wróg nie może teraz działać.');
+    actedCommit(res);
+  },
+  eSpec: el => {
+    const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id); if (!e) return;
+    { const g = enemyTurn(e); if (!g.ok) return toast(g.why); }
+    const res = enemySpecial(e, el.dataset.n); if (!res) return toast(el.dataset.n + ': teraz bez skutku (brak miejsca albo nikt nie jest ranny).');
+    actedCommit(res);
   },
   pickHeroT: el => {
     const P = UI.epend; UI.epend = null; const e = Store.S.stol.enemies.find(x => x.id === P.eid);
@@ -2777,7 +2998,7 @@ Object.assign(ACT, {
       lines.push('**Walka!** Zaskoczenie (' + ti.name + ', ' + sur + '): k10 = **' + r + '** → ' + (who === 'nikt' ? 'nikt nie jest zaskoczony.' : who === 'wrogowie' ? '**wrogowie zaskoczeni** — drużyna ma całą pierwszą rundę.' : '**drużyna zaskoczona** — wrogowie mają całą pierwszą rundę, pozycje bohaterów losuje się od nowa, każdy +1 Stres.') + note);
     }
     if (w.quest && w.noSurprise) Store.act([opSet('wyprawa.noSurprise', false)], { quiet: true });
-    const st = clone(s); st.fight = true; st.round = 0; st.init = []; st.turn = -1; st.transformed = []; st.looted = false; st.acted = null; st.atk = null; st.fallen = []; st.forceSurprise = null; st.bossFight = s.enemies.some(e => e.boss);
+    const st = clone(s); st.fight = true; st.round = 0; st.init = []; st.turn = -1; st.transformed = []; st.looted = false; st.acted = null; st.atk = null; st.fallen = []; st.forceSurprise = null; st.bossFight = s.enemies.some(e => e.boss); st.bossName = (s.enemies.find(e => e.boss) || {}).name || null; st.cauldron = null; st.witchDmg = null; st.heartTaken = false; st.notes = [];
     const touched = {};
     const hasUndead = s.enemies.some(e => /Nieumar/.test(e.type || ''));
     st.heroes.forEach(id => {
@@ -2844,13 +3065,14 @@ Object.assign(ACT, {
       if (won) { ops.push(opSet('osada.trinkets', (Store.S.osada.trinkets || []).concat(s.fallen))); lines.push('Wygrana: błyskotki poległych wracają do magazynu (' + s.fallen.map(t => t.name).join(', ') + ').'); }
       else lines.push('Błyskotki poległych przepadają: ' + s.fallen.map(t => t.name).join(', ') + '.');
     }
+    if (won && s.bossName === 'Shambler') { const kiel = ALL_TRINKETS().find(t => t.kind === 'kiel'); if (kiel) { ops.push(opSet('osada.trinkets', ((ops.find(o => o.p === 'osada.trinkets') || {}).v || Store.S.osada.trinkets || []).concat([kiel]))); lines.push('**Shambler pokonany.** Nagroda: **Kieł spoza gwiazd** trafia do magazynu błyskotek.'); } }
     const w = Store.S.wyprawa;
     if (won && w.quest && s.roomId) {
       const w2 = clone(w); const r = w2.rooms.find(x => x.id === s.roomId);
       if (r && !r.cleared) { r.cleared = true; lines.push('Komnata oczyszczona' + (r.c === 'boss' ? ' — **boss pokonany**' : '') + '.'); const g = goalProgress(w2); if (g.ok) lines.push('**Cel zadania wykonany** (' + g.txt + ').'); }
       ops.push(opSet('wyprawa', w2));
     }
-    s.fight = false; s.init = []; s.turn = -1; s.round = 0; s.last = null; s.enemies = s.enemies.filter(e => !e.corpse); s.fallen = []; s.roomId = null; s.forceSurprise = null; s.lootBonus = 0; s.acted = null;
+    s.fight = false; s.init = []; s.turn = -1; s.round = 0; s.last = null; s.enemies = s.enemies.filter(e => !e.corpse); s.fallen = []; s.roomId = null; s.forceSurprise = null; s.lootBonus = 0; s.acted = null; s.cauldron = null; s.witchDmg = null; s.bossName = null; s.bossFight = false;
     if (ops.length) Store.act(ops, { quiet: true });
     commit({ lines, stol: s, touched }, 'sys');
   },

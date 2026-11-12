@@ -146,7 +146,7 @@ function parseEffects(eff) {
   if (/ogłuszenie/.test(eff)) out.push({ k: 'stun', res: 'krzepa' });
   if (/Znak/.test(eff) && !/ze Znakiem/.test(eff.replace(/Znak,|Znak$/, ''))) { if (/(^|, )Znak(,|$| )/.test(eff)) out.push({ k: 'mark' }); }
   if ((m = eff.match(/odrzut (\d)/))) out.push({ k: 'push', x: +m[1], res: 'krzepa' });
-  if ((m = eff.match(/przyciągnięcie (\d)/))) out.push({ k: 'pull', x: +m[1], res: 'krzepa' });
+  if ((m = eff.match(/przyciągnięcie (\d)/)) || (m = eff.match(/przyciąga o (\d)/))) out.push({ k: 'pull', x: +m[1], res: 'krzepa' });
   if ((m = eff.match(/[^,;:]*cel(?:u|ów) −\d[^,;]*/))) { const tm = m[0].match(/na (\d) tury/); out.push({ k: 'debuff', txt: m[0].trim().replace(/ na \d tury/, ''), turns: tm ? +tm[1] : 3, res: 'krzepa' }); }
   if (/^cel: obrażenia −1 i Celność −1/.test(eff)) out.push({ k: 'debuff', txt: 'obrażenia −1, Celność −1', turns: 3, res: 'krzepa' });
   return out;

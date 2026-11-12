@@ -188,7 +188,7 @@ VIEWS.stol = {
         <button class="btn sm" data-act="heroMove" data-d="-1" ${pos > 1 && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z przodu (bliżej wrogów)">do przodu ▶</button>
         <button class="btn sm" data-act="heroPass" ${busy ? 'disabled' : ''}>Pas</button>
         ${ohyda ? `<button class="btn sm gold" data-act="transform" ${busy ? 'disabled' : ''}>${h.form === 'beast' ? 'Wróć do ludzkiej postaci' : 'Przemiana w bestię'}</button>` : ''}
-        <button class="btn sm" data-act="retreat" ${busy || !Store.S.stol.fight || Store.S.stol.enemies.some(e => e.boss && !e.corpse) ? 'disabled' : ''} ${Store.S.stol.enemies.some(e => e.boss && !e.corpse) ? 'title="Z walki z bossem nie ma odwrotu"' : ''}>Odwrót</button>
+        <button class="btn sm" data-act="retreat" ${busy || !Store.S.stol.fight || Store.S.stol.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler') ? 'disabled' : ''} ${Store.S.stol.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler') ? 'title="Z walki z bossem nie ma odwrotu"' : ''}>Odwrót</button>
       </div>
       <div class="row acts items">
         <span class="lbl">Plecak</span>
@@ -213,12 +213,10 @@ VIEWS.stol = {
       <div class="atks">${(e.attacks || []).map((a, i) => `<div class="atk"><div>${a.w ? `<span class="sp2">${posDots(posList(a.w), a.aoe ? 'to multi' : 'to', 'hero')}<span class="ptxt">w bohaterów ${esc(a.w)}</span></span> ` : ''}${attackText(a)}</div>${gm && a.w ? `<div class="row">
         ${a.aoe ? `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="all" ${eoff ? 'disabled' : ''}>Atakuj pozycje ${esc(a.w)}</button>` : `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="rand" ${eoff ? 'disabled' : ''}>Losowy cel</button><button class="btn sm" data-act="eAtk" data-i="${i}" data-m="pick" ${eoff ? 'disabled' : ''}>Wybierz cel</button>`}
       </div>` : gm ? `<div class="row"><button class="btn sm" data-act="eSay" data-i="${i}">Ogłoś</button></div>` : ''}</div>`).join('') || '<p class="muted">Zwłoki nic nie robią.</p>'}</div>
+      ${gm && !e.corpse ? `<div class="row eauto"><button class="btn primary" data-act="eAuto" ${eoff ? 'disabled' : ''} title="Wróg działa według zasad: wybór ataku kością${e.boss ? ', wzór ruchów bossa' : ''}, cel losowany (Znak ma pierwszeństwo)">Tura wroga — według zasad</button>${enemySpecials(e).map(n => `<button class="btn sm gold" data-act="eSpec" data-n="${esc(n)}" ${eoff ? 'disabled' : ''}>${esc(n)}</button>`).join('')}</div>
+        ${e.boss && BOSS_AI[e.name] ? `<p class="small dim">Wzór ruchów: pierwsza tura w rundzie — ${esc(BOSS_AI[e.name].first)}; druga — k6: ${BOSS_AI[e.name].table.map(([a, b, n]) => (a === b ? a : a + '–' + b) + ' ' + esc(n)).join(', ')}.${(curEntry() || {}).id === e.id ? ' Teraz: <b>' + ((Store.S.stol.init || []).slice(0, Math.max(0, Store.S.stol.turn)).some(x => x.id === e.id) ? 'druga tura (k6)' : 'pierwsza tura (sygnatura)') + '</b>.' : ''}</p>` : ''}` : ''}
       ${e.notes && e.notes.length ? `<div class="bnotes">${e.notes.map(n => `<p>${md(n.replace(/^([^:]+):/, '**$1:**'))}</p>`).join('')}</div>` : ''}
       ${gm ? `<div class="row acts">
-        ${e.boss ? `<button class="btn sm gold" data-act="bossMove">Druga tura: rzuć k6</button>` : ''}
-        ${/Wezwanie kości/.test((e.notes || []).join()) ? `<button class="btn sm" data-act="summon" data-n="Kościany żołdak">Przyzwij żołdaka</button>` : ''}
-        ${e.name === 'Shambler' ? `<button class="btn sm" data-act="summon" data-n="Macka">Przyzwij mackę</button>` : ''}
-        ${e.name === 'Matka Mięsa' ? `<button class="btn sm" data-act="summon" data-n="Ochłap">Porodzenie</button>` : ''}
         <button class="btn sm ghost" data-act="adjE" data-v="-1">Zdr −1</button><button class="btn sm ghost" data-act="adjE" data-v="-5">−5</button><button class="btn sm ghost" data-act="adjE" data-v="1">+1</button>
         <button class="btn sm ghost" data-act="eMove" data-d="-1">◀</button><button class="btn sm ghost" data-act="eMove" data-d="1">▶</button>
         <button class="btn sm ghost" data-act="eRemove">Usuń</button>
@@ -342,7 +340,7 @@ Object.assign(ACT, {
     actedCommit({ lines, stol: null, touched: { [h.id]: h } });
   },
   retreat: () => {
-    if (Store.S.stol.enemies.some(e => e.boss && !e.corpse)) return toast('Z walki z bossem nie ma odwrotu.');
+    if (Store.S.stol.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler')) return toast('Z walki z bossem nie ma odwrotu.');
     { const g = heroTurn(H(UI.sel.id)); if (!g.ok) return toast(g.why); }
     const r = d(10); const ok = r <= 7 && r !== 10;
     const lines = ['Odwrót: k10 = **' + r + '** przy Szansie 7 → **' + (ok ? 'udany' : 'nieudany, tura stracona') + '**.'];
@@ -413,7 +411,7 @@ Object.assign(ACT, {
     const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id); const i = +el.dataset.i; const a = e.attacks[i]; const m = el.dataset.m;
     { const g = enemyTurn(e); if (!g.ok) return toast(g.why); }
     const order = Store.S.stol.heroes; const allowed = posList(a.w) || [1, 2, 3, 4];
-    const inRange = order.map((id, k) => ({ id, pos: k + 1 })).filter(x => allowed.includes(x.pos) && H(x.id) && !H(x.id).dead).map(x => x.id);
+    const inRange = order.map((id, k) => ({ id, pos: k + 1 })).filter(x => allowed.includes(x.pos) && H(x.id) && !H(x.id).dead && !((H(x.id).fx || {}).cauldron)).map(x => x.id);
     if (!inRange.length) return toast('Na pozycjach ' + a.w + ' nikogo nie ma.');
     if (m === 'all') return actedCommit(enemyAttack(e, i, inRange));
     if (m === 'pick') { UI.epend = { eid: e.id, idx: i, valid: inRange, label: 'uderza ' + a.name }; return renderView(); }
@@ -422,6 +420,18 @@ Object.assign(ACT, {
     let note = pool.length > 1 ? 'Cel losowany spośród ' + pool.map(x => heroLabel(H(x))).join(', ') + ': ' + pt.t + ' → ' + heroLabel(H(t)) + '.' : marked.length ? 'Cel: ' + heroLabel(H(t)) + ' (Znak).' : '';
     const g = (H(t).fx || {}); if (g.guard && g.guardBy && order.includes(g.guardBy) && !H(g.guardBy).dead) { t = g.guardBy; note += ' Ochrona: atak przejmuje ' + heroLabel(H(t)) + '.'; }
     const res = enemyAttack(e, i, [t]); if (note && res) { res.lines.splice(1, 0, note); res.sum && res.sum.unshift(note); } actedCommit(res);
+  },
+  eAuto: () => {
+    const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id); if (!e) return;
+    { const g = enemyTurn(e); if (!g.ok) return toast(g.why); }
+    const res = enemyAuto(e, inTurns() ? curEntry() : null); if (!res) return toast('Ten wróg nie może teraz działać.');
+    actedCommit(res);
+  },
+  eSpec: el => {
+    const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id); if (!e) return;
+    { const g = enemyTurn(e); if (!g.ok) return toast(g.why); }
+    const res = enemySpecial(e, el.dataset.n); if (!res) return toast(el.dataset.n + ': teraz bez skutku (brak miejsca albo nikt nie jest ranny).');
+    actedCommit(res);
   },
   pickHeroT: el => {
     const P = UI.epend; UI.epend = null; const e = Store.S.stol.enemies.find(x => x.id === P.eid);
@@ -442,7 +452,7 @@ Object.assign(ACT, {
       lines.push('**Walka!** Zaskoczenie (' + ti.name + ', ' + sur + '): k10 = **' + r + '** → ' + (who === 'nikt' ? 'nikt nie jest zaskoczony.' : who === 'wrogowie' ? '**wrogowie zaskoczeni** — drużyna ma całą pierwszą rundę.' : '**drużyna zaskoczona** — wrogowie mają całą pierwszą rundę, pozycje bohaterów losuje się od nowa, każdy +1 Stres.') + note);
     }
     if (w.quest && w.noSurprise) Store.act([opSet('wyprawa.noSurprise', false)], { quiet: true });
-    const st = clone(s); st.fight = true; st.round = 0; st.init = []; st.turn = -1; st.transformed = []; st.looted = false; st.acted = null; st.atk = null; st.fallen = []; st.forceSurprise = null; st.bossFight = s.enemies.some(e => e.boss);
+    const st = clone(s); st.fight = true; st.round = 0; st.init = []; st.turn = -1; st.transformed = []; st.looted = false; st.acted = null; st.atk = null; st.fallen = []; st.forceSurprise = null; st.bossFight = s.enemies.some(e => e.boss); st.bossName = (s.enemies.find(e => e.boss) || {}).name || null; st.cauldron = null; st.witchDmg = null; st.heartTaken = false; st.notes = [];
     const touched = {};
     const hasUndead = s.enemies.some(e => /Nieumar/.test(e.type || ''));
     st.heroes.forEach(id => {
@@ -509,13 +519,14 @@ Object.assign(ACT, {
       if (won) { ops.push(opSet('osada.trinkets', (Store.S.osada.trinkets || []).concat(s.fallen))); lines.push('Wygrana: błyskotki poległych wracają do magazynu (' + s.fallen.map(t => t.name).join(', ') + ').'); }
       else lines.push('Błyskotki poległych przepadają: ' + s.fallen.map(t => t.name).join(', ') + '.');
     }
+    if (won && s.bossName === 'Shambler') { const kiel = ALL_TRINKETS().find(t => t.kind === 'kiel'); if (kiel) { ops.push(opSet('osada.trinkets', ((ops.find(o => o.p === 'osada.trinkets') || {}).v || Store.S.osada.trinkets || []).concat([kiel]))); lines.push('**Shambler pokonany.** Nagroda: **Kieł spoza gwiazd** trafia do magazynu błyskotek.'); } }
     const w = Store.S.wyprawa;
     if (won && w.quest && s.roomId) {
       const w2 = clone(w); const r = w2.rooms.find(x => x.id === s.roomId);
       if (r && !r.cleared) { r.cleared = true; lines.push('Komnata oczyszczona' + (r.c === 'boss' ? ' — **boss pokonany**' : '') + '.'); const g = goalProgress(w2); if (g.ok) lines.push('**Cel zadania wykonany** (' + g.txt + ').'); }
       ops.push(opSet('wyprawa', w2));
     }
-    s.fight = false; s.init = []; s.turn = -1; s.round = 0; s.last = null; s.enemies = s.enemies.filter(e => !e.corpse); s.fallen = []; s.roomId = null; s.forceSurprise = null; s.lootBonus = 0; s.acted = null;
+    s.fight = false; s.init = []; s.turn = -1; s.round = 0; s.last = null; s.enemies = s.enemies.filter(e => !e.corpse); s.fallen = []; s.roomId = null; s.forceSurprise = null; s.lootBonus = 0; s.acted = null; s.cauldron = null; s.witchDmg = null; s.bossName = null; s.bossFight = false;
     if (ops.length) Store.act(ops, { quiet: true });
     commit({ lines, stol: s, touched }, 'sys');
   },
