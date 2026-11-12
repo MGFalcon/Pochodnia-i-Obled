@@ -20,6 +20,14 @@ function stateChip(h) {
   const c = h.state.kind === 'virtue' ? 'virtue' : 'affl';
   return gchip(c, h.state.name, h.state.name);
 }
+/* kto nie może iść na wyprawę: leczenie, przepadł, odpoczynek po Najmroczniejszym Lochu */
+function heroAway(h) {
+  const wk = Store.S.osada.week;
+  if (h.status === 'leczenie') return 'w leczeniu do następnego tygodnia';
+  if (h.status === 'przepadł') return 'przepadł — wróci w tygodniu ' + (h.awayUntil || wk + 1);
+  if ((h.restUntil || 0) > wk) return 'odpoczywa po Najmroczniejszym Lochu do tygodnia ' + h.restUntil;
+  return '';
+}
 function curEntry() { const s = Store.S.stol; return s.init && s.init[s.turn]; }
 /* kolejka w walce: działa się tylko w swojej turze, jedna akcja na turę; ogłuszony traci turę */
 const turnKey = () => { const s = Store.S.stol; return (s.round || 0) + ':' + s.turn; };
@@ -131,7 +139,7 @@ VIEWS.stol = {
         const nm = x.k === 'h' ? (H(x.id) ? heroLabel(H(x.id)) : '—') : ((s.enemies.find(e => e.id === x.id) || {}).name || '—');
         return `<span class="ini ${x.k} ${i === s.turn ? 'now' : ''} ${i < s.turn ? 'done' : ''}">${esc(nm)} <b class="num">${x.tot}</b></span>`;
       }).join('')}</div>` : ''}
-      ${s.fight && !living ? `<div class="won"><b>Wrogowie pokonani.</b> <button class="btn sm gold" data-act="lootFight">Rzuć na łup</button> <button class="btn sm primary" data-act="fightEnd">Zakończ walkę</button></div>` : ''}
+      ${s.fight && !living ? `<div class="won"><b>Wrogowie pokonani.</b> ${s.looted ? '<span class="muted small">łup wylosowany</span>' : W ? `<button class="btn sm gold" data-act="lootFight">Rzuć na łup</button>` : ''} ${W ? `<button class="btn sm primary" data-act="fightEnd">Zakończ walkę</button>` : ''}</div>` : ''}
       ${eventBanner()}
       ${lootCardHtml()}
       ${lootStrip()}
@@ -180,11 +188,11 @@ VIEWS.stol = {
         <button class="btn sm" data-act="heroMove" data-d="-1" ${pos > 1 && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z przodu (bliżej wrogów)">do przodu ▶</button>
         <button class="btn sm" data-act="heroPass" ${busy ? 'disabled' : ''}>Pas</button>
         ${ohyda ? `<button class="btn sm gold" data-act="transform" ${busy ? 'disabled' : ''}>${h.form === 'beast' ? 'Wróć do ludzkiej postaci' : 'Przemiana w bestię'}</button>` : ''}
-        <button class="btn sm" data-act="retreat" ${busy || !Store.S.stol.fight ? 'disabled' : ''} ${Store.S.stol.enemies.some(e => e.boss && !e.corpse) ? 'title="Z walki z bossem nie ma odwrotu"' : ''}>Odwrót</button>
+        <button class="btn sm" data-act="retreat" ${busy || !Store.S.stol.fight || Store.S.stol.enemies.some(e => e.boss && !e.corpse) ? 'disabled' : ''} ${Store.S.stol.enemies.some(e => e.boss && !e.corpse) ? 'title="Z walki z bossem nie ma odwrotu"' : ''}>Odwrót</button>
       </div>
       <div class="row acts items">
         <span class="lbl">Plecak</span>
-        ${[['Bandaże', 'bandaż', 'bleed'], ['Antidota', 'antidotum', 'blight'], ['Laudanum', 'laudanum', 'horror'], ['Zioła', 'zioła', 'debuff'], ['Prowiant', 'prowiant', 'food']].map(([k, n, w]) => `<button class="btn sm ghost" data-act="useItem" data-k="${k}" data-w="${w}" ${busy && (!g.mine || lost) ? 'disabled' : ''}>${n} <span class="muted num">${sup[k] != null ? sup[k] : '–'}</span></button>`).join('')}
+        ${[['Bandaże', 'bandaż', 'bleed'], ['Antidota', 'antidotum', 'blight'], ['Laudanum', 'laudanum', 'horror'], ['Zioła', 'zioła', 'debuff'], ['Woda święcona', 'woda święcona', 'holy'], ['Prowiant', 'prowiant', 'food']].map(([k, n, w]) => `<button class="btn sm ghost" data-act="useItem" data-k="${k}" data-w="${w}" ${busy && (!g.mine || lost) ? 'disabled' : ''}>${n} <span class="muted num">${sup[k] != null ? sup[k] : '–'}</span></button>`).join('')}
       </div>
       <div class="row acts">
         <span class="lbl">Popraw</span>
@@ -277,9 +285,9 @@ Object.assign(ACT, {
     const cur = Store.S.stol.heroes.slice();
     const list = liveHeroes();
     modal(`<h3>Drużyna</h3><p class="dim">Zaznacz do czterech bohaterów w kolejności od pozycji 1 (przód) do 4 (tył).</p>
-      <div class="flist">${list.map(h => { const sick = h.status === 'leczenie'; return `<label class="chk ${sick ? 'sick' : ''}" ${sick ? 'title="W leczeniu — wraca do gry od następnego tygodnia"' : ''}><input type="checkbox" value="${h.id}" ${cur.includes(h.id) && !sick ? 'checked' : ''} ${sick ? 'disabled' : ''}> ${esc(heroLabel(h))} <span class="muted">${esc(CLS[h.cls].name)} · Poz. ${h.level}${sick ? ' · w leczeniu do następnego tygodnia' : ''}</span></label>`; }).join('') || '<p class="muted">Rejestr jest pusty — dodaj bohaterów w zakładce Bohaterowie.</p>'}</div>`,
+      <div class="flist">${list.map(h => { const why = heroAway(h); const sick = !!why; return `<label class="chk ${sick ? 'sick' : ''}" ${sick ? `title="${esc(why)}"` : ''}><input type="checkbox" value="${h.id}" ${cur.includes(h.id) && !sick ? 'checked' : ''} ${sick ? 'disabled' : ''}> ${esc(heroLabel(h))} <span class="muted">${esc(CLS[h.cls].name)} · Poz. ${h.level}${sick ? ' · ' + esc(why) : ''}</span></label>`; }).join('') || '<p class="muted">Rejestr jest pusty — dodaj bohaterów w zakładce Bohaterowie.</p>'}</div>`,
       [{ t: 'Anuluj' }, { t: 'Ustaw', cls: 'primary', fn: () => {
-        const picked = $$('.flist input:checked').map(i => i.value).filter(id => H(id) && H(id).status !== 'leczenie');
+        const picked = $$('.flist input:checked').map(i => i.value).filter(id => H(id) && !heroAway(H(id)));
         if (picked.length > 4) { toast('Najwyżej czterech bohaterów.'); return false; }
         const order = cur.filter(id => picked.includes(id)).concat(picked.filter(id => !cur.includes(id)));
         setStol(st => { st.heroes = order; });
@@ -322,6 +330,7 @@ Object.assign(ACT, {
     if (h.form === 'beast') { h.form = 'human'; lines.push(heroLabel(h) + ' wraca do ludzkiej postaci.'); }
     else {
       h.form = 'beast'; const r = d(4); heroHeal(h, r, lines); lines.push(heroLabel(h) + ' przemienia się w bestię i leczy ' + r + '.');
+      if ((!Store.S.stol.transformed || !Store.S.stol.transformed.includes(h.id)) && h.fx && h.fx.noTransformStress) { const st = clone(Store.S.stol); st.transformed = (st.transformed || []).concat(h.id); lines.push('Ostrzeżenie z obozu: drużyna nie dostaje Stresu z tej przemiany.'); return actedCommit({ lines, stol: st, touched: { [h.id]: h } }); }
       if (!Store.S.stol.transformed || !Store.S.stol.transformed.includes(h.id)) {
         const st = clone(Store.S.stol); st.transformed = (st.transformed || []).concat(h.id);
         const touched = { [h.id]: h };
@@ -340,7 +349,12 @@ Object.assign(ACT, {
     const touched = {};
     if (ok) Store.S.stol.heroes.forEach(id => { const t = clone(H(id)); heroStress(t, 1, lines); touched[id] = t; });
     if (ok) lines.push('Każdy bohater +1 Stres. Drużyna wraca do poprzedniej komnaty.');
-    if (ok) commit({ lines, stol: Object.assign(clone(Store.S.stol), { fight: false, init: [], turn: -1 }), touched }); else actedCommit({ lines, stol: null, touched }, 'bad');
+    if (ok) {
+      const w = Store.S.wyprawa; const st = Object.assign(clone(Store.S.stol), { fight: false, init: [], turn: -1, round: 0, enemies: [], roomId: null, acted: null, fallen: [] });
+      if (w.quest && w.prev) { const w2 = clone(w); const back = w2.rooms.find(r => r.id === w2.prev); w2.at = w2.prev; Store.act([opSet('wyprawa', w2)], { quiet: true }); lines.push('Drużyna cofa się do komnaty: **' + (back ? back.c : '?') + '**. Wrogowie zostają na miejscu.'); }
+      st.heroes.forEach(id => { const t = touched[id]; if (t) { t.fx = {}; t.fatigue = 0; t.block = 0; t.form = 'human'; } });
+      commit({ lines, stol: st, touched });
+    } else actedCommit({ lines, stol: null, touched }, 'bad');
   },
   useItem: el => {
     { const g = heroTurn(H(UI.sel.id)); if (!g.ok && (!g.mine || g.lost)) return toast(g.mine ? g.why : 'Przedmioty z plecaka bierze się w swojej turze. ' + g.why); }
@@ -353,6 +367,7 @@ Object.assign(ACT, {
     if (w === 'horror') { h.fx.horror = []; lines.push(heroLabel(h) + ' bierze laudanum: groza mija.'); }
     if (w === 'debuff') { h.fx.buffs = (h.fx.buffs || []).filter(b => !/−/.test(b[0])); lines.push(heroLabel(h) + ' żuje zioła: osłabienia znikają.'); }
     if (w === 'food') { heroHeal(h, 1, lines); lines.push(heroLabel(h) + ' je prowiant: +1 Zdrowia.'); }
+    if (w === 'holy') { h.fx.buffs = (h.fx.buffs || []).concat([['Krzepa i Odporność +2', 3]]); lines.push(heroLabel(h) + ' pije wodę święconą: Krzepa i Odporność +2 na 3 tury.'); }
     const res = { lines, stol: null, touched: { [h.id]: h } };
     if (Store.S.wyprawa.quest) Store.act([opSet('wyprawa.sup.' + k, sup[k] - 1)], { quiet: true });
     commit(res);
@@ -415,12 +430,19 @@ Object.assign(ACT, {
   },
   /* przebieg walki */
   fightStart: () => {
-    const s = Store.S.stol; const ti = torchInfo(s.torch); const r = d(10); const lines = [];
+    const s = Store.S.stol; const ti = torchInfo(s.torch); const lines = []; const w = Store.S.wyprawa;
     const sur = ti.surprise; let who = 'nikt';
-    const m = { 'Jasno': [r <= 3, r === 10], 'Półmrok': [r <= 2, r >= 9], 'Cienie': [r === 1, r >= 8], 'Mrok': [false, r >= 7], 'Ciemność': [false, r >= 6] }[ti.name];
-    if (m[0]) who = 'wrogowie'; if (m[1]) who = 'drużyna';
-    lines.push('**Walka!** Zaskoczenie (' + ti.name + ', ' + sur + '): k10 = **' + r + '** → ' + (who === 'nikt' ? 'nikt nie jest zaskoczony.' : who === 'wrogowie' ? '**wrogowie zaskoczeni** — drużyna ma całą pierwszą rundę.' : '**drużyna zaskoczona** — wrogowie mają całą pierwszą rundę, pozycje bohaterów losuje się od nowa, każdy +1 Stres.'));
-    const st = clone(s); st.fight = true; st.round = 0; st.init = []; st.turn = -1; st.transformed = [];
+    if (s.forceSurprise) { who = s.forceSurprise; lines.push('**Walka!** ' + (who === 'wrogowie' ? 'Zgaszone ognisko: **wrogowie zaskoczeni** — drużyna ma całą pierwszą rundę.' : '**Drużyna zaskoczona** — wrogowie mają całą pierwszą rundę, pozycje bohaterów losuje się od nowa, każdy +1 Stres.')); }
+    else {
+      const r = d(10);
+      const m = { 'Jasno': [r <= 3, r === 10], 'Półmrok': [r <= 2, r >= 9], 'Cienie': [r === 1, r >= 8], 'Mrok': [false, r >= 7], 'Ciemność': [false, r >= 6] }[ti.name];
+      if (m[0]) who = 'wrogowie'; if (m[1]) who = 'drużyna';
+      let note = '';
+      if (who === 'drużyna' && w.quest && w.noSurprise) { who = 'nikt'; note = ' Plan marszu: drużyna nie daje się zaskoczyć.'; }
+      lines.push('**Walka!** Zaskoczenie (' + ti.name + ', ' + sur + '): k10 = **' + r + '** → ' + (who === 'nikt' ? 'nikt nie jest zaskoczony.' : who === 'wrogowie' ? '**wrogowie zaskoczeni** — drużyna ma całą pierwszą rundę.' : '**drużyna zaskoczona** — wrogowie mają całą pierwszą rundę, pozycje bohaterów losuje się od nowa, każdy +1 Stres.') + note);
+    }
+    if (w.quest && w.noSurprise) Store.act([opSet('wyprawa.noSurprise', false)], { quiet: true });
+    const st = clone(s); st.fight = true; st.round = 0; st.init = []; st.turn = -1; st.transformed = []; st.looted = false; st.acted = null; st.atk = null; st.fallen = []; st.forceSurprise = null; st.bossFight = s.enemies.some(e => e.boss);
     const touched = {};
     const hasUndead = s.enemies.some(e => /Nieumar/.test(e.type || ''));
     st.heroes.forEach(id => {
@@ -431,6 +453,16 @@ Object.assign(ACT, {
       if (h.qn.some(q => qname(q.t) === 'Klaustrofobia') && /Ruiny|Nory/.test(s.region)) { add++; why.push('Klaustrofobia'); }
       if (h.qn.some(q => qname(q.t) === 'Lęk przed nieumarłymi') && hasUndead) { add++; why.push('Lęk przed nieumarłymi'); }
       if (add) { lines.push(heroLabel(h) + ' +' + add + ' Stresu (' + why.join(', ') + ').'); heroStress(h, add, lines); }
+      /* przygotowania z obozu na tę walkę */
+      const nf = h.nextFight || {};
+      if ((nf.buffs || []).length || nf.noFirst || nf.block || nf.noTransformStress) {
+        h.fx = Object.assign({}, h.fx);
+        if ((nf.buffs || []).length) { h.fx.buffs = (h.fx.buffs || []).concat(nf.buffs.map(b => [b[0], b[1] || 99])); lines.push(heroLabel(h) + ' z obozu: ' + nf.buffs.map(b => b[0] + (b[1] === 1 ? ' (pierwsza runda)' : '')).join(', ') + '.'); }
+        if (nf.noFirst) h.fx.noFirst = 1;
+        if (nf.block) { h.block = (h.block || 0) + nf.block; lines.push(heroLabel(h) + ' zaczyna z żetonem Bloku.'); }
+        if (nf.noTransformStress) h.fx.noTransformStress = 1;
+      }
+      h.nextFight = null;
     });
     if (who === 'drużyna') { for (let i = st.heroes.length - 1; i > 0; i--) { const j = d(i + 1) - 1; [st.heroes[i], st.heroes[j]] = [st.heroes[j], st.heroes[i]]; } }
     st.surprise = who;
@@ -438,6 +470,14 @@ Object.assign(ACT, {
     setTimeout(() => ACT.newRound(), 50);
   },
   newRound: () => {
+    { /* przeciąganie walki: został jeden wróg i w zeszłej rundzie nikt go nie zaatakował */
+      const s0 = Store.S.stol; const living = s0.enemies.filter(e => !e.corpse);
+      if ((s0.round || 0) >= 1 && living.length === 1 && !(s0.atk && s0.atk.r === s0.round && s0.atk.ids.includes(living[0].id))) {
+        const lines = ['**Przeciąganie walki:** został tylko ' + living[0].name + ', a w rundzie ' + s0.round + ' nikt go nie zaatakował — każdy bohater +1 Stres.']; const touched = {};
+        s0.heroes.forEach(id => { const h = H(id); if (h && !h.dead) { const t = touched[id] = clone(h); heroStress(t, 1, lines); } });
+        commit({ lines, stol: null, touched }, 'bad');
+      }
+    }
     const s = clone(Store.S.stol); s.round = (s.round || 0) + 1; const init = [];
     const sur = s.round === 1 ? s.surprise : null;
     s.heroes.forEach(id => { const h = H(id); if (!h || h.dead) return; const r = d(10); init.push({ k: 'h', id, roll: r, tot: r + heroStats(h).speed, late: sur === 'drużyna' }); });
@@ -457,18 +497,37 @@ Object.assign(ACT, {
     const res = startTurn(e); if (res && !res.quiet) commit(res); runFollow(res); autoSkip(res);
   },
   fightEnd: () => {
+    { const s0 = Store.S.stol; if (s0.fight && (s0.round || 0) >= 1 && !s0.enemies.some(e => !e.corpse) && !s0.looted) ACT.lootFight(); }
     const s = clone(Store.S.stol); const touched = {}; const lines = ['**Koniec walki.** Efekty wygasają.'];
     s.heroes.forEach(id => {
       const h = touched[id] = clone(H(id)); h.fx = {}; h.fatigue = 0; h.block = 0; h.form = 'human';
       if (h.exhausted) { h.exh = (h.exh || 1) - 1; if (h.exh <= 0) { h.exhausted = false; h.exh = 0; } }
     });
-    s.fight = false; s.init = []; s.turn = -1; s.round = 0; s.last = null; s.enemies = s.enemies.filter(e => !e.corpse);
+    const won = s.fight && (s.round || 0) >= 1 && !s.enemies.some(e => !e.corpse);
+    const ops = [];
+    if ((s.fallen || []).length) {
+      if (won) { ops.push(opSet('osada.trinkets', (Store.S.osada.trinkets || []).concat(s.fallen))); lines.push('Wygrana: błyskotki poległych wracają do magazynu (' + s.fallen.map(t => t.name).join(', ') + ').'); }
+      else lines.push('Błyskotki poległych przepadają: ' + s.fallen.map(t => t.name).join(', ') + '.');
+    }
+    const w = Store.S.wyprawa;
+    if (won && w.quest && s.roomId) {
+      const w2 = clone(w); const r = w2.rooms.find(x => x.id === s.roomId);
+      if (r && !r.cleared) { r.cleared = true; lines.push('Komnata oczyszczona' + (r.c === 'boss' ? ' — **boss pokonany**' : '') + '.'); const g = goalProgress(w2); if (g.ok) lines.push('**Cel zadania wykonany** (' + g.txt + ').'); }
+      ops.push(opSet('wyprawa', w2));
+    }
+    s.fight = false; s.init = []; s.turn = -1; s.round = 0; s.last = null; s.enemies = s.enemies.filter(e => !e.corpse); s.fallen = []; s.roomId = null; s.forceSurprise = null; s.lootBonus = 0; s.acted = null;
+    if (ops.length) Store.act(ops, { quiet: true });
     commit({ lines, stol: s, touched }, 'sys');
   },
   lootFight: () => {
-    const s = Store.S.stol; const boss = s.enemies.some(e => e.boss) || (Store.S.stol.lastBoss);
+    const s = Store.S.stol; if (s.looted) return toast('Łup za tę walkę został już wylosowany.');
+    if (s.enemies.some(e => !e.corpse)) return toast('Najpierw pokonajcie wszystkich wrogów.');
+    const boss = s.bossFight || s.enemies.some(e => e.boss);
     const ti = torchInfo(s.torch); const extra = { 'Jasno': -1, 'Półmrok': 0, 'Cienie': 1, 'Mrok': 1, 'Ciemność': 2 }[ti.name];
-    const n = Math.max(0, (boss ? 4 : 1) + extra); rollLoot(n, 'wygrana walka');
+    const bonus = s.lootBonus || 0;
+    Store.act([opSet('stol.looted', true)], { quiet: true });
+    const n = Math.max(0, (boss ? 4 : 1) + extra + bonus);
+    rollLoot(n, 'wygrana walka' + (boss ? ', boss' : '') + ', Pochodnia ' + ti.name + (bonus ? ', +' + bonus + ' za zgaszone ognisko' : ''));
   }
 });
 const MEM_TYPES = ['Popiersie', 'Portret', 'Akt', 'Herb'];
@@ -476,6 +535,7 @@ const SUP_KEYS = ['Prowiant', 'Pochodnie', 'Łopaty', 'Bandaże', 'Antidota', 'L
 const lootMult = () => [1, 1.5, 2][+(Store.S.wyprawa.quest ? Store.S.wyprawa.quest.dl : Store.S.stol.dl) || 0];
 /* łup trafia do plecaka wyprawy (albo prosto do skarbca, gdy nie ma wyprawy) i jest pokazywany wszystkim jako karta */
 function rollLoot(n, why) {
+  if (Store.S.wyprawa.quest && Store.S.wyprawa.rumor) { n += 1; why += ', +1 za plotkę z Osady'; Store.act([opSet('wyprawa.rumor', false)], { quiet: true }); }
   const items = []; let gold = 0, gems = 0; const mem = {}; const sup = {}; const mult = lootMult();
   for (let i = 0; i < n; i++) {
     const r = rollTable('lup');

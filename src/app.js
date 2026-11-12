@@ -110,7 +110,7 @@ function renderTorch() {
     <b class="tv num">${t}</b><span class="tname">${ti.name}</span>
     <span class="tinfo muted">wrogowie: ${ti.enemy} · łupy: ${ti.loot} · zwiad ${ti.scout || 'brak'}</span>
     <span class="sp"></span>
-    <button class="btn sm ghost" data-act="torch0" title="Zgaś do zera — decyzja graczy">Zgaś</button>
+    <button class="btn sm ghost" data-act="torchDim" title="Przygaś o 1 — decyzja graczy" ${t > 0 ? '' : 'disabled'}>Przygaś −1</button><button class="btn sm ghost" data-act="torch0" title="Zgaś do zera — decyzja graczy" ${t > 0 ? '' : 'disabled'}>Zgaś</button>
     ${Store.S.wyprawa.quest ? `<span class="tpack" title="Pochodnie w plecaku"><span class="lbl">w plecaku</span> <b class="num">${(Store.S.wyprawa.sup || {}).Pochodnie || 0}</b> poch. · <span class="lbl">korytarze</span> <b class="num">${Store.S.wyprawa.crossed || 0}</b> · <span class="lbl">głód za</span> <b class="num">${4 - ((Store.S.wyprawa.crossed || 0) % 4)}</b></span>` : ''}
     ${Store.S.wyprawa.quest && Store.canWrite() && scoutable().length ? `<button class="btn scoutbtn sm2" data-act="scoutAny">Zwiad (${scoutChance(Store.S.stol, party()).chance})</button>` : ''}
     <button class="btn sm" data-act="torchUse" title="Pochodnia z plecaka: +3" ${Store.S.wyprawa.quest && !((Store.S.wyprawa.sup || {}).Pochodnie > 0) ? 'disabled' : ''}>Pochodnia +3</button>
@@ -157,8 +157,8 @@ function checkRollCard() {
   if (!e || e.id === _lastRoll) return; const fresh = Date.now() - e.t < 15000; _lastRoll = e.id;
   if (!fresh || !(e.kind === 'roll' || e.kind === 'sys') || !/k\d+ = |rzut \*\*/.test(e.text || '')) return;
   let c = document.getElementById('rollcard'); if (!c) { c = document.createElement('div'); c.id = 'rollcard'; c.className = 'rollcard'; c.setAttribute('role', 'status'); document.body.appendChild(c); c.addEventListener('click', () => { c.hidden = true; }); }
-  c.innerHTML = `<span class="lbl">Rzut${e.by ? ' · ' + esc(e.by) : ''}</span><div>${diceBadges(md(e.text))}</div>`; c.hidden = false;
-  clearTimeout(c._t); c._t = setTimeout(() => { c.hidden = true; }, 6500);
+  c.innerHTML = `<button class="rc-x" aria-label="Zamknij" title="Zamknij">×</button><span class="lbl">Rzut${e.by ? ' · ' + esc(e.by) : ''}</span><div>${diceBadges(md(e.text))}</div>`; c.hidden = false;
+  clearTimeout(c._t); c._t = setTimeout(() => { c.hidden = true; }, 5000);
 }
 function checkCaption() {
   const L = Store.S.log || []; const e = L[L.length - 1];
@@ -199,7 +199,7 @@ function wireGlobal() {
 function route() {
   const h = location.hash.replace('#', '');
   if (/^pokoj-/.test(h)) return;
-  if (TABS.some(([k]) => k === h)) { UI.view = h; if (h === 'mg' && !Store.isGM()) UI.view = 'stol'; }
+  if (TABS.some(([k]) => k === h)) { if (UI.view !== h) $$('#pops .pop').forEach(p => p.remove()); UI.view = h; if (h === 'mg' && !Store.isGM()) UI.view = 'stol'; }
   document.body.classList.remove('side-open');
   if (Store.ready) renderAll();
 }
@@ -226,6 +226,7 @@ Object.assign(ACT, {
   gloss: () => glossaryModal(),
   leave: () => confirmBox('Zmienić tryb gry?', 'Wrócisz do ekranu wyboru. Zapisany stan zostaje w tej przeglądarce.', 'Zmień', () => { LS.set('pio:ostatni', null); location.hash = ''; location.reload(); }),
   torch: el => Store.act([opSet('stol.torch', +el.dataset.v === Store.S.stol.torch ? +el.dataset.v - 1 : +el.dataset.v)]),
+  torchDim: () => { const t = Math.max(0, Store.S.stol.torch - 1); Store.act([opSet('stol.torch', t)]); rollLog('Drużyna przygasza pochodnię: Pochodnia **' + t + '** (' + torchInfo(t).name + ').', t <= 2 ? 'bad' : '', 'sys'); },
   torch0: () => { Store.act([opSet('stol.torch', 0)]); rollLog('Drużyna gasi pochodnię. **Ciemność.**', 'bad', 'sys'); },
   torchUse: () => {
     const w = Store.S.wyprawa; const n = (w.sup && w.sup.Pochodnie) || 0;

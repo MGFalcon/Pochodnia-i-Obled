@@ -16,9 +16,9 @@ const STAT_NAMES = { hp: 'Zdrowie maks.', dodge: 'Unik', speed: 'Szybkość', pr
 const qname = s => String(s || '').split(':')[0].trim();
 
 /* "Celność +1 i Kryt +1", "Celność i Szybkość −1", "Unik −2" -> {acc:1, crit:1, ...} */
-const MOD_KEY = { 'Celność': 'acc', 'Kryt': 'crit', 'obrażenia': 'dmg', 'Szybkość': 'speed', 'Unik': 'dodge', 'Pancerz': 'prot', 'Krzepa': 'krzepa', 'Odporność': 'odp' };
+const MOD_KEY = { 'Celność': 'acc', 'Kryt': 'crit', 'obrażenia': 'dmg', 'Szybkość': 'speed', 'Unik': 'dodge', 'Pancerz': 'prot', 'Krzepa': 'krzepa', 'Odporność': 'odp', 'Śmierć': 'death' };
 function parseMods(txt) {
-  const out = {}; const W = '(Celność|Kryt|obrażenia|Szybkość|Unik|Pancerz|Krzepa|Odporność)';
+  const out = {}; const W = '(Celność|Kryt|obrażenia|Szybkość|Unik|Pancerz|Krzepa|Odporność|Śmierć)';
   const num = s => +s.replace('−', '-').replace('+', '');
   let m; const rx2 = new RegExp(W + ' i ' + W + ' ([+−]\\d)', 'g');
   let rest = txt;
@@ -66,6 +66,7 @@ function heroStats(h) {
   if (c.name === 'Ohyda' && h.form === 'beast') { add('dmg', 1, 'bestia'); add('speed', 2, 'bestia'); add('dodge', 1, 'bestia'); }
   if (h.fatigue) { const k = c.name === 'Błazen' ? 2 : 1; add('acc', -k * h.fatigue, 'Zmęczenie'); add('dmg', -k * h.fatigue, 'Zmęczenie'); }
   ((h.fx && h.fx.buffs) || []).forEach(b => Object.entries(parseMods(b[0])).forEach(([k, v]) => add(k, v, b[0])));
+  (h.qbuff || []).forEach(b => Object.entries(parseMods(b)).forEach(([k, v]) => add(k, v, b + ' (do końca wyprawy)')));
   if (h.exhausted) { add('acc', -1, 'Wyczerpanie'); add('dmg', -1, 'Wyczerpanie'); add('speed', -1, 'Wyczerpanie'); }
   const vRaw = st.virtue; st.virtue = clamp(st.virtue, 1, 5);
   if (vRaw !== st.virtue) why.virtue.push(['granice 1–5', st.virtue - vRaw]);

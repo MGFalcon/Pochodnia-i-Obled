@@ -88,8 +88,10 @@ function heroStress(h, n, lines, opts = {}) {
   if (n > 0) {
     if (opts.enemy && h.state && h.state.kind === 'ekstaza') { lines.push(heroLabel(h) + ' w Ekstazie bólu nie czuje Stresu.'); return; }
     if (h.state && h.state.kind === 'virtue' && h.state.name === 'Odważny') n = Math.max(0, n - 1);
+    if (Store.S.stol.fight && h.fx && h.fx.noFirst) { h.fx = Object.assign({}, h.fx, { noFirst: 0, optUsed: 1 }); lines.push(heroLabel(h) + ' nie czuje pierwszego Stresu w tej walce (Kpina z ciemności).'); return; }
+    if (Store.S.stol.fight && !(h.fx && h.fx.optUsed) && h.qp.some(q => qname(q.t) === 'Optymista')) { h.fx = Object.assign({}, h.fx, { optUsed: 1 }); n -= 1; lines.push(heroLabel(h) + ' (Optymista): pierwszy Stres w walce −1.'); if (n <= 0) return; }
     const before = h.stress; h.stress = Math.min(st.heart, h.stress + n);
-    if (before < 10 && h.stress >= 10 && (!h.state || h.state.kind === 'virtue')) resolveTest(h, lines);
+    if (before < 10 && h.stress >= 10 && (!h.state || h.state.kind === 'virtue' || h.state.temp)) resolveTest(h, lines);
     else if (before < 10 && h.stress >= 10 && h.state && h.state.kind === 'virtue') resolveTest(h, lines);
     if (h.stress >= st.heart) {
       lines.push('**Zawał!** ' + heroLabel(h) + ' pęka pod ciężarem Stresu.');
@@ -102,7 +104,8 @@ function heroStress(h, n, lines, opts = {}) {
   }
 }
 function resolveTest(h, lines) {
-  const st = heroStats(h); const r = d(10); const ok = r === 1 || (r !== 10 && r <= st.virtue);
+  const st = heroStats(h); const vb = h.nextVirtue || 0; h.nextVirtue = 0; st.virtue = Math.min(5, st.virtue + vb); const r = d(10); const ok = r === 1 || (r !== 10 && r <= st.virtue);
+  if (vb) lines.push(heroLabel(h) + ': Szansa Cnoty +' + vb + ' (Opowieści weterana).');
   if (h.state && h.state.kind === 'virtue') lines.push(heroLabel(h) + ' traci Cnotę ' + h.state.name + '.');
   if (ok) {
     const pv = pickD(DATA.virtues); const v = pv.v; h.state = { kind: 'virtue', name: v.name }; h.stress = 4;
@@ -169,16 +172,24 @@ function heroUse(h0, idx, targetIds) {
   lines.push('**' + heroLabel(h) + '** używa: **' + sk.name + '**.');
   if (inf.attack) {
     const tlist = stol.enemies;
+    stol.atk = { r: stol.round || 0, ids: ((stol.atk && stol.atk.r === (stol.round || 0)) ? stol.atk.ids : []).concat(targetIds) };
+    const eps = enemyPositions(tlist);
     targetIds.forEach(tid => {
       const e = tlist.find(x => x.id === tid); if (!e) return;
-      const dg = enemyDodge(e); const chance = v.cel - dg;
+      /* Celność zależna od sytuacji: Nocny marek, Celne oko, Kompas ślepca */
+      const ep = eps.find(x => x.e.id === tid); let sit = 0; const sitWhy = [];
+      if (stol.torch <= 2 && h.qp.some(q => qname(q.t) === 'Nocny marek')) { sit++; sitWhy.push('Nocny marek +1'); }
+      if (ep && ep.last >= 3 && h.qp.some(q => qname(q.t) === 'Celne oko')) { sit++; sitWhy.push('Celne oko +1'); }
+      if (stol.torch >= 9 && st.accBright) { sit += st.accBright; sitWhy.push('Kompas ślepca ' + st.accBright); }
+      const cel = v.cel + sit;
+      const dg = enemyDodge(e); const chance = cel - dg;
       const roll = hitRoll(chance, v.crit);
-      let txt = '→ ' + e.name + ': ' + needTxt(roll.r, v.cel, dg);
+      let txt = '→ ' + e.name + ': ' + needTxt(roll.r, cel, dg) + (sitWhy.length ? ' [' + sitWhy.join(', ') + ']' : '');
       if (roll.res === 'miss') {
         const mk = missKind(roll.r, v.cel);
         const w = mk === 'miss' ? 'PUDŁO' : 'UNIK';
         lines.push(txt + ' → **' + (mk === 'miss' ? 'pudło' : 'unik: ' + e.name + ' uchyla się') + '**.');
-        ev.push({ id: e.id, k: mk, txt: w }); sum.push(e.name + ': **' + w + '** — ' + needTxt(roll.r, v.cel, dg) + (mk === 'miss' ? ', chybienie nawet bez uniku.' : ', uratował go Unik.'));
+        ev.push({ id: e.id, k: mk, txt: w }); sum.push(e.name + ': **' + w + '** — ' + needTxt(roll.r, cel, dg) + (mk === 'miss' ? ', chybienie nawet bez uniku.' : ', uratował go Unik.'));
         return;
       }
       const crit = roll.res === 'crit'; if (crit) crits++;
@@ -194,7 +205,7 @@ function heroUse(h0, idx, targetIds) {
         txt += ' → **' + (crit ? 'KRYTYK' : 'trafienie') + '**, ' + obrN(dmg) + (prot ? ' (po Pancerzu ' + prot + ')' : '') + (tb ? ' (w tym +' + tb + ' premii)' : '');
       } else txt += ' → **' + (crit ? 'KRYTYK' : 'trafienie') + '**';
       ev.push({ id: e.id, k: crit ? 'crit' : 'hit', txt: (crit ? 'KRYTYK ' : '') + (dmg ? '−' + dmg : 'TRAFIENIE') });
-      let s1 = e.name + ': **' + (crit ? 'KRYTYK' : 'TRAFIENIE') + '**' + (dmg ? ', ' + obrN(dmg) : '') + ' — ' + needTxt(roll.r, v.cel, dg) + (crit ? ', a kryt przy ≤ ' + v.crit : '') + '.';
+      let s1 = e.name + ': **' + (crit ? 'KRYTYK' : 'TRAFIENIE') + '**' + (dmg ? ', ' + obrN(dmg) : '') + ' — ' + needTxt(roll.r, cel, dg) + (crit ? ', a kryt przy ≤ ' + v.crit : '') + '.';
       if (e.hp <= 0) {
         txt += '. **' + e.name + ' pada.**'; s1 += ' **Pada.**';
         ev.push({ id: e.id, k: 'kill', txt: 'PADA' });
@@ -398,6 +409,12 @@ function afterDeaths(res) {
     if (idx >= 0) { const cur = idx === st.turn; init.splice(idx, 1); if (idx <= st.turn) st.turn--; if (cur) st.acted = rk(); }
     st.init = init;
     const h = res.touched[id];
+    /* błyskotki poległego: wracają do magazynu, jeśli drużyna wygra tę walkę; inaczej przepadają */
+    if ((h.trinkets || []).length) {
+      if (st.fight) { st.fallen = (st.fallen || []).concat(h.trinkets); res.lines.push('Błyskotki poległego (' + h.trinkets.map(t => t.name).join(', ') + ') wrócą do magazynu, jeśli drużyna wygra tę walkę.'); }
+      else res.lines.push('Błyskotki poległego przepadają: ' + h.trinkets.map(t => t.name).join(', ') + '.');
+      h.trinkets = [];
+    }
     ops.push(opSet('osada.cemetery', (Store.S.osada.cemetery || []).concat([{ name: heroLabel(h), cls: CLS[h.cls].name, level: h.level, cause: h.deathCause, week: Store.S.osada.week }])));
   });
   st.heroes.forEach(id => {
@@ -506,6 +523,25 @@ function startTurn(entry) {
   }
   const h = touched[entry.id] = clone(s.heroes[entry.id]); if (!h || h.dead) return null;
   h.fx = h.fx || {};
+  /* Klątwa bestii: przy Pochodni 0 działa jak Przypadłość Obłęd */
+  const cursed = !h.state && stol.torch === 0 && (h.diseases || []).some(x => /Klątwa bestii/.test(x));
+  if (cursed) { h.state = { kind: 'affliction', name: 'Obłęd', temp: true }; lines.push(heroLabel(h) + ': Klątwa bestii w Ciemności działa jak **Obłęd**.'); }
+  const res = heroTurnStart(h, entry, stol, lines, touched);
+  if (cursed && h.state && h.state.temp) h.state = null;
+  return res;
+}
+function heroTurnStart(h, entry, stol, lines, touched) {
+  const s = Store.S;
+  const tick = fx => {
+    let dot = 0, hor = 0;
+    ['bleed', 'blight'].forEach(k => { dot += sumDot(fx[k]); fx[k] = (fx[k] || []).map(x => [x[0], x[1] - 1]).filter(x => x[1] > 0); });
+    hor = sumDot(fx.horror); fx.horror = (fx.horror || []).map(x => [x[0], x[1] - 1]).filter(x => x[1] > 0);
+    ['mark', 'guard'].forEach(k => { if (fx[k]) fx[k]--; });
+    fx.buffs = (fx.buffs || []).map(b => [b[0], b[1] - 1]).filter(b => b[1] >= 0);
+    if (!fx.buffs.some(b => /^Unik −/.test(b[0]))) delete fx.dodgeDown;
+    if (!fx.buffs.some(b => /^Pancerz −/.test(b[0]))) delete fx.protDown;
+    return { dot, hor };
+  };
   const { dot, hor } = tick(h.fx);
   if (dot) { lines.push(heroLabel(h) + ': ' + obrN(dot) + ' od krwawienia i zarazy.'); heroDamage(h, dot, lines, 'krwawienie/zaraza'); }
   if (hor && !h.dead) { lines.push(heroLabel(h) + ': groza +' + hor + ' Stresu.'); heroStress(h, hor, lines); }

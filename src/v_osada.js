@@ -15,13 +15,14 @@ VIEWS.osada = {
     return `<div class="grid2">
       <section class="panel"><h2>Tydzień ${o.week}</h2>
         ${o.event ? `<p><b>Wydarzenie:</b> ${esc(o.event)}</p>` : '<p class="muted">Wydarzenie tygodnia jeszcze nie wylosowane.</p>'}
+        ${o.cultists ? '<p class="small warn">Kultyści na trakcie: następna wyprawa ma dodatkową walkę w pierwszym korytarzu.</p>' : ''}${o.rumor ? '<p class="small">Plotka: następna wyprawa ma +1 rzut na łup.</p>' : ''}
         ${gm ? `<div class="row"><button class="btn primary" data-act="newWeek">Nowy tydzień</button><span class="small muted">wydarzenie k10, dyliżans, koniec leczenia, nowa tablica zadań</span></div>` : ''}
         <div class="ph">Dyliżans <span class="hint">rekruci za darmo, rejestr ${liveHeroes().length}/${o.slots}</span></div>
         ${(o.recruits || []).map((r, i) => `<div class="recruit"><b>${esc(CLS[r.cls].name)}</b> <span class="muted">Poz. ${r.level} · k20 = ${r.roll}</span> <span class="small dim">${esc(r.qp)}; ${esc(r.qn)}</span>${W ? ` <button class="btn sm" data-act="hire" data-i="${i}">Przyjmij</button>` : ''}</div>`).join('') || '<p class="muted small">Dyliżans przyjedzie z nowym tygodniem.</p>'}
       </section>
       <section class="panel"><h2>Skarbiec</h2>
         <div class="treasury"><div class="gold"><span class="lbl">Złoto</span>${gm ? `<input type="number" id="ogold" data-bind="osada.gold" data-num value="${o.gold}" style="width:6em">` : `<b class="num">${o.gold}</b>`}</div>
-          ${Object.keys(MEM_PL).map(k => `<div class="memo"><span class="lbl">${MEM_PL[k]}</span><span class="row">${W ? `<button class="btn sm ghost" data-act="memAdj" data-k="${k}" data-v="-1">−</button>` : ''}<b class="num">${o.mem[k] || 0}</b>${W ? `<button class="btn sm ghost" data-act="memAdj" data-k="${k}" data-v="1">+</button>` : ''}</span></div>`).join('')}</div>
+          ${Object.keys(MEM_PL).map(k => `<div class="memo"><span class="lbl">${MEM_PL[k]}</span><span class="row">${gm ? `<button class="btn sm ghost" data-act="memAdj" data-k="${k}" data-v="-1">−</button>` : ''}<b class="num">${o.mem[k] || 0}</b>${gm ? `<button class="btn sm ghost" data-act="memAdj" data-k="${k}" data-v="1">+</button>` : ''}</span></div>`).join('')}</div>
         <p class="small muted">Złoto i pamiątki są wspólne — to kasa posiadłości, nie bohaterów.</p>
       </section>
     </div>
@@ -62,16 +63,25 @@ function classTrinketDialog(clsIdx, why) {
 }
 Object.assign(ACT, {
   newWeek: () => {
-    const o = clone(Store.S.osada); o.week++;
-    const ev = rollTable('osada'); o.event = ev.text;
+    const o = clone(Store.S.osada); if (o.started || o.week > 1) o.week++; o.started = true;
+    const ev = rollTable('osada'); o.event = ev.text; o.eventR = ev.r; o.svc = {};
     if (ev.r === 6) o.gold += 10;
+    if (ev.r === 9) o.cultists = true;
     const n = 3 + (o.b['Dyliżans'] || 0); const lvl = (o.b['Dyliżans'] || 0) >= 3 ? 1 : 0;
     o.recruits = Array.from({ length: n }, () => { let r; do { r = d(20); } while (r > 17); return { cls: r - 1, roll: r, level: lvl, qp: pick(DATA.quirks_pos), qn: pick(DATA.quirks_neg) }; });
     if (ev.r === 4) o.recruits[0].level = 2;
-    const ops = [opSet('osada', o)];
-    heroes().filter(h => h.status === 'leczenie').forEach(h => { const h2 = clone(h); h2.status = 'osada'; ops.push(opSet('heroes.' + h.id, h2)); });
-    if (ev.r === 7) liveHeroes().filter(h => h.status !== 'wyprawa').forEach(h => { const h2 = clone(h); const l = []; heroStress(h2, 1, l); ops.push(opSet('heroes.' + h.id, h2)); });
-    ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'sys', text: '**Tydzień ' + o.week + '.** Wydarzenie: k10 = ' + ev.r + ' → ' + ev.text + '. Dyliżans przywozi ' + n + ' rekrutów.' } });
+    const ops = [opSet('osada', o)]; const notes = [];
+    /* tydzień w Osadzie: koniec leczenia, powroty, pełne Zdrowie, Niespokojne sny */
+    liveHeroes().filter(h => h.status !== 'wyprawa').forEach(h => {
+      const h2 = clone(h); let ch = false;
+      if (h2.status === 'leczenie') { h2.status = 'osada'; ch = true; }
+      if (h2.status === 'przepadł' && (h2.awayUntil || 0) <= o.week) { h2.status = 'osada'; h2.awayUntil = 0; ch = true; notes.push(heroLabel(h2) + ' wraca do Osady.'); }
+      if (h2.ban && h2.ban.until <= o.week) { h2.ban = null; ch = true; }
+      const mx = heroStats(h2).maxhp; if (h2.hp < mx || h2.dd || h2.exhausted) { h2.hp = mx; h2.dd = false; h2.exhausted = false; h2.exh = 0; ch = true; }
+      if (ev.r === 7) { const l = []; heroStress(h2, 1, l); ch = true; }
+      if (ch) ops.push(opSet('heroes.' + h.id, h2));
+    });
+    ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'sys', text: '**Tydzień ' + o.week + '.** Wydarzenie: k10 = ' + ev.r + ' → ' + ev.text + '. Dyliżans przywozi ' + n + ' rekrutów. Bohaterowie w Osadzie wracają do pełnego Zdrowia.' + (notes.length ? ' ' + notes.join(' ') : '') } });
     Store.act(ops);
     rollBoard();
   },
@@ -82,7 +92,7 @@ Object.assign(ACT, {
     const rec = o.recruits.slice(); rec.splice(+el.dataset.i, 1);
     Store.act([opSet('heroes.' + h.id, h), opSet('osada.recruits', rec), { log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'sys', text: 'Do rejestru dołącza: **' + CLS[r.cls].name + '** (Poziom ' + r.level + ').' } }]);
   },
-  memAdj: el => { const k = el.dataset.k; Store.act([opSet('osada.mem.' + k, Math.max(0, (Store.S.osada.mem[k] || 0) + +el.dataset.v))]); },
+  memAdj: el => { if (!Store.isGM()) return; const k = el.dataset.k; Store.act([opSet('osada.mem.' + k, Math.max(0, (Store.S.osada.mem[k] || 0) + +el.dataset.v))]); },
   build: el => {
     const n = el.dataset.n; const B = BUILD.find(x => x[0] === n); const o = Store.S.osada; const lv = o.b[n] || 0; const cost = STEP_COST[lv];
     const [a, b] = B[1]; const ha = o.mem[a] || 0, hb = o.mem[b] || 0;

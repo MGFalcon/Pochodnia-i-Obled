@@ -45,7 +45,7 @@ VIEWS.bohaterowie = {
       </div>
       <div class="rlist">${list.map(h => {
         const st = heroStats(h);
-        return `<button class="rcard ${UI.heroSel === h.id ? 'on' : ''} ${h.dead ? 'dead' : ''} ${h.status === 'leczenie' ? 'sick' : ''}" data-act="heroSel" data-id="${h.id}" ${h.status === 'leczenie' ? 'title="W leczeniu — nie pójdzie na najbliższą wyprawę"' : ''}>
+        return `<button class="rcard ${UI.heroSel === h.id ? 'on' : ''} ${h.dead ? 'dead' : ''} ${!h.dead && heroAway(h) ? 'sick' : ''}" data-act="heroSel" data-id="${h.id}" ${!h.dead && heroAway(h) ? `title="${esc(heroAway(h))}"` : ''}>
           <span class="rp2">${portraitHtml(h, 'rp-img')}</span><span class="rn">${esc(heroLabel(h))}</span><span class="rc">${h.name ? esc(CLS[h.cls].name) + ' · ' : ''}Poz. ${h.level}</span>
           ${h.dead ? `<span class="rc">☩ ${esc(h.deathCause || '')}</span>` : bar('hp', h.hp, st.maxhp, h.hp + '/' + st.maxhp) + bar('st', h.stress, 20, 'Stres ' + h.stress)}
           <span class="ro">${esc(ownerName(h))}${h.status && h.status !== 'osada' ? ' · ' + esc(h.status) : ''}</span></button>`;
@@ -121,7 +121,7 @@ VIEWS.bohaterowie = {
           <div class="box"><div class="ph">Obóz <span class="hint">12 Punktów Odpoczynku na drużynę</span></div>
             <ul class="camp">${c.camp.map(x => `<li><b>${esc(x.name)}</b> <span class="num muted">${x.pts} pkt</span> — ${esc(x.eff)}</li>`).join('')}
             ${COMMON_CAMP.map(x => `<li><b>${esc(x.name)}</b> <span class="num muted">${x.pts} pkt</span> — ${esc(x.eff)}</li>`).join('')}</ul>
-            <div class="row"><span class="lbl">Obozownik</span>${LEARN_CAMP.map(x => `<label class="chk" title="${esc(x.eff)}"><input type="checkbox" data-act-change="camp" value="${x.name}" ${h.camp.includes(x.name) ? 'checked' : ''} ${dis}> ${x.name}</label>`).join('')}</div>
+            <div class="row"><span class="lbl">Obozownik ${Math.max(1, 4 - ((Store.S.osada.b || {}).Obozownik || 0))} Z</span>${LEARN_CAMP.map(x => `<label class="chk" title="${esc(x.eff)}"><input type="checkbox" data-act-change="camp" value="${x.name}" ${h.camp.includes(x.name) ? 'checked' : ''} ${dis}> ${x.name}</label>`).join('')}</div>
           </div>
           <div class="box qbox">
             <div class="ph">Dziwactwa <span class="hint">do 5 pozytywnych i 5 negatywnych</span></div>
@@ -142,23 +142,60 @@ VIEWS.bohaterowie = {
   },
   services(h) {
     const o = Store.S.osada; const b = o.b;
-    const qn = h.qn.map(q => qname(q.t)); const cn = CLS[h.cls].name;
-    const noAbbey = qn.includes('Bezbożnik') || cn === 'Ohyda' || qn.some(q => /Pijak/.test(q));
-    const noTavern = qn.includes('Fanatyk') || cn === 'Biczownik';
-    const sanCost = n => Math.max(1, n - b.Sanatorium);
+    const sanCost = n => Math.max(1, n - (b.Sanatorium || 0));
+    const sanClosed = o.eventR === 3; const busy = heroBusy(h);
+    const btn = (bd, sub) => { const v = svcState(h, bd, sub); return `<button class="btn sm" data-act="service" data-b="${bd}" data-s="${sub}" ${v.ok ? '' : 'disabled'} title="${esc(v.ok ? '−(k6+' + (4 + (b[bd] || 0)) + ') Stres, usuwa Przypadłość' : v.why)}">${sub} <span class="num">${v.cost} Z</span> <span class="muted small">${v.left}/${v.slots}</span></button>`; };
     return `<div class="box"><div class="ph">Osada <span class="hint">usługa = bohater opuszcza najbliższą wyprawę · skarbiec ${o.gold} Z</span></div>
-      <div class="row">
-        <button class="btn sm" data-act="service" data-b="Opactwo" ${noAbbey ? 'disabled title="Ten bohater nie wejdzie do Opactwa"' : ''}>Opactwo 4 Z: −(k6+${4 + b.Opactwo}) Stres</button>
-        <button class="btn sm" data-act="service" data-b="Gospoda" ${noTavern ? 'disabled title="Ten bohater nie leczy się w Gospodzie"' : ''}>Gospoda 4 Z: −(k6+${4 + b.Gospoda}) Stres</button>
-      </div>
-      <div class="row">
-        <button class="btn sm ghost" data-act="sanat" data-w="disease" ${h.diseases.length ? '' : 'disabled'}>Sanatorium: choroba ${sanCost(5)} Z</button>
-        <button class="btn sm ghost" data-act="sanat" data-w="quirk" ${h.qn.some(q => !q.lock) ? '' : 'disabled'}>negatywne dziwactwo ${sanCost(8)} Z</button>
-        <button class="btn sm ghost" data-act="sanat" data-w="lock" ${h.qp.some(q => !q.lock) ? '' : 'disabled'}>utrwal pozytywne ${sanCost(6)} Z</button>
+      ${busy ? `<p class="small muted">${esc(busy)}</p>` : ''}
+      <div class="row"><span class="lbl">Opactwo${o.eventR === 1 ? ' (Procesja: −2 Z)' : ''}</span>${SVC.Opactwo.map(x => btn('Opactwo', x)).join('')}</div>
+      <div class="row"><span class="lbl">Gospoda${o.eventR === 5 ? ' — zamknięta (pożar)' : ''}</span>${SVC.Gospoda.map(x => btn('Gospoda', x)).join('')}</div>
+      <p class="small dim">Stres: −(k6+${4 + (b.Opactwo || 0)}) w Opactwie, −(k6+${4 + (b.Gospoda || 0)}) w Gospodzie. Liczby przy usłudze to wolne miejsca w tym tygodniu. Przy każdej usłudze k10 = 1 oznacza skutek uboczny.</p>
+      <div class="row"><span class="lbl">Sanatorium${sanClosed ? ' — zamknięte (zaraza)' : ''}</span>
+        <button class="btn sm ghost" data-act="sanat" data-w="disease" ${h.diseases.length && !sanClosed && !busy ? '' : 'disabled'}>choroba ${sanCost(5)} Z</button>
+        <button class="btn sm ghost" data-act="sanat" data-w="quirk" ${h.qn.some(q => !q.lock) && !sanClosed && !busy ? '' : 'disabled'}>negatywne dziwactwo ${sanCost(8)} Z</button>
+        <button class="btn sm ghost" data-act="sanat" data-w="lock" ${h.qp.some(q => !q.lock) && !sanClosed && !busy ? '' : 'disabled'}>utrwal pozytywne ${sanCost(6)} Z</button>
       </div></div>`;
   }
 };
 
+/* usługi Osady: pod-usługi, miejsca w tygodniu, zamknięcia, zakazy, dziwactwa */
+const SVC = { Opactwo: ['Medytacja', 'Modlitwa', 'Biczowanie'], Gospoda: ['Bar', 'Hazard', 'Dom Uciech'] };
+function heroBusy(h) {
+  const wk = Store.S.osada.week;
+  if (h.dead) return 'Poległ.';
+  if (h.status === 'wyprawa') return 'Jest na wyprawie.';
+  if (h.status === 'leczenie') return 'Leczy się w tym tygodniu — wraca do gry od następnego.';
+  if (h.status === 'przepadł') return 'Przepadł gdzieś w Osadzie — wróci w tygodniu ' + (h.awayUntil || wk + 1) + '.';
+  return '';
+}
+function svcState(h, b, sub) {
+  const o = Store.S.osada; const qn = h.qn.map(q => qname(q.t)); const cn = CLS[h.cls].name;
+  const cost = Math.max(1, 4 - (b === 'Opactwo' && o.eventR === 1 ? 2 : 0)); const slots = 2 + ((o.b || {})[b] || 0); const left = Math.max(0, slots - ((o.svc || {})[sub] || 0));
+  const r = (why) => ({ ok: false, why, cost, slots, left });
+  const busy = heroBusy(h); if (busy) return r(busy);
+  if (b === 'Gospoda' && o.eventR === 5) return r('Gospoda zamknięta w tym tygodniu (pożar).');
+  if (h.ban && h.ban.b === b && h.ban.until > o.week) return r('Zakaz wstępu do: ' + b + ' do tygodnia ' + h.ban.until + ' (awantura).');
+  if (b === 'Opactwo' && (qn.includes('Bezbożnik') || cn === 'Ohyda')) return r(qn.includes('Bezbożnik') ? 'Bezbożnik nie wejdzie do Opactwa.' : 'Ohyda nie wejdzie do Opactwa.');
+  if (b === 'Gospoda' && (qn.includes('Fanatyk') || cn === 'Biczownik')) return r(qn.includes('Fanatyk') ? 'Fanatyk leczy Stres tylko w Opactwie.' : 'Biczownik nie leczy się w Gospodzie.');
+  if (qn.some(q => /Pijak/.test(q)) && !['Bar', 'Hazard'].includes(sub)) return r('Pijak albo Hazardzista leczy Stres tylko w Barze albo przy Hazardzie.');
+  if (!left) return r('Brak wolnych miejsc w tym tygodniu.');
+  return { ok: true, cost, slots, left };
+}
+/* nowe dziwactwo (k10 w tabeli); limit 5, nowe wypiera losowe nieutrwalone */
+function gainQuirk(h, k, fixed) {
+  const list = k === 'qp' ? DATA.quirks_pos : DATA.quirks_neg;
+  let q, die = '';
+  if (fixed) q = list.find(x => qname(x) === fixed) || fixed; else { const pq = pickD(list); q = pq.v; die = ' (' + pq.t + ')'; }
+  let txt = heroLabel(h) + ' — ' + (k === 'qp' ? 'pozytywne' : 'negatywne') + ' dziwactwo' + die + ': ';
+  if (h[k].some(x => x.t === q)) return txt + q + ' — już je ma, bez zmian.';
+  if (h[k].length >= 5) {
+    const free = h[k].map((x, i) => i).filter(i => !h[k][i].lock);
+    if (!free.length) return txt + q + ' nie mieści się (wszystkie utrwalone).';
+    const pf = pickD(free); const i = pf.v; const old = h[k][i].t; h[k][i] = { t: q, lock: false }; return txt + '**' + q + '** wypiera ' + old + ' (' + pf.t + ').';
+  }
+  h[k].push({ t: q, lock: false }); const st = heroStats(h); h.hp = Math.min(h.hp, st.maxhp);
+  return txt + '**' + q + '**.';
+}
 /* dziwactwo po wyprawie: k10 1–2 pozytywne, 3–5 negatywne, 6–10 nic; limit 5, nowe wypiera losowe nieutrwalone */
 function rollQuirkFor(h) {
   const r = d(10); let txt = heroLabel(h) + ' — dziwactwo po wyprawie: k10 = **' + r + '** → ';
@@ -224,9 +261,11 @@ Object.assign(ACT, {
   sheetTest: () => { const h = curHero(); const lines = []; resolveTest(h, lines); commit({ lines, stol: null, touched: { [h.id]: h } }); },
   rankSet: el => { const h = curHero(); const k = el.dataset.k; let v = +el.dataset.v; if (h.gear[k] === v) v--; const st0 = heroStats(h); h.gear[k] = v; const st1 = heroStats(h); h.hp = clamp(h.hp + st1.maxhp - st0.maxhp, 0, st1.maxhp); saveHero(h); },
   rankBuy: el => {
-    const h = curHero(); const k = el.dataset.k; const cost = +el.dataset.c * (h.gear[k] + 1);
+    const h = curHero(); const k = el.dataset.k; const drunk = el.dataset.b === 'Kuźnia' && Store.S.osada.eventR === 8;
+    const cost = drunk ? Math.ceil(+el.dataset.c * (h.gear[k] + 1) / 2) : +el.dataset.c * (h.gear[k] + 1);
     if (h.gear[k] + 1 > maxRank(h, Store.S.osada.b[el.dataset.b])) return toast('Ta ranga jest jeszcze zablokowana.');
     if (!payGold(cost)) return;
+    if (drunk) { const r = d(10); if (r <= 3) return rollLog(heroLabel(h) + ': Pijany kowal (' + cost + ' Z) — k10 = **' + r + '** → ulepszenie się nie udaje, złoto przepada.', 'bad', 'sys'); rollLog('Pijany kowal: k10 = **' + r + '** → tym razem się udało.', 'good', 'sys'); }
     const st0 = heroStats(h); h.gear[k]++; const st1 = heroStats(h); h.hp = Math.min(st1.maxhp, h.hp + st1.maxhp - st0.maxhp);
     saveHero(h); rollLog(heroLabel(h) + ': ' + el.dataset.b + ' podnosi rangę (' + ({ weapon: 'broń', armor: 'pancerz', guild: 'umiejętności' }[k]) + ' ' + h.gear[k] + ') za ' + cost + ' Złota.', '', 'sys');
   },
@@ -265,18 +304,31 @@ Object.assign(ACT, {
     });
   },
   service: el => {
-    const h = curHero(); const b = el.dataset.b; const lvl = Store.S.osada.b[b] || 0;
-    if (!payGold(4)) return;
+    const h = curHero(); const b = el.dataset.b; const sub = el.dataset.s || SVC[b][0]; const lvl = Store.S.osada.b[b] || 0;
+    const v = svcState(h, b, sub); if (!v.ok) return toast(v.why);
+    if (!payGold(v.cost)) return;
+    const o = clone(Store.S.osada); o.svc = Object.assign({}, o.svc, { [sub]: ((o.svc || {})[sub] || 0) + 1 });
     const r = d(6); const relief = r + 4 + lvl; const lines = [];
     const before = h.stress; heroStress(h, -relief, lines); if (h.state && h.state.kind !== 'virtue') h.state = null;
     h.status = 'leczenie';
-    let txt = heroLabel(h) + ' — ' + b + ': k6 = ' + r + ' → Stres −' + relief + ' (' + before + ' → ' + h.stress + '), Przypadłość znika. Opuszcza najbliższą wyprawę.';
-    const side = d(10);
-    if (side === 1) { const s2 = rollTable('skutek'); txt += ' **Skutek uboczny** (k6 = ' + s2.r + '): ' + s2.text + '.'; }
-    saveHero(h, true); dropFromParty(h.id); rollLog(txt, side === 1 ? 'bad' : 'good', 'sys');
+    let txt = heroLabel(h) + ' — ' + b + ', ' + sub + ' (' + v.cost + ' Z): k6 = **' + r + '** → Stres −' + relief + ' (' + before + ' → ' + h.stress + '), Przypadłość znika. Opuszcza najbliższą wyprawę.';
+    const side = d(10); txt += ' Skutek uboczny: k10 = **' + side + '**' + (side === 1 ? '' : ' → nic.');
+    if (side === 1) {
+      const s2 = rollTable('skutek'); txt += ' → **' + s2.text + '** (k6 = **' + s2.r + '**).';
+      if (s2.r === 1) { h.status = 'przepadł'; h.awayUntil = o.week + 2; txt += ' ' + heroLabel(h) + ' wróci w tygodniu ' + h.awayUntil + '.'; }
+      if (s2.r === 2) { const g = d(6); const lost = Math.min(o.gold, g); o.gold -= lost; txt += ' Osada traci k6 = **' + g + '** Złota (' + lost + ').'; }
+      if (s2.r === 3) { if ((o.trinkets || []).length) { const pt = pickD(o.trinkets.map((t, i) => i)); const t = o.trinkets[pt.v]; o.trinkets = o.trinkets.filter((x, i) => i !== pt.v); txt += ' Z magazynu znika (' + pt.t + '): ' + t.name + '.'; } else txt += ' Magazyn był pusty — nic nie zginęło.'; }
+      if (s2.r === 4) { h.ban = { b, until: o.week + 3 }; txt += ' Zakaz wstępu do: ' + b + ' przez 2 tygodnie.'; }
+      if (s2.r === 5) txt += ' ' + gainQuirk(h, 'qn', b === 'Opactwo' ? 'Fanatyk' : 'Pijak albo Hazardzista');
+      if (s2.r === 6) { o.rumor = true; txt += ' Następna wyprawa ma +1 rzut na łup.'; }
+    }
+    Store.act([opSet('osada', o)], { quiet: true });
+    saveHero(h, true); dropFromParty(h.id); rollLog(txt + (lines.length ? ' ' + lines.join(' ') : ''), side === 1 ? 'bad' : 'good', 'sys');
   },
   sanat: el => {
     const h = curHero(); const w = el.dataset.w; const lvl = Store.S.osada.b.Sanatorium || 0;
+    if (Store.S.osada.eventR === 3) return toast('Sanatorium jest zamknięte w tym tygodniu (zaraza).');
+    { const busy = heroBusy(h); if (busy) return toast(busy); }
     const cost = Math.max(1, { disease: 5, quirk: 8, lock: 6 }[w] - lvl);
     const opts = w === 'disease' ? h.diseases.map((x, i) => [x, i]) : w === 'quirk' ? h.qn.map((q, i) => [q.t, i]).filter(([, i]) => !h.qn[i].lock) : h.qp.map((q, i) => [q.t, i]).filter(([, i]) => !h.qp[i].lock);
     modal(`<h3>Sanatorium — ${cost} Z</h3><div class="flist">${opts.map(([t, i]) => `<label class="chk"><input type="radio" name="san" value="${i}"> ${esc(t)}</label>`).join('')}</div>`,
@@ -301,7 +353,10 @@ document.addEventListener('change', ev => {
   const el = ev.target; const a = el.dataset && el.dataset.actChange; if (!a || !UI.heroSel) return;
   const h = curHero(); if (!canHero(h)) return;
   if (a === 'state') { const v = el.value; h.state = v ? { kind: v.split(':')[0], name: v.split(':')[1] } : null; }
-  if (a === 'camp') { h.camp = el.checked ? h.camp.concat(el.value) : h.camp.filter(x => x !== el.value); }
+  if (a === 'camp') {
+    if (el.checked) { const cost = Math.max(1, 4 - ((Store.S.osada.b || {}).Obozownik || 0)); if (!payGold(cost)) { el.checked = false; return; } rollLog(heroLabel(h) + ' uczy się w Obozowniku: ' + el.value + ' (' + cost + ' Z).', '', 'sys'); h.camp = h.camp.concat(el.value); }
+    else h.camp = h.camp.filter(x => x !== el.value);
+  }
   if (a === 'qlock') { h[el.dataset.k][+el.dataset.i].lock = el.checked; }
   if (a === 'qadd') { if (!el.value) return; h[el.dataset.k].push({ t: el.value, lock: false }); }
   if (a === 'dadd') { if (!el.value) return; h.diseases.push(el.value); }

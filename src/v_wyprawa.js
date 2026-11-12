@@ -38,6 +38,7 @@ function rollBoard() {
     lines.push(REGIONS[reg].name + ' (' + DL[q.dl] + '): długość k10 = ' + rl + ', cel k10 = ' + rg);
     return q;
   });
+  if (!(o.questsDone || 0) && !board.some(q => q.len === 'krotka')) { board[0].len = 'krotka'; if (board[0].goal === 'boss') board[0].goal = 'eksploracja'; lines.push('pierwsza wyprawa kampanii: ' + REGIONS[board[0].region].name + ' — krótka'); }
   if (top >= 5 && (o.dd || 0) < 4) board.push({ id: uid(), region: 'dd', dd: o.dd || 0, dl: 2, len: 'srednia', goal: 'boss' });
   Store.act([opSet('osada.board', board), { log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'sys', text: '**Tablica zadań, tydzień ' + o.week + '.** ' + lines.join('; ') + '.' } }]);
 }
@@ -226,24 +227,27 @@ VIEWS.wyprawa = {
     const at = w.rooms.find(r => r.id === w.at); const sup = w.sup || {};
     const L = w.loot || {};
     const visited = w.rooms.filter(r => r.visited).length;
-    return `<div class="dgrid">
+    return `<div class="dgrid"><div class="stack">
       <section class="panel"><h2>${esc(isDD ? DD_FLOORS[q.dd].name : R.locs[q.dl].name)} <span class="hint">${isDD ? 'piętro ' + (q.dd + 1) : esc(R.name) + ' · ' + DL[q.dl]} · ${esc(goalText(q))}</span></h2>
+        ${(() => { const g = goalProgress(w); return `<div class="goalbar ${g.ok ? 'ok' : ''}"><span class="lbl">Cel</span> ${esc(goalText(q))}${g.txt ? ` — <b>${esc(g.txt)}</b>` : ''} ${g.ok ? '<span class="chip sm gold">wykonany — możecie wracać</span>' : ''}</div>`; })()}
         ${eventBanner()}
         ${lootCardHtml()}
         ${Store.S.wyprawa.pending ? '' : scoutBar()}
         ${dungeonSvg()}
         <p class="small muted">Kliknij sąsiednią komnatę, żeby przejść korytarzem: Pochodnia −1, zwiad, zdarzenie, co czwarty korytarz głód. Odwiedzone: ${visited} z ${w.rooms.length}. Korytarzy za wami: ${w.crossed}.</p>
       </section>
+      ${campPanel()}</div>
       <div class="stack">
         <section class="panel"><h2>Komnata <span class="hint">${at ? esc(at.c) : ''}</span></h2>${this.roomPanel(at)}</section>
-        <section class="panel"><h2>Plecak</h2>
-          <div class="supgrid">${SUPPLY.map(([k]) => `<div class="sup"><span>${k}</span><span class="row">${W ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="-1">−</button>` : ''}<b class="num">${sup[k] || 0}</b>${W ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="1">+</button>` : ''}</span></div>`).join('')}
+        <section class="panel"><h2>Plecak <span class="hint ${packSlots(sup, L) > 16 ? 'bad' : ''}">${packSlots(sup, L)} z 16 miejsc</span></h2>
+          ${packSlots(sup, L) > 16 ? '<p class="warn small">Plecak jest przepełniony. Wyrzućcie coś (−), zanim pójdziecie dalej — łup się nie mieści.</p>' : ''}
+          <div class="supgrid">${SUPPLY.map(([k]) => `<div class="sup"><span>${k}</span><span class="row">${W ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="-1" title="Wyrzuć jedną sztukę">−</button>` : ''}<b class="num">${sup[k] || 0}</b>${Store.isGM() ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="1" title="Poprawka MG">+</button>` : ''}</span></div>`).join('')}
             <div class="sup"><span>Drewno</span><b class="num">${w.campsLeft || 0}</b></div></div>
           ${lootStrip()}
           <div class="row"><input type="number" id="scoutB" value="${UI.scoutB || 0}" min="-3" max="6" style="width:4.5em" aria-label="Premia do zwiadu"><span class="small muted">premia do najbliższego zwiadu (Tropienie +2, Rozpoznanie +3…)</span></div>
         </section>
         ${this.scoutPanel()}
-        ${W ? `<section class="panel"><h2>Koniec wyprawy</h2><div class="row"><button class="btn primary" data-act="endQuest" data-v="done">Zadanie wykonane</button><button class="btn" data-act="endQuest" data-v="leave">Wyjście bez zadania (+3 Stres)</button></div></section>` : ''}
+        ${W ? `<section class="panel"><h2>Koniec wyprawy</h2><div class="row"><button class="btn primary" data-act="endQuest" data-v="done" ${goalProgress(w).ok || Store.isGM() ? '' : 'disabled title="Cel jeszcze niespełniony"'}>Zadanie wykonane</button><button class="btn" data-act="endQuest" data-v="leave">Wyjście bez zadania (+3 Stres)</button></div><p class="small muted">${goalProgress(w).ok ? 'Cel wykonany.' : 'Cel: ' + esc(goalProgress(w).txt) + '.'} Wyjść bez zadania można z pustej albo oczyszczonej komnaty.</p></section>` : ''}
       </div></div>`;
   },
   scoutPanel() {
@@ -267,16 +271,21 @@ VIEWS.wyprawa = {
     const bits = [];
     if (r.item && !r.itemTaken) bits.push(`<p>Leży tu: <b>${esc(r.item)}</b>. ${W ? `<button class="btn sm gold" data-act="takeItem">Zabierz</button>` : ''}</p>`);
     if (/walka|boss/.test(r.c) && !r.cleared) bits.push(`<p>${r.c === 'boss' ? 'Tu czeka boss.' : 'W komnacie czają się wrogowie.'} ${W ? `<button class="btn sm primary" data-act="roomFight">${r.c === 'boss' ? 'Boss!' : 'Do walki'}</button>` : ''}</p>`);
-    if (r.curio && !r.curioDone) {
-      const cu = DATA.curios.find(c => c.name === r.curio) || { item: 'brak', good: '', bad: '' };
-      bits.push(`<p>Osobliwość: <b>${esc(r.curio)}</b>${r.goal ? ' (cel zadania)' : ''}. Właściwy przedmiot: ${esc(cu.item)}. <span class="dim small">Dobrze: ${esc(cu.good)}. Źle: ${esc(cu.bad)}.</span></p>
-        ${W ? `<div class="row"><button class="btn sm" data-act="curio" data-m="roll">Dotknij (k10)</button>${cu.item !== 'brak' ? `<button class="btn sm gold" data-act="curio" data-m="item">Użyj: ${esc(cu.item)}</button>` : ''}<button class="btn sm ghost" data-act="curio" data-m="skip">Omiń</button></div>` : ''}`);
-    }
+    const fightHere = /walka|boss/.test(r.c) && !r.cleared;
+    [['curio', !r.curioDone], ['ccurio', !r.ccurioDone]].forEach(([f, open]) => {
+      if (!r[f] || !open) return;
+      const cu = DATA.curios.find(c => c.name === r[f]) || { item: 'brak', good: '', bad: '' };
+      const pt = party(); const ciek = pt.filter(h => h.qn.some(q => qname(q.t) === 'Ciekawski')); const obl = pt.filter(h => h.state && h.state.kind === 'affliction' && h.state.name === 'Obłęd');
+      bits.push(`<div class="curiobox"><p>Osobliwość${f === 'ccurio' ? ' z korytarza' : ''}: <b>${esc(r[f])}</b>${f === 'curio' && r.goal ? ' (cel zadania)' : ''}. Właściwy przedmiot: <b>${esc(cu.item)}</b> — pewny dobry wynik. Bez niego k10: 1–4 dobrze, 5–7 nic, 8–10 źle. <span class="dim small">Dobrze: ${esc(cu.good)}. Źle: ${esc(cu.bad)}.</span></p>
+        ${ciek.length || obl.length ? `<p class="small warn">${obl.map(h => esc(heroLabel(h)) + ' (Obłęd) dotknie jej bez pytania, jeśli ją ominiecie.').concat(ciek.map(h => esc(heroLabel(h)) + ' (Ciekawski) przy k10 1–5 dotknie jej sam, jeśli ją ominiecie.')).join(' ')}</p>` : ''}
+        ${fightHere && f === 'curio' ? '<p class="muted small">Najpierw walka — osobliwość poczeka.</p>' : W ? `<div class="row"><label class="lbl" for="cwho-${f}">Kto dotyka</label><select id="cwho-${f}">${pt.map(h => `<option value="${h.id}">${esc(heroLabel(h))}</option>`).join('')}</select>
+          <button class="btn sm" data-act="curio" data-m="roll" data-f="${f}">Dotknij (k10)</button>${cu.item !== 'brak' ? `<button class="btn sm gold" data-act="curio" data-m="item" data-f="${f}">Użyj: ${esc(cu.item)} (${(Store.S.wyprawa.sup || {})[CURIO_ITEM[cu.item]] || 0})</button>` : ''}<button class="btn sm ghost" data-act="curio" data-m="skip" data-f="${f}">Omiń</button></div>` : ''}</div>`);
+    });
     if (r.c === 'skrzynia' && !r.opened) bits.push(`<p>Skrzynia. ${W ? `<button class="btn sm gold" data-act="chest">Otwórz</button>` : ''}</p>`);
     if (/pusta|wejście/.test(r.c)) bits.push('<p class="muted">Pusto. Cisza i kurz.</p>');
-    if (W) bits.push(`<div class="row">${!r.cleared && /walka|boss/.test(r.c) ? '' : ''}<label class="chk"><input type="checkbox" data-act-change="roomClear" ${r.cleared ? 'checked' : ''}> oczyszczona</label>
+    if (W) bits.push(`<div class="row">${Store.isGM() ? `<label class="chk" title="Poprawka MG — po wygranej walce komnata oczyszcza się sama"><input type="checkbox" data-act-change="roomClear" ${r.cleared ? 'checked' : ''}> oczyszczona</label>` : r.cleared ? '<span class="chip sm">oczyszczona</span>' : ''}
       ${(w.campsLeft || 0) > 0 && (r.cleared || !/walka|boss/.test(r.c)) ? `<button class="btn sm" data-act="camp">Rozbij obóz</button>` : ''}
-      <button class="btn sm ghost" data-act="roomLoot">Rzut na łup</button></div>`);
+      ${Store.isGM() ? `<button class="btn sm ghost" data-act="roomLoot" title="Dodatkowy rzut na łup — decyzja MG">Rzut na łup (MG)</button>` : ''}</div>`);
     return bits.join('');
   }
 };
@@ -359,27 +368,35 @@ Object.assign(ACT, {
     const sup = Object.assign({}, PACK[q.len]);
     const pt = party();
     const refuse = pt.filter(h => (q.dl === 0 && h.level >= 3) || (q.dl === 1 && h.level >= 5));
-    const sick = pt.filter(h => h.status === 'leczenie');
+    const sick = pt.filter(h => heroAway(h));
     modal(`<h3>Zaopatrzenie</h3>
       <p class="dim">${esc(goalText(q))}. Zalecany zestaw na ${({ krotka: 'krótką', srednia: 'średnią', dluga: 'długą' })[q.len]} wyprawę jest już wpisany — dopakujcie przedmioty pod region (${esc(q.dd != null ? 'wszystko' : DATA.regions[REGIONS[q.region].key].pack)}).</p>
       ${refuse.length ? `<p class="warn">Odmowa: ${refuse.map(h => esc(heroLabel(h)) + ' (Poz. ' + h.level + ')').join(', ')} nie zejdzie do lochu ${DL[q.dl]}. Zmień drużynę na Stole.</p>` : ''}
       ${!pt.length ? `<p class="warn">Drużyna jest pusta — ustaw ją na Stole.</p>` : ''}
-      ${sick.length ? `<p class="warn">W leczeniu: ${sick.map(h => esc(heroLabel(h))).join(', ')} — nie może iść na tę wyprawę. Zmień drużynę na Stole.</p>` : ''}
+      ${sick.length ? `<p class="warn">Nie może iść: ${sick.map(h => esc(heroLabel(h)) + ' (' + esc(heroAway(h)) + ')').join(', ')}. Zmień drużynę na Stole.</p>` : ''}
       <div class="supgrid">${SUPPLY.map(([k, c]) => `<label class="sup"><span>${k} <span class="muted small">${c === 0.5 ? '1 Z / 2 szt.' : c + ' Z'}</span></span><input type="number" min="0" max="40" data-sup="${k}" value="${sup[k] || 0}" style="width:4.5em"></label>`).join('')}</div>
-      <p>Koszt: <b id="pcost">${packCost(sup)}</b> Z · w skarbcu ${Store.S.osada.gold} Z</p>`,
+      <p>Koszt: <b id="pcost">${packCost(sup)}</b> Z · w skarbcu ${Store.S.osada.gold} Z · plecak: <b id="pslots">${packSlots(sup, {})}</b> z 16 miejsc</p>`,
       [{ t: 'Anuluj' }, { t: 'Kup i wyrusz', cls: 'primary', fn: () => {
         const s2 = {}; $$('[data-sup]').forEach(i => { s2[i.dataset.sup] = Math.max(0, +i.value || 0); });
         const cost = packCost(s2);
-        if (sick.length) { toast('W drużynie jest bohater w leczeniu — zmień skład na Stole.'); return false; }
+        if (sick.length) { toast('W drużynie jest bohater, który nie może iść — zmień skład na Stole.'); return false; }
+        if (packSlots(s2, {}) > 16) { toast('Plecak ma 16 miejsc (4 sztuki zapasów na miejsce) — ten zestaw zajmuje ' + packSlots(s2, {}) + '.'); return false; }
         if (refuse.length) { toast('Ktoś w drużynie odmawia zejścia do lochu ' + DL[q.dl] + ' — zmień skład na Stole.'); return false; }
         if (Store.S.osada.gold < cost) { toast('Za mało Złota: zestaw kosztuje ' + cost + ', w skarbcu jest ' + Store.S.osada.gold + '.'); return false; }
         startQuest(q, s2, cost);
       } }]);
-    $$('[data-sup]').forEach(i => i.addEventListener('input', () => { const s2 = {}; $$('[data-sup]').forEach(j => { s2[j.dataset.sup] = +j.value || 0; }); $('#pcost').textContent = packCost(s2); }));
+    $$('[data-sup]').forEach(i => i.addEventListener('input', () => { const s2 = {}; $$('[data-sup]').forEach(j => { s2[j.dataset.sup] = +j.value || 0; }); $('#pcost').textContent = packCost(s2); $('#pslots').textContent = packSlots(s2, {}); }));
   },
   evPick: el => resolveRoad(el.dataset.o),
   evHunger: () => resolveHunger(),
-  goRoom: el => { if (Store.S.wyprawa.pending) return toast('Najpierw rozstrzygnijcie wydarzenie: ' + pendingTitle(Store.S.wyprawa.pending) + '.'); crossTo(el.dataset.id); },
+  goRoom: el => {
+    const w = Store.S.wyprawa; if (w.pending) return toast('Najpierw rozstrzygnijcie wydarzenie: ' + pendingTitle(w.pending) + '.');
+    if (w.camp) return toast('Najpierw zakończcie obóz (noc).');
+    if (Store.S.stol.fight || Store.S.stol.enemies.some(e => !e.corpse)) return toast('Najpierw rozstrzygnijcie walkę na Stole.');
+    const at = w.rooms.find(r => r.id === w.at); if (at && /walka|boss/.test(at.c) && !at.cleared && at.id !== 'r0' && w.prev !== el.dataset.id) return toast('W tej komnacie czekają wrogowie — walczcie albo wycofajcie się tam, skąd przyszliście.');
+    if (packSlots(w.sup, w.loot) > 16) return toast('Plecak jest przepełniony (' + packSlots(w.sup, w.loot) + ' z 16) — wyrzućcie coś.');
+    crossTo(el.dataset.id);
+  },
   scoutAny: () => {
     const list = scoutable(); if (!list.length) return toast('Wszystkie korytarze stąd są już zwiadowane albo przebyte.');
     if (list.length === 1) return ACT.scout({ dataset: { i: list[0].i } });
@@ -396,47 +413,34 @@ Object.assign(ACT, {
     Store.act([opSet('wyprawa', w)].concat(hf ? [opSet('stol.lastLoot', { id: uid(), t: Date.now(), why: hf.why, items: hf.items, tot: lootTotals(hf.x, DL_INFO[w.quest.dl].mult), dest: 'plecak wyprawy' })] : []).concat([ { log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', cls: e.scout.ok ? 'good' : '', text: lines.join(' ') } }]));
   },
   roomSel: () => { },
-  supAdj: el => { const k = el.dataset.k; const v = Math.max(0, ((Store.S.wyprawa.sup || {})[k] || 0) + +el.dataset.v); Store.act([opSet('wyprawa.sup.' + k, v)]); },
+  supAdj: el => { if (+el.dataset.v > 0 && !Store.isGM()) return toast('Zapasy kupuje się przed wyprawą albo zdobywa w lochu.'); const k = el.dataset.k; const v = Math.max(0, ((Store.S.wyprawa.sup || {})[k] || 0) + +el.dataset.v); Store.act([opSet('wyprawa.sup.' + k, v)]); },
   takeItem: () => setW(w => { const r = w.rooms.find(x => x.id === w.at); r.itemTaken = true; w.found = (w.found || 0) + 1; }, 'Drużyna zabiera: **' + Store.S.wyprawa.rooms.find(x => x.id === Store.S.wyprawa.at).item + '** (' + ((Store.S.wyprawa.found || 0) + 1) + ' z 3).', 'good'),
   roomFight: () => {
     const w = Store.S.wyprawa; const q = w.quest; const r = w.rooms.find(x => x.id === w.at);
     const region = q.dd != null ? 'DD' : REGIONS[q.region].key;
     const st = clone(Store.S.stol); st.region = region; st.dl = q.dl; st.floor = q.dd || 0;
     st.enemies = r.c === 'boss' ? bossSetup(region, q.dl, q.dd || 0) : rollEncounter(region, q.dl).list.filter(Boolean);
+    st.roomId = r.id; st.looted = false; st.lootBonus = 0;
     Store.act([opSet('stol', st), { log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', cls: 'bad', text: (r.c === 'boss' ? '**Boss!** ' : 'Wrogowie w komnacie: ') + st.enemies.map(e => e.name).join(', ') + '. Przejdźcie na Stół.' } }]);
     location.hash = '#stol';
   },
-  curio: el => {
-    const w = Store.S.wyprawa; const r = w.rooms.find(x => x.id === w.at); const cu = DATA.curios.find(c => c.name === r.curio) || { item: 'brak', good: '?', bad: '?' };
-    const m = el.dataset.m; let txt, cls = '';
-    if (m === 'skip') txt = 'Drużyna omija: ' + r.curio + '.';
-    else if (m === 'item') {
-      const key = { 'Klucz': 'Klucze', 'Woda święcona': 'Woda święcona', 'Łopata': 'Łopaty', 'Antidotum': 'Antidota', 'Laudanum': 'Laudanum' }[cu.item];
-      if (key && !((w.sup || {})[key] > 0)) return toast('W plecaku nie ma: ' + cu.item.toLowerCase() + '.');
-      if (key) Store.act([opSet('wyprawa.sup.' + key, w.sup[key] - 1)], { quiet: true });
-      txt = r.curio + ' + ' + cu.item + ' → **dobrze:** ' + cu.good + '.'; cls = 'good';
-    } else {
-      const t = rollTable('osobliwosc');
-      txt = r.curio + ': k10 = **' + t.r + '** → **' + t.text + '**' + (t.text === 'dobrze' ? ': ' + cu.good : t.text === 'źle' ? ': ' + cu.bad : '') + '.'; cls = t.text === 'dobrze' ? 'good' : t.text === 'źle' ? 'bad' : '';
-    }
-    const goodLoot = /dobrze/.test(txt) && /rzuty na łup/.test(cu.good);
-    setW(w2 => { const rr = w2.rooms.find(x => x.id === w2.at); rr.curioDone = true; if (rr.goal && m !== 'skip') w2.activated = (w2.activated || 0) + 1; }, txt, cls);
-    if (goodLoot) rollLoot(2 + (party().some(h => CLS[h.cls].name === 'Antykwariuszka') ? 1 : 0), 'osobliwość');
-  },
+  curio: el => resolveCurio(el.dataset.f || 'curio', el.dataset.m),
   chest: () => {
     setW(w => { w.rooms.find(x => x.id === w.at).opened = true; });
     const klep = party().find(h => h.qn.some(q => qname(q.t) === 'Kleptoman'));
     if (klep) { const r = d(10); if (r <= 3) return rollLog('Skrzynia: k10 = ' + r + ' → łup znika w kieszeni **' + heroLabel(klep) + '** (Kleptoman).', 'bad'); }
     rollLoot(2 + (party().some(h => CLS[h.cls].name === 'Antykwariuszka') ? 1 : 0), 'skrzynia');
   },
-  roomLoot: () => { const ti = torchInfo(Store.S.stol.torch); const extra = { 'Jasno': -1, 'Półmrok': 0, 'Cienie': 1, 'Mrok': 1, 'Ciemność': 2 }[ti.name]; rollLoot(Math.max(0, 1 + extra), 'komnata, Pochodnia ' + ti.name); },
+  roomLoot: () => { if (!Store.isGM()) return; const ti = torchInfo(Store.S.stol.torch); const extra = { 'Jasno': -1, 'Półmrok': 0, 'Cienie': 1, 'Mrok': 1, 'Ciemność': 2 }[ti.name]; rollLoot(Math.max(0, 1 + extra), 'komnata, Pochodnia ' + ti.name); },
   camp: () => {
+    if (Store.S.wyprawa.camp) return toast('Obóz już trwa.');
+    if (Store.S.stol.enemies.some(e => !e.corpse)) return toast('Najpierw rozstrzygnijcie walkę.');
     modal(`<h3>Obóz</h3><p>Posiłek dla ${party().length} bohaterów:</p>
       <div class="flist"><label class="chk"><input type="radio" name="meal" value="1" checked> Skromny (po 1 prowiancie): +2 Zdrowia każdemu</label>
       <label class="chk"><input type="radio" name="meal" value="2"> Uczta (po 2): +4 Zdrowia i −1 Stres</label>
       <label class="chk"><input type="radio" name="meal" value="0"> Bez jedzenia: +2 Stres każdemu</label></div>
       <label class="chk"><input type="checkbox" id="fireout"> Zgaście ognisko na noc (zasadzka przy 1–4, ale to wrogowie są zaskoczeni i +2 rzuty na łup)</label>
-      <p class="dim small">Punkty Odpoczynku (12) rozdajcie na umiejętności obozowe z kart — każdy bohater użyje każdej najwyżej raz.</p>`,
+      <p class="dim small">Po posiłku rozdacie 12 Punktów Odpoczynku na umiejętności obozowe — każdy bohater użyje każdej najwyżej raz.</p>`,
       [{ t: 'Anuluj' }, { t: 'Rozbij obóz', cls: 'primary', fn: () => {
         const meal = +$('input[name=meal]:checked').value; const out = $('#fireout').checked;
         const pt = party(); const w = clone(Store.S.wyprawa); const lines = ['**Obóz.**']; const touched = {};
@@ -451,28 +455,38 @@ Object.assign(ACT, {
         });
         lines.push(m === 1 ? 'Skromny posiłek: +2 Zdrowia.' : m === 2 ? 'Uczta: +4 Zdrowia, −1 Stres.' : 'Bez jedzenia: +2 Stres.');
         pt.filter(x => x.state && x.state.kind === 'affliction' && x.state.name === 'Agresja').forEach(ag => { lines.push(heroLabel(ag) + ' (Agresja) wszczyna kłótnię przy ognisku: pozostali +1 Stres.'); pt.filter(x => x.id !== ag.id).forEach(x => { const t = touched[x.id] || (touched[x.id] = clone(x)); heroStress(t, 1, lines); }); });
-        const czuj = pt.some(x => x.camp.includes('Czujność'));
-        const r = d(10); const lim = out ? 4 : (czuj ? 1 : 2);
-        lines.push('Noc: k10 = **' + r + '** → ' + (r <= lim ? '**nocna zasadzka!**' + (out ? ' Wrogowie są zaskoczeni, walka daje +2 rzuty na łup.' : '') : 'spokojna noc.'));
+        w.camp = { pts: 12, used: {}, fireOut: out };
+        lines.push('Drużyna ma **12 Punktów Odpoczynku** na umiejętności obozowe (panel Obóz), potem noc' + (out ? ' przy zgaszonym ognisku' : '') + '.');
         Store.act([opSet('wyprawa', w)], { quiet: true });
-        commit({ lines, stol: null, touched }, r <= lim ? 'bad' : 'good');
+        commit({ lines, stol: null, touched }, 'good');
       } }]);
   },
   endQuest: el => {
     const done = el.dataset.v === 'done'; const w = Store.S.wyprawa; const q = w.quest; const rw = questReward(q);
+    const at = w.rooms.find(r => r.id === w.at);
+    if (!done && at && /walka|boss/.test(at.c) && !at.cleared) return toast('Z lochu wychodzi się z pustej albo oczyszczonej komnaty — tu czekają wrogowie.');
+    if (Store.S.stol.fight) return toast('Najpierw zakończcie walkę.');
+    if (done) {
+      const g = goalProgress(w);
+      if (!g.ok && !Store.isGM()) return toast('Cel jeszcze niespełniony: ' + g.txt + '.');
+      if (!g.ok) return confirmBox('Cel niespełniony', 'Postęp: ' + g.txt + '. Zakończyć jako wykonane mimo to (decyzja MG)?', 'Tak, wykonane', () => finishQuest(true));
+    }
     confirmBox(done ? 'Zadanie wykonane?' : 'Wyjść bez wykonania zadania?', done ? 'Drużyna wraca z nagrodą: ' + rw.gold + ' Złota, ' + rw.mem + ' pamiątki i ' + rw.xp + ' znaczniki doświadczenia. Niewykorzystane zapasy przepadają.' : 'Drużyna zatrzymuje łupy, ale traci nagrodę, a każdy bohater dostaje +3 Stresu.', done ? 'Wracamy' : 'Wychodzimy', () => finishQuest(done));
   }
 });
 document.addEventListener('change', ev => {
   const el = ev.target; const a = el.dataset && el.dataset.actChange;
   if (a === 'regionOpen') { const o = Store.S.osada; const list = (o.regions || []).filter(x => x !== el.value).concat(el.checked ? [el.value] : []); Store.act([opSet('osada.regions', list)]); }
-  if (a === 'roomClear') setW(w => { w.rooms.find(x => x.id === w.at).cleared = el.checked; });
+  if (a === 'roomClear' && Store.isGM()) setW(w => { w.rooms.find(x => x.id === w.at).cleared = el.checked; });
 });
 function startQuest(q, sup, cost) {
   const g = genDungeon(q);
-  const w = { quest: q, rooms: g.rooms, edges: g.edges, at: 'r0', crossed: 0, sup, loot: { zloto: 0, klejnoty: 0, pamiatki: 0, inne: [] }, campsLeft: QUEST_LEN[q.len].camps, found: 0, activated: 0 };
+  const o0 = Store.S.osada;
+  const w = { quest: q, rooms: g.rooms, edges: g.edges, at: 'r0', crossed: 0, sup, loot: { zloto: 0, klejnoty: 0, pamiatki: 0, inne: [] }, campsLeft: QUEST_LEN[q.len].camps, found: 0, activated: 0, cultists: !!o0.cultists, rumor: !!o0.rumor };
   const st = clone(Store.S.stol); st.torch = 10; st.region = q.dd != null ? 'DD' : REGIONS[q.region].key; st.dl = q.dl; st.floor = q.dd || 0;
-  const ops = [opSet('wyprawa', w), opSet('stol', st), opSet('osada.gold', Store.S.osada.gold - cost), opSet('osada.board', (Store.S.osada.board || []).filter(x => x.id !== q.id))];
+  const ops = [opSet('wyprawa', w), opSet('stol', st), opSet('osada.gold', Store.S.osada.gold - cost), opSet('osada.board', (Store.S.osada.board || []).filter(x => x.id !== q.id)), opSet('osada.cultists', false), opSet('osada.rumor', false)];
+  if (w.cultists) ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'sys', text: 'Kultyści na trakcie: w pierwszym korytarzu czeka dodatkowa walka.' } });
+  if (w.rumor) ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'sys', text: 'Plotka z Osady: pierwszy rzut na łup tej wyprawy dostaje +1 rzut.' } });
   party().forEach(h => { const h2 = clone(h); h2.status = 'wyprawa'; ops.push(opSet('heroes.' + h.id, h2)); });
   ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'sys', text: '**Wyprawa:** ' + (q.dd != null ? DD_FLOORS[q.dd].name : REGIONS[q.region].locs[q.dl].name) + ' (' + goalText(q) + '). Zaopatrzenie za ' + cost + ' Złota. Pochodnia 10.' } });
   UI.wsub = 'loch'; Store.act(ops);
@@ -490,7 +504,7 @@ function scoutBar() {
 }
 /* zwiad korytarza: rzut na Szansę Zwiadu z Pochodni, zdarzenie losowane od razu, ukryta komnata po sukcesie */
 function scoutChance(st, pt) {
-  const ti = torchInfo(st.torch); const bonus = (+UI.scoutB || 0) + (pt.some(h => h.trinkets.some(t => t.name === 'Kompas ślepca')) ? 2 : 0);
+  const ti = torchInfo(st.torch); const bonus = (+UI.scoutB || 0) + ((Store.S.wyprawa || {}).scoutBonus || 0) + (pt.some(h => h.trinkets.some(t => t.name === 'Kompas ślepca')) ? 2 : 0);
   return { chance: ti.scout ? ti.scout + bonus : 0, base: ti.scout, bonus, name: ti.name };
 }
 function scoutCorridor(w, st, e, dest, pt, lines) {
@@ -518,7 +532,7 @@ function scoutCorridor(w, st, e, dest, pt, lines) {
       w.dig = false;
     }
   }
-  UI.scoutB = 0;
+  UI.scoutB = 0; w.scoutBonus = 0;
   return ok;
 }
 function crossTo(id) {
@@ -542,10 +556,7 @@ function crossTo(id) {
       const thief = pt.some(h => /Rozbójnik|Rabuś/.test(CLS[h.cls].name));
       let hit = true;
       if (ok) { const r2 = d(10); const ch = 5 + (thief ? 2 : 0); hit = !(r2 === 1 || (r2 !== 10 && r2 <= ch)); lines.push('Rozbrojenie: k10 = ' + r2 + ' przy Szansie ' + ch + ' → ' + (hit ? 'nieudane' : 'udane') + '.'); }
-      if (hit) {
-        const pv = pickD(pt); const v = pv.v; const t = T(v.id); const ef = rollTable('pulapka'); lines.push('Pułapka trafia (ofiara ' + pv.t + ') **' + heroLabel(v) + '**, skutek k4 = **' + ef.r + '**: ' + ef.text + '.');
-        if (ef.r === 1) heroDamage(t, d(4), lines, 'pułapka'); if (ef.r === 2) { t.fx = Object.assign({}, t.fx); addFx(t.fx, 'bleed', 2); } if (ef.r === 3) { t.fx = Object.assign({}, t.fx); addFx(t.fx, 'blight', 2); } if (ef.r === 4) heroStress(t, 2, lines);
-      }
+      if (hit) { const pv = pickD(pt); trapHit(T(pv.v.id), lines, 'Pułapka (ofiara ' + pv.t + ') trafia'); }
     }
     if (ev.text === 'przeszkoda') {
       if ((w.sup['Łopaty'] || 0) > 0) { w.sup['Łopaty']--; lines.push('Łopata usuwa przeszkodę.'); }
@@ -556,7 +567,7 @@ function crossTo(id) {
       const r3 = d(10);
       if (r3 <= 3) { const e6 = pickD(ROAD_EVENTS); w.pending = { id: uid(), type: 'droga', key: e6.v.key }; lines.push('Cisza nie trwa długo: k10 = **' + r3 + '** → **wydarzenie w drodze** (' + e6.t + '): **' + e6.v.title + '**.'); }
     }
-    if (ev.text === 'osobliwość') { const R = w.quest.dd != null ? null : REGIONS[w.quest.region]; const pool = DATA.curios.filter(c => !R || c.region === R.key || c.region === 'wszędzie'); lines.push('W korytarzu: ' + pick(pool).name + ' (rozstrzygnijcie na komnacie albo omińcie).'); }
+    if (ev.text === 'osobliwość') { const R = w.quest.dd != null ? null : REGIONS[w.quest.region]; const pool = DATA.curios.filter(c => !R || c.region === R.key || c.region === 'wszędzie'); const pc = pickD(pool); dest.ccurio = pc.v.name; dest.ccurioDone = false; lines.push('W korytarzu stoi osobliwość (' + pc.t + '): **' + pc.v.name + '** — możecie jej dotknąć albo ją ominąć (panel komnaty).'); }
   }
   if (w.crossed % 4 === 0) {
     const eaters = [];
@@ -570,7 +581,9 @@ function crossTo(id) {
     });
     if (eaters.length) { w.pending = { id: uid(), type: 'glod', eaters }; lines.push('**Głód!** Drużyna musi zdecydować, kto je (potrzeba ' + eaters.reduce((a, x) => a + x.need, 0) + ' prowiantu, w plecaku ' + (w.sup.Prowiant || 0) + ').'); }
   }
-  w.at = id; dest.visited = true; dest.seen = true;
+  if (w.cultists && !st.enemies.some(x => !x.corpse)) { w.cultists = false; const region = w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key; st.region = region; st.dl = w.quest.dl; st.enemies = rollEncounter(region, w.quest.dl).list.filter(Boolean); st.roomId = null; st.looted = false; lines.push('**Kultyści na trakcie** (wydarzenie z Osady): w pierwszym korytarzu czeka walka — ' + st.enemies.map(x => x.name).join(', ') + '. Przejdźcie na Stół.'); }
+  if (st.enemies.some(x => !x.corpse) && !s.stol.enemies.some(x => !x.corpse)) { st.roomId = null; st.looted = false; }
+  w.prev = w.at; w.at = id; dest.visited = true; dest.seen = true;
   if (UI._hiddenFind) { const hf = UI._hiddenFind; UI._hiddenFind = null; st.lastLoot = { id: uid(), t: Date.now(), why: hf.why, items: hf.items, tot: lootTotals(hf.x, DL_INFO[w.quest.dl].mult), dest: 'plecak wyprawy' }; }
   lines.push('Drużyna wchodzi do komnaty: **' + dest.c + '**.');
   Store.act([opSet('wyprawa', w)], { quiet: true });
@@ -599,19 +612,214 @@ function finishQuest(done) {
       if (up) lines.push('**' + heroLabel(t) + '** awansuje na Poziom ' + t.level + '.');
     });
     if (q.goal === 'boss' && q.dd == null) o.bosses = Object.assign({}, o.bosses, { [q.region + q.dl]: true });
-    if (q.dd != null) o.dd = Math.max(o.dd || 0, q.dd + 1);
+    if (q.dd != null) { o.dd = Math.max(o.dd || 0, q.dd + 1); pt.forEach(h => { const t = touched[h.id]; if (t && !t.dead) t.restUntil = o.week + 2; }); lines.push('Ocaleni z Najmroczniejszego Lochu przez 2 tygodnie nie zejdą do żadnego lochu.'); }
+    o.questsDone = (o.questsDone || 0) + 1;
+    const nextReg = ['ruiny', 'nory', 'knieja', 'zatoka'].find(r => !(o.regions || []).includes(r));
+    if (nextReg) { o.regions = (o.regions || ['ruiny']).concat([nextReg]); lines.push('**Otwiera się nowy region: ' + REGIONS[nextReg].name + '.**'); }
   } else pt.forEach(h => { const t = touched[h.id] = clone(h); heroStress(t, 3, lines); lines.push(heroLabel(t) + ' +3 Stres (porzucona wyprawa).'); });
   pt.forEach(h => { const t = touched[h.id] || (touched[h.id] = clone(h)); t.status = 'osada'; t.fx = {}; t.dd = t.dd && t.hp === 0; });
   lines.push('Niewykorzystane zapasy przepadają.');
   const qlines = pt.filter(h => !(touched[h.id] || h).dead).map(h => { const t = touched[h.id]; const q = rollQuirkFor(t); return q.txt; });
   if (qlines.length) lines.push('**Dziwactwa po wyprawie:** ' + qlines.join(' '));
+  /* tydzień w Osadzie: rany się goją (Stres, Przypadłości, choroby i dziwactwa zostają) */
+  pt.forEach(h => { const t = touched[h.id]; if (!t || t.dead) return; t.hp = heroStats(t).maxhp; t.dd = false; t.exhausted = false; t.exh = 0; t.qbuff = []; });
+  if (pt.some(h => !(touched[h.id] || h).dead)) lines.push('Przez tydzień w Osadzie rany się goją: ocaleni wracają do pełnego Zdrowia. Stres, Przypadłości, choroby i dziwactwa zostają.');
   o.lastReturn = Date.now();
   const card = { id: uid(), t: Date.now(), why: done ? 'Powrót z wykonanym zadaniem' : 'Powrót bez wykonania zadania', items: qlines, tot: [], dest: 'skarbiec Osady i karty bohaterów' };
   const rwTot = []; if ((L.zloto || 0) + gemsGold) rwTot.push(((L.zloto || 0) + gemsGold) + ' Złota z łupów'); if (lootMem.length) rwTot.push('pamiątki: ' + lootMem.join(', ')); if (done) { rwTot.push(rw.gold + ' Złota nagrody', rw.mem + ' pamiątki nagrody', '+' + rw.xp + ' doświadczenia'); }
   card.tot = rwTot;
   const ops = [opSet('osada', o), opSet('wyprawa', DEFAULT_S().wyprawa), opSet('stol.lastLoot', card)];
-  if (done && (o.regions || []).length < 4) lines.push('Otwiera się nowy region — MG zaznacza go na mapie posiadłości.');
   UI.wsub = 'mapa';
   Store.act(ops, { quiet: true });
   commit({ lines, stol: null, touched }, done ? 'good' : 'bad');
 }
+
+/* ---------- osobliwości: skutki działają naprawdę ---------- */
+const CURIO_ITEM = { 'Klucz': 'Klucze', 'Woda święcona': 'Woda święcona', 'Łopata': 'Łopaty', 'Antidotum': 'Antidota', 'Laudanum': 'Laudanum' };
+/* pułapka trafia bohatera: k4 na skutek */
+function trapHit(t, lines, pre) {
+  const ef = rollTable('pulapka'); lines.push((pre || 'Pułapka trafia') + ' **' + heroLabel(t) + '**, skutek k4 = **' + ef.r + '**: ' + ef.text + '.');
+  t.fx = Object.assign({}, t.fx);
+  if (ef.r === 1) heroDamage(t, d(4), lines, 'pułapka'); if (ef.r === 2) addFx(t.fx, 'bleed', 2); if (ef.r === 3) addFx(t.fx, 'blight', 2); if (ef.r === 4) heroStress(t, 2, lines);
+  if (ef.r === 2 || ef.r === 3) lines.push('(Krwawienie i zaraza zadziałają w najbliższej walce, chyba że użyjecie ' + (ef.r === 2 ? 'bandaża' : 'antidotum') + '.)');
+}
+/* choroba: rzut Odporności, porażka = losowa choroba k6 */
+function diseaseCheck(t, lines) {
+  const st = heroStats(t); const r = d(10); const ok = r === 1 || (r !== 10 && r <= st.odp);
+  lines.push('Odporność ' + heroLabel(t) + ': k10 = **' + r + '** przy ' + st.odp + ' → ' + (ok ? 'bez choroby.' : '**choroba**!'));
+  if (!ok) { const pz = pickD(DATA.diseases); if (!(t.diseases || []).includes(pz.v)) t.diseases = (t.diseases || []).concat([pz.v]); lines.push('Choroba (' + pz.t + '): **' + pz.v + '**.'); }
+}
+function curioEffect(name, good, hid, w, lines, touched) {
+  const s = Store.S; const T = id => touched[id] || (touched[id] = clone(s.heroes[id]));
+  const pt = party(); const who = T(hid); const res = {};
+  const mult = DL_INFO[w.quest.dl].mult;
+  if (name === 'Zamknięty sarkofag') { if (good) res.loot = 2; else res.fight = 'zasadzka szkieletów'; }
+  else if (name === 'Plugawy ołtarz') {
+    if (good) { pt.forEach(h => heroStress(T(h.id), -3, lines)); lines.push('Drużyna −3 Stres.'); }
+    else { heroStress(who, 2, lines); who.fx = Object.assign({}, who.fx); addFx(who.fx, 'horror', 1); lines.push(heroLabel(who) + ': +2 Stres i groza 1 (zadziała w najbliższej walce, laudanum ją zdejmie).'); }
+  }
+  else if (name === 'Stos gnijącego mięsa') { if (good) res.loot = 2; else diseaseCheck(who, lines); }
+  else if (name === 'Wysyp grzybów') {
+    if (good) { heroHeal(who, 4, lines); who.qbuff = (who.qbuff || []).concat(['Odporność +2']); lines.push(heroLabel(who) + ': leczenie 4 i Odporność +2 do końca wyprawy.'); }
+    else { who.fx = Object.assign({}, who.fx); addFx(who.fx, 'blight', 2); lines.push(heroLabel(who) + ': zaraza 2 (zadziała w najbliższej walce, antidotum ją zdejmie).'); }
+  }
+  else if (name === 'Opuszczony wóz') {
+    if (good) { const a = pickD(SUP_KEYS), b = pickD(SUP_KEYS); [a, b].forEach(x => { w.sup[x.v] = (w.sup[x.v] || 0) + (x.v === 'Prowiant' ? 2 : 1); }); const g = d(6); w.loot = addLootTo(w.loot || {}, { gold: Math.ceil(g * mult) }); lines.push('Zapasy: ' + a.v.toLowerCase() + ' (' + a.t + ') i ' + b.v.toLowerCase() + ' (' + b.t + '); Złoto k6 = **' + g + '**' + (mult > 1 ? ' ×' + String(mult).replace('.', ',') : '') + '.'); }
+    else trapHit(who, lines, 'Wóz był pułapką. Trafia');
+  }
+  else if (name === 'Muszla szepcząca') lines.push(gainQuirk(who, good ? 'qp' : 'qn'));
+  else if (name === 'Zakazana księga') {
+    if (good) { who.qbuff = (who.qbuff || []).concat(['Kryt +1']); lines.push(heroLabel(who) + ': Kryt +1 do końca wyprawy.'); }
+    else { heroStress(who, 3, lines); lines.push(heroLabel(who) + ': +3 Stres.'); }
+  }
+  return res;
+}
+function resolveCurio(f, m) {
+  const s = Store.S; const w = clone(s.wyprawa); const r = w.rooms.find(x => x.id === w.at); const name = r[f]; if (!name) return;
+  const cu = DATA.curios.find(c => c.name === name) || { item: 'brak', good: '?', bad: '?' };
+  const sel = $('#cwho-' + f); let hid = sel ? sel.value : (party()[0] || {}).id; if (!hid) return toast('Drużyna jest pusta.');
+  const lines = []; const touched = {}; let outcome = null;
+  if (m === 'skip') {
+    const pt = party(); const obl = pt.find(h => h.state && h.state.kind === 'affliction' && h.state.name === 'Obłęd');
+    if (obl) { hid = obl.id; lines.push('Drużyna chce ominąć: ' + name + ', ale **' + heroLabel(obl) + '** (Obłęd) dotyka jej bez pytania.'); m = 'roll'; }
+    else {
+      for (const h of pt.filter(x => x.qn.some(q => qname(q.t) === 'Ciekawski'))) { const rr = d(10); lines.push(heroLabel(h) + ' (Ciekawski): k10 = **' + rr + '**' + (rr <= 5 ? ' → **musi dotknąć**.' : ' → wytrzymuje.')); if (rr <= 5) { hid = h.id; m = 'roll'; break; } }
+      if (m === 'skip') lines.push('Drużyna omija: ' + name + '.');
+    }
+  }
+  if (m === 'item') {
+    const key = CURIO_ITEM[cu.item];
+    if (key && !((w.sup || {})[key] > 0)) return toast('W plecaku nie ma: ' + cu.item.toLowerCase() + '.');
+    if (key) w.sup[key]--;
+    outcome = 'dobrze'; lines.push('**' + name + '** + ' + cu.item.toLowerCase() + ' (' + heroLabel(H(hid)) + ') → **dobrze:** ' + cu.good + '.');
+  } else if (m === 'roll') {
+    let t = rollTable('osobliwosc'); let extra = '';
+    if (w.lucky) { const t2 = rollTable('osobliwosc'); extra = ' i drugi rzut k10 = **' + t2.r + '** (Złodziejski nos — wybieracie lepszy)'; if (t2.r < t.r) t = t2; w.lucky = false; }
+    outcome = t.text; lines.push('**' + name + '** — dotyka ' + heroLabel(H(hid)) + ': k10 = **' + t.r + '**' + extra + ' → **' + t.text + '**' + (t.text === 'dobrze' ? ': ' + cu.good : t.text === 'źle' ? ': ' + cu.bad : '') + '.');
+  }
+  let res = {};
+  if (outcome === 'dobrze' || outcome === 'źle') res = curioEffect(name, outcome === 'dobrze', hid, w, lines, touched);
+  r[f + 'Done'] = true; if (f === 'curio' && r.goal && outcome) w.activated = (w.activated || 0) + 1;
+  if (f === 'curio' && r.goal && outcome) lines.push('Aktywacja: ' + w.activated + ' z 3.');
+  let st = null;
+  if (res.fight) { st = clone(s.stol); const region = w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key; st.region = region; st.dl = w.quest.dl; st.enemies = rollEncounter(region, w.quest.dl).list.filter(Boolean); st.roomId = null; st.looted = false; lines.push('**Zasadzka!** ' + st.enemies.map(e => e.name).join(', ') + '. Przejdźcie na Stół.'); }
+  Store.act([opSet('wyprawa', w)], { quiet: true });
+  commit({ lines, stol: st, touched }, outcome === 'dobrze' ? 'good' : outcome === 'źle' ? 'bad' : '');
+  if (res.loot) rollLoot(res.loot + (party().some(h => CLS[h.cls].name === 'Antykwariuszka') ? 1 : 0), 'osobliwość');
+  if (res.fight) location.hash = '#stol';
+}
+
+/* ---------- cel zadania: postęp i sprawdzenie ---------- */
+function goalProgress(w) {
+  const q = w.quest; const rooms = w.rooms || [];
+  if (q.dd != null || q.goal === 'boss') { const b = rooms.find(r => r.c === 'boss'); const ok = !!(b && b.cleared); return { ok, txt: ok ? 'boss pokonany' : 'boss jeszcze żyje' }; }
+  if (q.goal === 'eksploracja') { const need = Math.ceil(rooms.length * 0.9); const v = rooms.filter(r => r.visited).length; return { ok: v >= need, txt: 'odwiedzone ' + v + ' z ' + need + ' wymaganych (komnat: ' + rooms.length + ')' }; }
+  if (q.goal === 'oczyszczenie') { const f = rooms.filter(r => /walka|boss/.test(r.c)); const c = f.filter(r => r.cleared).length; return { ok: c >= f.length, txt: 'oczyszczone walki ' + c + ' z ' + f.length }; }
+  if (q.goal === 'zbiorka') { const n = w.found || 0; return { ok: n >= 3, txt: 'znalezione ' + n + ' z 3' }; }
+  if (q.goal === 'aktywacja') { const n = w.activated || 0; return { ok: n >= 3, txt: 'aktywowane ' + n + ' z 3' }; }
+  return { ok: true, txt: '' };
+}
+
+/* ---------- plecak: 16 miejsc ---------- */
+function packSlots(sup, loot) {
+  sup = sup || {}; loot = loot || {};
+  let n = 0; SUP_KEYS.forEach(k => { n += Math.ceil((sup[k] || 0) / 4); });
+  n += Math.ceil((loot.zloto || 0) / 10) + (loot.klejnoty || 0) + Math.ceil((loot.pamiatki || 0) / 2) + (loot.trinkets || []).length;
+  return n;
+}
+
+/* ---------- obóz: Punkty Odpoczynku i umiejętności obozowe ---------- */
+const campSkillsOf = h => (CLS[h.cls].camp || []).concat(COMMON_CAMP);
+const campTarget = eff => /sojusznik/.test(eff) ? 'ally' : /^(sam|sama)\b/.test(eff) ? 'self' : 'party';
+function campPanel() {
+  const w = Store.S.wyprawa; const c = w.camp; if (!c) return '';
+  const W = Store.canWrite(); const pt = party();
+  return `<section class="panel campp"><h2>Obóz <span class="hint">Punkty Odpoczynku: <b class="num">${c.pts}</b> z 12</span></h2>
+    <p class="small muted">Każdy bohater użyje każdej swojej umiejętności najwyżej raz. Gdy skończycie, kliknijcie „Noc”.</p>
+    ${pt.map(h => { const used = c.used[h.id] || []; const can = canHero(h) && W; return `<div class="camph"><div class="ch-h"><b>${esc(heroLabel(h))}</b> <span class="muted small">Zdr ${h.hp}/${heroStats(h).maxhp} · Stres ${h.stress}</span>
+      ${campSkillsOf(h).some(x => campTarget(x.eff) === 'ally') ? `<label class="small">cel: <select id="ctgt-${h.id}">${pt.map(x => `<option value="${x.id}">${esc(heroLabel(x))}</option>`).join('')}</select></label>` : ''}</div>
+      <div class="row">${campSkillsOf(h).map(x => `<button class="btn sm ${used.includes(x.name) ? 'ghost' : ''}" data-act="campSkill" data-h="${h.id}" data-n="${esc(x.name)}" ${!can || used.includes(x.name) || x.pts > c.pts ? 'disabled' : ''} title="${esc(x.eff)}">${esc(x.name)} <span class="num">${x.pts}</span></button>`).join('')}</div>
+      <div class="small dim">${campSkillsOf(h).map(x => '<b>' + esc(x.name) + '</b>: ' + esc(x.eff)).join(' · ')}</div></div>`; }).join('')}
+    ${W ? `<div class="row"><button class="btn primary" data-act="campNight">Noc${c.fireOut ? ' (ognisko zgaszone)' : ''}</button><span class="small muted">zasadzka przy k10 ${w.noAmbush ? '— niemożliwa (warta)' : c.fireOut ? '1–4' : pt.some(x => x.camp.includes('Czujność')) ? '1 (Czujność)' : '1–2'}</span></div>` : ''}
+  </section>`;
+}
+function campApply(h0, sk, tid, w, lines, touched) {
+  const s = Store.S; const T = id => touched[id] || (touched[id] = clone(s.heroes[id]));
+  const me = T(h0.id); const pt = party().map(h => T(h.id)); const tg = tid ? T(tid) : me;
+  const nf = (h, buffs, extra) => { h.nextFight = Object.assign({ buffs: [] }, h.nextFight); h.nextFight.buffs = h.nextFight.buffs.concat(buffs.map(b => Array.isArray(b) ? b : [b, 99])); Object.assign(h.nextFight, extra || {}); };
+  const stress = (h, n) => heroStress(h, n, lines);
+  const hpLoss = (h, n) => { h.hp = Math.max(1, h.hp - n); };
+  const sup2 = () => { const a = pickD(SUP_KEYS), b = pickD(SUP_KEYS); [a, b].forEach(x => { w.sup[x.v] = (w.sup[x.v] || 0) + (x.v === 'Prowiant' ? 2 : 1); }); lines.push('Zapasy: ' + a.v.toLowerCase() + ' (' + a.t + ') i ' + b.v.toLowerCase() + ' (' + b.t + ').'); };
+  const H2 = heroLabel;
+  const fx = {
+    'Żarliwe kazanie': () => pt.forEach(h => stress(h, -2)),
+    'Ślub rycerski': () => nf(tg, ['Śmierć +1', 'Krzepa +2']),
+    'Czyszczenie broni': () => nf(me, ['Celność +1', 'Kryt +1']),
+    'Czujny bandyta': () => { w.noAmbush = true; },
+    'Pijawki': () => { heroHeal(tg, 3, lines); if ((tg.diseases || []).length) { const r = d(10); lines.push('Pijawki na chorobę: k10 = **' + r + '**' + (r <= 5 ? ' → usuwają: ' + tg.diseases[0] + '.' : ' → bez skutku.')); if (r <= 5) tg.diseases = tg.diseases.slice(1); } },
+    'Eksperymentalne opary': () => pt.forEach(h => nf(h, ['Odporność +3'])),
+    'Modlitwa': () => { if (tg.qn.some(q => qname(q.t) === 'Bezbożnik')) lines.push(H2(tg) + ' (Bezbożnik) nie przyjmuje modlitwy.'); else stress(tg, -3); },
+    'Sanktuarium': () => pt.forEach(h => { heroHeal(h, 3, lines); h.exhausted = false; h.exh = 0; }),
+    'Ofiara krwi': () => { hpLoss(me, 2); pt.forEach(h => stress(h, -1)); },
+    'Ostrzenie': () => nf(me, ['Kryt +1']),
+    'Mroczny rytuał': () => { const r = d(10); lines.push('Mroczny rytuał: k10 = **' + r + '**' + (r <= 2 ? ' → rytuał się odwraca, +2 Stres.' : ' → −3 Stres.')); stress(tg, r <= 2 ? 2 : -3); },
+    'Zakazana wiedza': () => { w.scoutBonus = (w.scoutBonus || 0) + 3; },
+    'Złodziejski nos': () => { w.lucky = true; },
+    'Wisielczy humor': () => pt.forEach(h => stress(h, -1)),
+    'Taktyka': () => pt.forEach(h => nf(h, ['Unik +1'])),
+    'Opowieści weterana': () => { stress(tg, -2); tg.nextVirtue = 1; },
+    'Zdjęcie maski': () => { pt.forEach(h => stress(h, -2)); stress(me, 1); },
+    'Zaduma': () => stress(me, -4),
+    'Wieczorny występ': () => pt.forEach(h => stress(h, -2)),
+    'Kpina z ciemności': () => nf(tg, [], { noFirst: 1 }),
+    'Psia warta': () => { w.noAmbush = true; },
+    'Pies terapeutyczny': () => stress(tg, -3),
+    'Rozpoznanie': () => { w.scoutBonus = (w.scoutBonus || 0) + 3; },
+    'Plan zasadzki': () => pt.forEach(h => nf(h, [['Celność +2', 1]])),
+    'Plan marszu': () => { w.noSurprise = true; },
+    'Nowa cięciwa': () => nf(me, ['Kryt +1']),
+    'Zapasy z sakwy': () => sup2(),
+    'Grzebanie w znaleziskach': () => { w.dig = true; },
+    'Łańcuchy na noc': () => stress(me, -3),
+    'Ostrzeżenie': () => nf(me, [], { noTransformStress: 1 }),
+    'Pokuta': () => { stress(me, -3); hpLoss(me, 2); },
+    'Kazanie o cierpieniu': () => nf(tg, ['Odporność +2', 'Śmierć +1']),
+    'Wężowa skóra': () => nf(me, [], { block: 1 }),
+    'Opowieść z piasków': () => pt.forEach(h => stress(h, -1)),
+    'Zachęta': () => stress(tg, -2),
+    'Pierwsza pomoc': () => { heroHeal(tg, 3, lines); tg.fx = Object.assign({}, tg.fx, { bleed: [], blight: [] }); },
+    'Pogadanka': () => nf(tg, ['Krzepa i Odporność +2'])
+  };
+  (fx[sk.name] || (() => lines.push('(Efekt rozstrzyga MG.)')))();
+}
+Object.assign(ACT, {
+  campSkill: el => {
+    const w = clone(Store.S.wyprawa); const c = w.camp; if (!c) return;
+    const h = H(el.dataset.h); if (!h || !canHero(h)) return toast('To bohater innego gracza.');
+    const sk = campSkillsOf(h).find(x => x.name === el.dataset.n); if (!sk) return;
+    if ((c.used[h.id] || []).includes(sk.name)) return toast(heroLabel(h) + ' użył już: ' + sk.name + '.');
+    if (sk.pts > c.pts) return toast('Za mało Punktów Odpoczynku.');
+    const tt = campTarget(sk.eff); const sel = $('#ctgt-' + h.id); const tid = tt === 'ally' ? (sel ? sel.value : h.id) : null;
+    const lines = ['**Obóz** — ' + heroLabel(h) + ': **' + sk.name + '** (' + sk.pts + ' pkt' + (tid ? ', cel: ' + heroLabel(H(tid)) : '') + ') — ' + sk.eff + '.']; const touched = {};
+    campApply(h, sk, tid, w, lines, touched);
+    c.pts -= sk.pts; c.used[h.id] = (c.used[h.id] || []).concat(sk.name);
+    lines.push('Zostało ' + c.pts + ' Punktów Odpoczynku.');
+    Store.act([opSet('wyprawa', w)], { quiet: true });
+    commit({ lines, stol: null, touched }, 'good');
+  },
+  campNight: () => {
+    const s = Store.S; const w = clone(s.wyprawa); const c = w.camp; if (!c) return;
+    const pt = party(); const lines = ['**Noc w obozie.**'];
+    const czuj = pt.some(x => x.camp.includes('Czujność'));
+    let ambush = false;
+    if (w.noAmbush) lines.push('Warta czuwa — nocna zasadzka jest niemożliwa.');
+    else { const r = d(10); const lim = c.fireOut ? 4 : (czuj ? 1 : 2); ambush = r <= lim; lines.push('k10 = **' + r + '** (zasadzka przy ' + (lim === 1 ? '1' : '1–' + lim) + (czuj && !c.fireOut ? ', Czujność' : '') + ') → ' + (ambush ? '**nocna zasadzka!**' + (c.fireOut ? ' Ognisko było zgaszone: wrogowie są zaskoczeni, walka daje +2 rzuty na łup.' : '') : 'spokojna noc.')); }
+    if (pt.some(x => x.camp.includes('Tropienie'))) { w.scoutBonus = (w.scoutBonus || 0) + 2; lines.push('Tropienie: następny zwiad +2.'); }
+    w.camp = null; w.noAmbush = false;
+    let st = null;
+    if (ambush) { st = clone(s.stol); const region = w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key; st.region = region; st.dl = w.quest.dl; st.enemies = rollEncounter(region, w.quest.dl).list.filter(Boolean); st.forceSurprise = c.fireOut ? 'wrogowie' : null; st.lootBonus = c.fireOut ? 2 : 0; st.roomId = null; st.looted = false; lines.push('Z ciemności wychodzą: ' + st.enemies.map(e => e.name).join(', ') + '. Przejdźcie na Stół.'); }
+    Store.act([opSet('wyprawa', w)], { quiet: true });
+    commit({ lines, stol: st, touched: {} }, ambush ? 'bad' : 'good');
+    if (ambush) location.hash = '#stol';
+  }
+});
