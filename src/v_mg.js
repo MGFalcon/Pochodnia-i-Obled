@@ -64,6 +64,10 @@ function voicePanel() {
 }
 const PRZODEK_SYS = 'Jesteś Przodkiem: zmarłym dziedzicem upadłego rodu w mrocznej grze fabularnej „Pochodnia i Obłęd” (gotycki horror: posiadłość, loch pod nią, osada, najemni bohaterowie, którzy giną). Przodek kopał zbyt głęboko i obudził coś pod domem; teraz zza grobu komentuje upadek rodu — z goryczą, pychą i czarnym humorem. Mówisz po polsku, poważnym, lekko archaicznym językiem, zwięźle, obrazowo. Piszesz wyłącznie własne, oryginalne zdania — nie cytujesz ani nie parafrazujesz żadnych gier, filmów ani książek. Nie używasz mechaniki gry (liczb, kości) w tekście.';
 
+Object.assign(ACT, {
+  przAutoT: () => Store.act([opSet('osada.przAuto', Store.S.osada.przAuto === false)]),
+  przVoiceT: () => Store.act([opSet('osada.przVoice', !Store.S.osada.przVoice)])
+});
 VIEWS.mg = {
   render() {
     if (!Store.isGM()) return '<section class="panel"><p class="muted">Ekran MG jest tylko dla prowadzącego.</p></section>';
@@ -113,6 +117,10 @@ VIEWS.mg = {
         <label class="fld"><span class="lbl">Kwestia</span><textarea id="ptext" rows="4">${esc(p.text)}</textarea></label>
         <div class="row"><button class="btn gold" data-act="przSay">Odczytaj na głos</button><button class="btn primary" data-act="przLog">Wyślij do stołu</button></div>
         <p class="small muted">Głos słychać na twoim urządzeniu. Gracze przez internet usłyszą go, jeśli udostępnisz dźwięk na Discordzie.</p>
+        <div class="box"><div class="ph">Przodek sam</div>
+          <div class="row"><button class="btn sm ${Store.S.osada.przAuto !== false ? 'gold' : 'ghost'}" data-act="przAutoT">Komentuje kluczowe chwile: ${Store.S.osada.przAuto !== false ? 'wł.' : 'wył.'}</button>
+          <button class="btn sm ${Store.S.osada.przVoice ? 'gold' : 'ghost'}" data-act="przVoiceT">Czyta na głos: ${Store.S.osada.przVoice ? 'wł.' : 'wył.'}</button></div>
+          <p class="small muted">Jedno zdanie przy krytyku, Progu Śmierci, śmierci, Przypadłości, Cnocie, zgaszonej pochodni, bossie i powrocie — najwyżej raz na 15 sekund. Głos czyta urządzenie MG.</p></div>
         ${voicePanel()}
       </section>
       <section class="panel"><h2>Ostatnie kwestie</h2><div class="log">${(Store.S.log || []).filter(e => e.kind === 'przodek').slice(-12).reverse().map(logLine).join('') || '<p class="muted">Przodek jeszcze milczy.</p>'}</div></section>

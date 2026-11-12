@@ -12,7 +12,7 @@ function sellValue(t) { const o = Store.S.osada; const base = t.kind === 'class'
 VIEWS.osada = {
   render() {
     const o = Store.S.osada; const gm = Store.isGM(); const W = Store.canWrite();
-    return `<div class="grid2">
+    return `${threatBar()}${hamletDecisionBox()}<div class="grid2">
       <section class="panel"><h2>Tydzień ${o.week}</h2>
         ${o.event ? `<p><b>Wydarzenie:</b> ${esc(o.event)}</p>` : '<p class="muted">Wydarzenie tygodnia jeszcze nie wylosowane.</p>'}
         ${o.cultists ? '<p class="small warn">Kultyści na trakcie: następna wyprawa ma dodatkową walkę w pierwszym korytarzu.</p>' : ''}${o.rumor ? '<p class="small">Plotka: następna wyprawa ma +1 rzut na łup.</p>' : ''}
@@ -38,7 +38,7 @@ VIEWS.osada = {
         ${W ? `<div class="row"><button class="btn sm primary" data-act="trkRoll">Losuj błyskotkę</button><button class="btn sm" data-act="trkAdd">Dodaj ręcznie</button><button class="btn sm ghost" data-act="trkSwap">Wóz: wymień 2 → 1</button></div>` : ''}
       </section>
       <section class="panel"><h2>Cmentarz</h2>
-        ${(o.cemetery || []).length ? `<ul class="cem">${o.cemetery.map(c => `<li><b>${esc(c.name)}</b> <span class="dim">${esc(c.cls)}, Poziom ${c.level}</span> <span class="muted small">— ${esc(c.cause || '')}${c.week ? ', tydzień ' + c.week : ''}</span></li>`).join('')}</ul><p class="small muted">MG odczytuje te imiona na początku sesji.</p>` : '<p class="muted">Nikt jeszcze nie spoczął. Jeszcze.</p>'}
+        ${(o.cemetery || []).length ? `<ul class="cem">${o.cemetery.map(c => `<li><b>${esc(c.name)}</b> <span class="dim">${esc(c.cls)}, Poziom ${c.level}</span> <span class="muted small">— ${esc(c.cause || '')}${c.week ? ', tydzień ' + c.week : ''}</span>${c.origin ? `<br><span class="small dim">${esc(c.origin)}${c.dream ? '; nie zdążył(a) spełnić marzenia: ' + esc(c.dream.replace(/^chce /, '')) : ''}.</span>` : ''}${c.epitaph ? `<br><i class="small">${esc(c.epitaph)}</i>` : ''}</li>`).join('')}</ul><p class="small muted">MG odczytuje te imiona na początku sesji.</p>` : '<p class="muted">Nikt jeszcze nie spoczął. Jeszcze.</p>'}
       </section>
     </div>
     ${gm ? `<section class="panel"><h2>Kopia gry <span class="hint">dla MG</span></h2>
@@ -70,7 +70,12 @@ Object.assign(ACT, {
     const n = 3 + (o.b['Dyliżans'] || 0); const lvl = (o.b['Dyliżans'] || 0) >= 3 ? 1 : 0;
     o.recruits = Array.from({ length: n }, () => { let r; do { r = d(20); } while (r > 17); return { cls: r - 1, roll: r, level: lvl, qp: pick(DATA.quirks_pos), qn: pick(DATA.quirks_neg) }; });
     if (ev.r === 4) o.recruits[0].level = 2;
-    const ops = [opSet('osada', o)]; const notes = [];
+    const tl = [];
+    if (o.debt && o.week >= o.debt.week) { if (o.gold >= o.debt.amount) { o.gold -= o.debt.amount; tl.push('Lichwiarz odbiera ' + o.debt.amount + ' Złota.'); } else { tl.push('**Lichwiarz** przychodzi po ' + o.debt.amount + ' Złota, a w skarbcu jest ' + o.gold + '. Zabiera wszystko, a jego ludzie straszą bohaterów: każdy +2 Stres.'); o.gold = 0; o.debtStress = true; } o.debt = null; }
+    threatTick(o, tl);
+    { const live = liveHeroes(); const okD = HAMLET_DECISIONS.filter(D => D.key === 'wdowa' ? (o.cemetery || []).length > 0 : D.key === 'medyk' ? live.some(h => (h.diseases || []).length) : D.key === 'zlodziej' ? (o.trinkets || []).length > 0 : D.key === 'lichwiarz' ? !o.debt : true);
+      o.decision = (o.questsDone || 0) >= 1 && okD.length && d(10) <= 7 ? { id: uid(), key: pick(okD).key } : null; }
+    const ops = [opSet('osada', o)]; const notes = tl.slice();
     /* tydzień w Osadzie: koniec leczenia, powroty, pełne Zdrowie, Niespokojne sny */
     liveHeroes().filter(h => h.status !== 'wyprawa').forEach(h => {
       const h2 = clone(h); let ch = false;
@@ -79,8 +84,11 @@ Object.assign(ACT, {
       if (h2.ban && h2.ban.until <= o.week) { h2.ban = null; ch = true; }
       const mx = heroStats(h2).maxhp; if (h2.hp < mx || h2.dd || h2.exhausted) { h2.hp = mx; h2.dd = false; h2.exhausted = false; h2.exh = 0; ch = true; }
       if (ev.r === 7) { const l = []; heroStress(h2, 1, l); ch = true; }
+      if (o.debtStress) { const l = []; heroStress(h2, 2, l); ch = true; }
       if (ch) ops.push(opSet('heroes.' + h.id, h2));
     });
+    o.debtStress = false;
+    if (o.decision) notes.push('Decyzja tygodnia: **' + HAMLET_DECISIONS.find(x => x.key === o.decision.key).title + '** (zakładka Osada).');
     ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'sys', text: '**Tydzień ' + o.week + '.** Wydarzenie: k10 = ' + ev.r + ' → ' + ev.text + '. Dyliżans przywozi ' + n + ' rekrutów. Bohaterowie w Osadzie wracają do pełnego Zdrowia.' + (notes.length ? ' ' + notes.join(' ') : '') } });
     Store.act(ops);
     rollBoard();
@@ -144,7 +152,8 @@ Object.assign(ACT, {
     modal(`<h3>${esc(t.name)}</h3><select id="tgh">${ok.map(h => `<option value="${h.id}">${esc(heroLabel(h))} — ${esc(CLS[h.cls].name)}</option>`).join('')}</select>`,
       [{ t: 'Anuluj' }, { t: 'Przekaż', cls: 'primary', fn: () => {
         const h = clone(H($('#tgh').value)); h.trinkets.push(t); const m = Store.S.osada.trinkets.slice(); m.splice(+el.dataset.i, 1);
-        Store.act([opSet('heroes.' + h.id, h), opSet('osada.trinkets', m)]);
+        const dl = []; dreamCheck(h, dl, 'trinket');
+        Store.act([opSet('heroes.' + h.id, h), opSet('osada.trinkets', m)]); if (dl.length) rollLog(dl.join(' '), 'good', 'sys');
       } }]);
   },
   trkSell: el => {

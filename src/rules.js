@@ -39,6 +39,7 @@ function newHero(clsIdx, opts = {}) {
     dd: false, exhausted: false, state: null, form: 'human', fatigue: 0, block: 0,
     fx: {}, notes: '', status: 'osada', dead: false, owner: null, created: Date.now()
   };
+  if (!opts.noStory && typeof rollStory === 'function') rollStory(h);
   if (opts.quirks) { const a = pickD(DATA.quirks_pos), b = pickD(DATA.quirks_neg); h.qp.push({ t: a.v, lock: false }); h.qn.push({ t: b.v, lock: false }); h._qroll = 'dziwactwa: ' + a.t + ', ' + b.t; }
   h.hp = heroStats(h).maxhp;
   return h;

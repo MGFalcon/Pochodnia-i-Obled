@@ -582,6 +582,33 @@ label.chk.sick { opacity: .45; filter: grayscale(.8); cursor: not-allowed; }
 .campp .camph { border-top: 1px solid #3a2a24; padding: 8px 0; }
 .campp .ch-h { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
 .hint.bad { color: var(--blood2); }
+/* „Co teraz?” */
+.guide { margin: 0 0 12px; }
+.guidebar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 14px; border: 1px solid var(--gold2); border-radius: var(--r); background: linear-gradient(90deg, rgba(60,44,20,.55), rgba(20,15,12,.6)); font-size: 15px; }
+.guidebar .lbl { color: var(--gold); }
+.guidebar .gtxt { flex: 1 1 420px; }
+.guidebar .prz { display: block; font-style: italic; color: var(--bone2); font-size: 13px; margin-top: 2px; }
+.pulse { animation: pulse 0.6s ease-in-out 4; outline: 2px solid var(--gold); outline-offset: 3px; }
+@keyframes pulse { 50% { outline-color: transparent; } }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+/* klimat i wybory */
+.rdesc { font-style: italic; color: var(--bone2); margin: 0 0 8px; }
+.featbox, .talkbox { border-top: 1px solid #3a2a24; padding-top: 8px; margin-top: 6px; }
+.votes .btn { margin: 0 6px 6px 0; }
+.vcount { display: inline-block; min-width: 1.4em; margin-left: 6px; padding: 0 5px; border-radius: 9px; background: rgba(0,0,0,.4); font-size: 12px; text-align: center; }
+.chip.tell { border-color: var(--gold2); }
+.hstory { margin: 4px 0; line-height: 1.4; }
+.hbonds { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+/* zegar Ciemności */
+.threat { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; padding: 8px 14px; border: 1px solid var(--rule2); border-radius: var(--r); background: rgba(20,15,12,.6); }
+.threat .tbar { display: inline-flex; gap: 3px; }
+.threat .tbar i { width: 14px; height: 10px; border-radius: 2px; background: #2a201b; border: 1px solid var(--rule2); }
+.threat .tbar i.on { background: #6b5a8e; border-color: #8d7bb5; }
+.threat .tbar i.on.hi { background: var(--blood2); border-color: var(--blood2); }
+.hamdec { margin: 0 0 12px; }
+/* imiona bohaterów i nazwy wrogów mieszczą się w wąskich polach */
+.slot .nm { font-size: clamp(13px, 1.25vw + 6px, 18px); overflow-wrap: normal; word-break: normal; hyphens: manual; }
+@media (max-width: 600px) { .slot .nm { font-size: clamp(11px, 3.3vw, 15px); } .slot .cl { font-size: 11px; } }
 
 </style>
 </head><body>
@@ -589,11 +616,12 @@ label.chk.sick { opacity: .45; filter: grayscale(.8); cursor: not-allowed; }
 <div id="dark" aria-hidden="true"></div>
 <div class="wrap" id="app">
   <header class="top" id="top">
-    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 12.11 · 21:15</span></small><h1>Stół <em>rodu</em></h1></div>
+    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 12.11 · 21:50</span></small><h1>Stół <em>rodu</em></h1></div>
     <nav class="tabs" id="tabs" aria-label="Widoki stołu"></nav>
     <div class="toolbar"><span class="sync" data-s="local">gra na jednym urządzeniu</span><span id="who" class="who"></span></div>
   </header>
   <div class="torchbar" id="torchbar"></div>
+  <div id="guide" class="guide"></div>
   <div class="layout">
     <main id="view" class="view"></main>
     <aside id="side" class="side"></aside>
@@ -609,7 +637,7 @@ const DATA = {"classes": [{"n": 1, "name": "Krzyżowiec", "desc": "Rycerz krucja
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => [...r.querySelectorAll(s)];
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
-const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>');
+const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, '<b>$1</b>').replace(/(^|[\s(])\*([^*\s][^*]*?)\*(?=[\s.,;:!?)]|$)/g, '$1<i>$2</i>');
 const clone = o => JSON.parse(JSON.stringify(o));
 const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 const clamp = (v, a, b) => Math.max(a, Math.min(b, v));
@@ -886,6 +914,167 @@ const NPC_GEN = {
   secrets: ['handluje z kultystami', 'był na wyprawie, z której nikt inny nie wrócił', 'jest spokrewniony z rodem', 'zjada mięso z Nor', 'ma w piwnicy Zakazaną księgę', 'zdradził poprzednią drużynę', 'słyszy głos przodka', 'ukrywa chorobę bestii']
 };
 
+/* Treści klimatyczne: opisy komnat, zapowiedzi bossów, kwestie bohaterów, imiona i historie, wybory w komnatach, rozmowy, decyzje Osady. */
+
+/* ---------- opisy komnat ---------- */
+const ROOM_DESC = {
+  Ruiny: {
+    'wejście': ['Schody kończą się pod sklepieniem, z którego zwisają korzenie. Za plecami jeszcze widać dzień.', 'Brama krużganków stoi otworem. Ktoś wyrwał z niej zawiasy — od środka.'],
+    walka: ['Kości na posadzce leżą w zbyt równym rzędzie. Jedna czaszka powoli obraca się w waszą stronę.', 'Z nisz w ścianach dobiega chrobot, jakby coś ostrzyło klingę o kamień.', 'W kręgu wypalonych świec klęczą zakapturzone postacie. Śpiew urywa się w pół słowa.'],
+    pusta: ['Komnata pełna połamanych ławek. Na ołtarzu ktoś zostawił zgaszoną świecę i odcisk dłoni w wosku.', 'Pusta krypta. Wieka sarkofagów leżą na podłodze, a w środku nie ma nic — nawet kurzu.', 'Kurz, pajęczyny i cisza tak gęsta, że słychać własne serce.'],
+    'osobliwość': ['Pod ścianą stoi coś, co nie pasuje do tego miejsca — i doskonale o tym wie.', 'Na środku sali coś czeka w kręgu świeżo wydrapanych znaków.', 'W bocznej kaplicy coś odbija światło pochodni, choć nie powinno.'],
+    skrzynia: ['Skrzynia okuta żelazem, z herbem rodu. Zamek wygląda na nietknięty od stu lat.', 'Pod zwalonym posągiem widać róg kufra.'],
+    boss: ['Sala pełna ksiąg i słoików. Ktoś przy stole podnosi głowę znad otwartego trupa — i uśmiecha się.', 'Pentagram na podłodze jeszcze dymi. Uczeń zmarłego mistrza czekał na was.']
+  },
+  Nory: {
+    'wejście': ['Kanał zaczyna się kratą wyrwaną ze ściany. Smród wbija się w gardło jak hak.', 'Zejście pod rzeźnię. Woda po kostki, ciepła — za ciepła.'],
+    walka: ['W ciemności coś chrumka i mlaszcze. Potem cichnie, bo was zwęszyło.', 'Na hakach wiszą połcie mięsa. Niektóre nie są wieprzowe. Spod nich wychodzą rzeźnicy.', 'Zalana komora, a w wodzie coś pływa — na plecach, z otwartymi oczami. Wstaje.'],
+    pusta: ['Opuszczone legowisko z kości i szmat. Ktoś tu spał niedawno.', 'Pusta komora, tylko echo kapiącej wody i szczury, które się was nie boją.', 'Ściany pokrywa gruby nalot, który lekko pulsuje, gdy się na niego patrzy.'],
+    'osobliwość': ['Na środku stoi coś, wokół czego krążą muchy, ale żadna nie siada.', 'W niszy coś leży — szczury omijają to szerokim łukiem.', 'Woda wokół tego jest dziwnie czysta.'],
+    skrzynia: ['Pod stertą odpadków stoi beczka z pieczęcią rzeźni.', 'Zardzewiała skrzynia przykuta łańcuchem do rury.'],
+    boss: ['Ogromna komora pełna ryków. Na tronie z beczek siedzi coś, co kiedyś było człowiekiem — teraz jest głównie apetytem.', 'Dwór Świńskiego Księcia: dywan z flaków, a giermek trzyma proporzec z wołowej skóry.']
+  },
+  Knieja: {
+    'wejście': ['Trakt urywa się przy szubienicy. Sznury kołyszą się, choć nie ma wiatru.', 'Wchodzicie między drzewa. Ptaki milkną jeden po drugim.'],
+    walka: ['Ognisko jeszcze się tli. Wokół niego ktoś szybko chowa noże za plecy.', 'Z grzybni pod korzeniami wynurza się coś na czworakach, porośnięte kapeluszami.', 'Strzała wbija się w pień tuż obok was. Z krzaków słychać śmiech.'],
+    pusta: ['Polana pełna mgły. Na pniu ktoś wyrył datę — jutrzejszą.', 'Opuszczony obóz bandytów: porwany namiot, pusta butelka, jeden but.', 'Krąg kamieni. W środku trawa nie rośnie od lat.'],
+    'osobliwość': ['Między drzewami coś stoi, jakby czekało właśnie na was.', 'W wykrocie coś połyskuje wilgocią.', 'Na rozstaju dróg coś leży, zostawione dla podróżnych.'],
+    skrzynia: ['Zakopany kuferek, ledwo przykryty liśćmi. Ktoś bardzo się spieszył.', 'Wóz bez koni, a na nim skrzynia z łupem bandytów.'],
+    boss: ['Chata na kurzej nóżce, a przed nią kocioł, w którym coś bulgocze i woła po imieniu.', 'Wiedźma miesza w kotle i nie podnosi wzroku. „Akurat na kolację” — mówi.']
+  },
+  Zatoka: {
+    'wejście': ['Grota otwiera się na morze. Fale bez przerwy szepczą coś niezrozumiałego.', 'Ścieżka między skałami, śliska od wodorostów. Sól szczypie w oczy.'],
+    walka: ['Z wody wychodzą postacie z łuską zamiast skóry, z harpunami w błoniastych dłoniach.', 'Topielcy siedzą przy ścianie, jakby czekali na odpływ. Na wasz widok wstają.', 'W kałużach coś śpiewa. Pieśń urywa się, gdy wchodzicie.'],
+    pusta: ['Wrak łodzi wbity w skałę. W środku tylko muszle i czyjś pamiętnik, rozmyty od wody.', 'Pusta grota. Na ścianach odciski dłoni — zbyt długich palców.', 'Woda sięga kolan i jest lodowata. Nic się nie rusza. Na razie.'],
+    'osobliwość': ['Na skale coś lśni perłowo i cicho szumi jak morze w muszli.', 'Fale wyrzuciły coś na brzeg i cofnęły się, jakby się bały.', 'Pośrodku groty coś pulsuje w rytm przypływu.'],
+    skrzynia: ['Kufer z wraku, oblepiony skorupiakami.', 'Skrzynia przemytników wciśnięta w szczelinę skalną.'],
+    boss: ['Na skale siedzi kobieta o włosach z wodorostów. Gdy otwiera usta, morze milknie.', 'Skała Syreny. Wokół niej pływają ciała tych, którzy wysłuchali pieśni do końca.']
+  },
+  DD: {
+    'wejście': ['Schody pod posiadłością. Każdy stopień jest cieplejszy od poprzedniego.', 'Drzwi do lochu stoją otworem. Z dołu dochodzi coś na kształt bicia serca.'],
+    walka: ['Kultyści w czerwonych szatach kłaniają się wam, jakby was oczekiwali.', 'Ściany są tu z mięsa. Coś w nich przesuwa się pod skórą — i wychodzi.', 'Templariusz w zbroi zrośniętej z ciałem zagradza przejście.'],
+    pusta: ['Komnata bez kątów — ściany przechodzą łukiem w sufit jak wnętrze żołądka.', 'Pusta kaplica. Na ołtarzu leży list w waszym charakterze pisma.', 'Cisza. Tylko daleko, daleko w dole coś bije: raz, dwa, raz, dwa.'],
+    'osobliwość': ['Coś tu leży — i pamięta was z innego życia.', 'Na środku stoi rzecz, której kształt zmienia się, gdy odwracacie wzrok.', 'Coś szepcze imię waszego przodka.'],
+    skrzynia: ['Relikwiarz rodu, uchylony, jakby ktoś właśnie z niego coś wyjął.', 'Szkatuła oblepiona woskiem z kultowych świec.'],
+    boss: ['Koniec drogi. To, co tu czeka, było tu przed rodem i będzie po nim.', 'Sala bije jak serce. Każdy oddech przybliża was do odpowiedzi.']
+  }
+};
+ROOM_DESC.Shambler = ROOM_DESC.Ruiny;
+function roomDesc(region, type) {
+  const R = ROOM_DESC[region] || ROOM_DESC.Ruiny;
+  const key = type === 'walka i osobliwość' ? 'walka' : type;
+  const list = R[key] || R.pusta; let t = pick(list);
+  if (type === 'walka i osobliwość') t += ' W kącie stoi coś, czego lepiej nie dotykać przed walką.';
+  return t;
+}
+
+/* ---------- elementy w pustych komnatach (decyzje) ---------- */
+const ROOM_FEATURES = [
+  { key: 'gruz', name: 'Sterta gruzu', text: 'Pod ścianą leży gruz, a spod niego wystaje coś metalowego.', opts: [{ id: 'szukaj', label: 'Przeszukajcie gruz', note: 'k10: 1–4 rzut na łup, 5–8 nic, 9–10 hałas budzi wrogów' }, { id: 'zostaw', label: 'Zostawcie' }] },
+  { key: 'drzwi', name: 'Drzwi bez klamki', text: 'Ciężkie drzwi, zza których dobiegają odgłosy z dalszych korytarzy.', opts: [{ id: 'sluchaj', label: 'Podsłuchajcie', note: 'Pochodnia −1, za to poznacie wszystkie komnaty sąsiednie' }, { id: 'idz', label: 'Idźcie dalej' }] },
+  { key: 'oltarzyk', name: 'Ołtarzyk przodków', text: 'Mały ołtarzyk z kośćmi i monetami. Ktoś wciąż tu przychodzi.', opts: [{ id: 'ofiara', label: 'Zostawcie ofiarę', note: '5 Złota z łupów albo 1 prowiant: drużyna −2 Stres' }, { id: 'zabierz', label: 'Zabierzcie monety', note: 'k6 Złota, ale każdy +1 Stres' }, { id: 'nic', label: 'Nie ruszajcie' }] },
+  { key: 'studnia', name: 'Stara studnia', text: 'Studnia z czarną wodą. Z dołu ciągnie chłodem.', opts: [{ id: 'pij', label: 'Zaczerpnijcie wody', note: 'k10: 1–5 każdy +2 Zdrowia, 6–8 nic, 9–10 zaraza 1 dla losowej osoby' }, { id: 'nie', label: 'Lepiej nie' }] },
+  { key: 'zapiski', name: 'Zapiski poprzednika', text: 'Notatnik kogoś, kto szedł tędy przed wami. Ostatnie strony są zalane krwią.', opts: [{ id: 'czytaj', label: 'Przeczytajcie', note: 'czytający k10: 1–5 następny zwiad +2, 6–10 +2 Stresu' }, { id: 'spal', label: 'Spalcie dla światła', note: 'Pochodnia +1' }] },
+  { key: 'lustro', name: 'Pęknięte lustro', text: 'W ramie wisi pęknięte lustro. Odbicie porusza się z lekkim opóźnieniem.', opts: [{ id: 'patrz', label: 'Niech ktoś spojrzy', note: 'k10: 1–3 −3 Stresu, 4–7 nic, 8–10 +3 Stresu' }, { id: 'zaslon', label: 'Zasłońcie je' }] }
+];
+
+/* ---------- zapowiedzi ruchów bossów ---------- */
+const BOSS_TELL = {
+  'Pocisk duszy': 'Uczeń wyciąga dłoń — między palcami zbiera się blade światło.',
+  'Wezwanie kości': 'Uczeń szepcze do posadzki. Kości pod waszymi stopami drżą.',
+  'Klątwa grobu': 'Uczeń unosi księgę nad głowę. Świece gasną jedna po drugiej.',
+  'Zgniecenie': 'Książę unosi pięści nad głowę i wbija wzrok w pierwszy szereg.',
+  'Zamach cielskiem': 'Książę pochyla się i zapiera racicami — szykuje się do szarży.',
+  'Rzut ochłapem': 'Książę sięga do koryta po coś gnijącego i celuje w tył szyku.',
+  'Ryk świni': 'Książę nabiera powietrza w ogromne płuca.',
+  'Do kotła!': 'Wiedźma zerka na kocioł i oblizuje wargi, wybierając składnik.',
+  'Chochla': 'Wiedźma unosi chochlę jak maczugę.',
+  'Złe oko': 'Wiedźma mruży jedno oko i szuka kogoś wzrokiem.',
+  'Pieśń syreny': 'Syrena przechyla głowę i nuci pierwsze takty.',
+  'Fala': 'Morze cofa się od skały. Zaraz wróci.',
+  'Szept otchłani': 'Syrena pochyla się do ucha, którego tu nie ma.',
+  'Uderzenie zewsząd': 'Macki wycofują się w ciemność, żeby uderzyć ze wszystkich stron.',
+  'Przyzwanie macek': 'Ciemność wokół Shamblera gęstnieje i wybrzusza się.',
+  'Spojrzenie spoza gwiazd': 'Coś w Shamblerze otwiera oko, którego nie powinno mieć.',
+  'Ofiara krwi': 'Arcykapłan obnaża sztylet i szuka ofiary.',
+  'Litania': 'Arcykapłan zaczyna litanię — kultyści podejmują ją szeptem.',
+  'Mroczne zszycie': 'Arcykapłan sięga po igłę z kości i czarną nić.',
+  'Miażdżący cios': 'Templariusz unosi młot nad pierwszy szereg.',
+  'Przygwożdżenie': 'Templariusz rozwija łańcuch z hakiem i celuje w tył.',
+  'Okrzyk wojenny': 'Templariusz nabiera tchu pod hełmem.',
+  'Porodzenie': 'Matka Mięsa kurczy się i pęcznieje. Coś się w niej rusza.',
+  'Wymiot': 'Matka Mięsa wzdyma się jak bukłak przed pęknięciem.',
+  'Wyrzut ochłapu': 'Matka Mięsa odrywa od siebie kawał mięsa i bierze zamach.',
+  'Puls': 'Serce przyspiesza. Ściany drżą w tym samym rytmie.',
+  'Spojrzenie pustki': 'Serce na chwilę zamiera — i patrzy.'
+};
+
+/* ---------- kwestie bohaterów ---------- */
+const BARKS = {
+  stress5: ['Coś tu jest nie tak. Czujecie to?', 'Nie podoba mi się ta cisza.', 'Trzymajmy się razem.', 'Ile jeszcze tych korytarzy?'],
+  stress15: ['Ja tam nie wchodzę.', 'Słyszę je… słyszę je w ścianach.', 'Zginiemy tu wszyscy. Wszyscy!', 'Dość. Mam dość.', 'Ręce mi się trzęsą. Nie patrzcie tak.'],
+  affliction: {
+    'Paranoja': ['Wiem, co knujecie. Wiem!', 'Nie dotykaj mnie. Nikomu nie ufam.'],
+    'Egoizm': ['Każdy dba o siebie. Ja też.', 'Moje. Wszystko to moje.'],
+    'Obłęd': ['Kolory! Słyszycie kolory?', 'Ha… ha, ha. Wszystko jest takie zabawne.'],
+    'Lęk': ['Wracajmy. Proszę, wracajmy.', 'Nie, nie, nie, nie…'],
+    'Beznadzieja': ['Po co walczyć? I tak nas zabiorą.', 'To koniec. Pogódźcie się z tym.'],
+    'Agresja': ['Z drogi, bo cię potnę razem z nimi!', 'Wszyscy jesteście bezużyteczni!'],
+    'Masochizm': ['Jeszcze. Jeszcze mocniej.', 'Ból to jedyne, co jest prawdziwe.']
+  },
+  virtue: {
+    'Niezłomny': ['Stoimy. Nikt nie cofa się ani o krok.'], 'Odważny': ['Strach? Strach to tylko słowo.'],
+    'Skupiony': ['Widzę każdy ich ruch.'], 'Potężny': ['Chodźcie. Wszyscy naraz.'], 'Witalny': ['To jeszcze nie koniec. Daleko do końca.']
+  },
+  crit: ['Tak się to robi!', 'Za ród!', 'Jeden mniej.', 'Padnij i nie wstawaj.'],
+  allyDeath: ['Nie… tylko nie to…', 'Zapłacą za to.', 'Następny będę ja.', 'Zostawcie go. Nie ma już czego ratować.']
+};
+
+/* ---------- imiona, pochodzenie, marzenia, epitafia ---------- */
+const FEMALE_CLASSES = ['Westalka', 'Piekielnica', 'Kuszniczka', 'Antykwariuszka', 'Łamaczka Tarcz'];
+const NAMES_M = ['Bogusław', 'Radomir', 'Wit', 'Dobiesław', 'Mszczuj', 'Sobiesław', 'Jarogniew', 'Czcibor', 'Zbylut', 'Przecław', 'Wszebor', 'Bolko', 'Racibor', 'Siemowit', 'Gniewko', 'Lubomir', 'Mirosław', 'Ostoja', 'Sławoj', 'Teodor', 'Ignacy', 'Kazimierz', 'Wojsław', 'Dzierżko'];
+const NAMES_F = ['Dobrosława', 'Radosława', 'Wiesna', 'Bogna', 'Jaromira', 'Mścisława', 'Zbysława', 'Dziwisława', 'Lubomira', 'Sława', 'Gniewomira', 'Wszebora', 'Rościsława', 'Milena', 'Jadwiga', 'Agnieszka', 'Ludmiła', 'Bożena', 'Witosława'];
+const ORIGINS = [['syn młynarza z Doliny Wron', 'córka młynarza z Doliny Wron'], ['dezerter z królewskiej chorągwi', 'dezerterka z królewskiej chorągwi'], ['dawny sługa w posiadłości', 'była służąca w posiadłości'], ['najmłodszy z dziewięciorga dzieci rybaka', 'najmłodsza z dziewięciorga dzieci rybaka'], ['wygnany z klasztoru za herezję', 'wygnana z klasztoru za herezję'], ['jedyny ocalały z zarazy we wsi Kruki', 'jedyna ocalała z zarazy we wsi Kruki'], ['dawny kat miejski', 'córka miejskiego kata'], ['syn przemytnika z Zatoki', 'córka przemytnika z Zatoki'], ['czeladnik kowalski bez mistrza', 'uczennica kowala, która przerosła mistrza'], ['wędrowny kuglarz, któremu zabrano trupę', 'wędrowna kuglarka, której zabrano trupę'], ['dłużnik lichwiarza z Osady', 'dłużniczka lichwiarza z Osady'], ['bękart zubożałego szlachcica', 'nieślubna córka zubożałego szlachcica'], ['grabarz, który widział za dużo', 'grabarka, która widziała za dużo'], ['żołnierz, który wrócił z wojny sam', 'markietanka, która wróciła z wojny sama'], ['zielarz wypędzony za śmierć pacjenta', 'zielarka wypędzona za śmierć pacjenta']];
+const DREAMS = [
+  { key: 'boss', text: 'chce zabić potwora, o którym śpiewają w karczmie', goal: 'pokonać bossa' },
+  { key: 'lvl3', text: 'chce zostać kimś, o kim się mówi', goal: 'dojść do Poziomu 3' },
+  { key: 'quests3', text: 'chce odpracować dług wobec rodu', goal: 'wrócić z 3 wykonanych wypraw' },
+  { key: 'dd', text: 'chce zajrzeć śmierci w oczy i przeżyć', goal: 'przeżyć Próg Śmierci' },
+  { key: 'trinket', text: 'chce mieć coś, co przetrwa po nim', goal: 'nosić błyskotkę' },
+  { key: 'calm', text: 'chce znów spokojnie spać', goal: 'wrócić z wyprawy ze Stresem 0' }
+];
+const EPITAPHS = ['Zawsze w pierwszym szeregu.', 'Bez czasu na strach.', 'Ciemność przerwała w pół zdania.', 'Długi spłacone. Wszystkie.', '„Wrócę przed zmrokiem.”', 'Ziemia nie pyta o imiona.', 'Za ród. Za nic. Za resztę z nas.'];
+function rollStory(h) {
+  const c = CLS[h.cls]; const fem = FEMALE_CLASSES.includes(c.name);
+  const others = Object.values((Store.S || {}).heroes || {}).filter(x => x.id !== h.id && !x.dead);
+  const fresh = (list, used) => { const f = list.filter(x => !used.includes(x)); return pick(f.length ? f : list); };
+  if (!h.name) h.name = fresh(fem ? NAMES_F : NAMES_M, others.map(x => x.name));
+  const dr = fresh(DREAMS, others.map(x => x.story && DREAMS.find(d => d.key === x.story.dream)).filter(Boolean));
+  const og = fresh(ORIGINS, others.map(x => x.story && ORIGINS.find(o => o.includes(x.story.origin))).filter(Boolean));
+  h.story = { origin: og[fem ? 1 : 0], dream: dr.key, dreamText: dr.text, goal: dr.goal, done: false };
+  h.tally = h.tally || { quests: 0, bosses: 0, ddSurvived: 0 };
+  return h;
+}
+
+/* ---------- rozmowy przy ognisku ---------- */
+const CAMP_TALKS = [
+  { key: 'tchorz', text: '{A} rzuca przy ognisku oskarżenie o tchórzostwo w ostatniej walce. Wszyscy patrzą na: {B}.', opts: [{ id: 'pogodz', label: 'Pogódźcie ich', note: 'obaj −1 Stres, więź +1' }, { id: 'niech', label: 'Niech się kłócą', note: '{A} −2 Stres, {B} +2 Stres, więź −1' }] },
+  { key: 'wspomnienie', text: '{A} opowiada o domu. {B} słucha w milczeniu, a potem opowiada swoje.', opts: [{ id: 'sluchaj', label: 'Posłuchajcie do końca', note: 'obaj −2 Stres, więź +1' }, { id: 'spac', label: 'Każcie im iść spać', note: 'obaj +1 Zdrowia' }] },
+  { key: 'jedzenie', text: 'Nocą znika prowiant. {A} wskazuje winnego: {B}.', opts: [{ id: 'kara', label: 'Ukarzcie winnego', note: '{B} +2 Stres, reszta −1 Stres' }, { id: 'odpusc', label: 'Odpuśćcie', note: '{A} +1 Stres, więź −1' }] },
+  { key: 'rana', text: '{B} ukrywa ranę. {A} to zauważa.', opts: [{ id: 'opatrz', label: 'Niech {A} ją opatrzy', note: '{B} +3 Zdrowia, więź +1' }, { id: 'przemilcz', label: 'Przemilczcie', note: '{B} −1 Zdrowia, ale nikt się nie martwi' }] },
+  { key: 'zaklad', text: '{A} i {B} zakładają się, kto zabije więcej wrogów w następnej walce.', opts: [{ id: 'przyjmij', label: 'Niech się zakładają', note: 'obaj: obrażenia +1 w następnej walce, więź +1' }, { id: 'zabron', label: 'Zabrońcie głupot', note: 'obaj −1 Stres' }] }
+];
+
+/* ---------- decyzje w Osadzie ---------- */
+const HAMLET_DECISIONS = [
+  { key: 'kaznodzieja', title: 'Wędrowny kaznodzieja', text: 'Na placu staje kaznodzieja i grzmi o grzechach rodu. Ludzie słuchają.', opts: [{ id: 'przyjmij', label: 'Przyjmijcie go', note: 'Opactwo o 1 Z tańsze w tym tygodniu, ale losowy bohater może zostać Fanatykiem (k10 1–3)' }, { id: 'wygon', label: 'Wygońcie go', note: 'każdy bohater w Osadzie +1 Stres' }] },
+  { key: 'lichwiarz', title: 'Lichwiarz', text: 'Do bramy puka lichwiarz z sakwą pełną monet. Proponuje pożyczkę.', opts: [{ id: 'pozycz', label: 'Weźcie 20 Złota', note: 'za 2 tygodnie oddacie 30 — jeśli nie, będzie gorzej' }, { id: 'odmow', label: 'Odmówcie' }] },
+  { key: 'medyk', title: 'Wędrowny medyk', text: 'Medyk z wozem pełnym słoików oferuje leczenie.', opts: [{ id: 'zaplac', label: 'Zapłaćcie 6 Złota', note: 'losowy chory bohater traci jedną chorobę' }, { id: 'odpraw', label: 'Odprawcie go' }] },
+  { key: 'zlodziej', title: 'Złodziej w magazynie', text: 'Ktoś kręci się nocą przy magazynie błyskotek.', opts: [{ id: 'straz', label: 'Opłaćcie straż (5 Złota)', note: 'nic nie zginie' }, { id: 'ryzyko', label: 'Zaryzykujcie', note: 'k10 1–4: znika błyskotka albo k6×2 Złota' }] },
+  { key: 'wdowa', title: 'Wdowa po poległym', text: 'Pod bramą stoi wdowa po jednym z waszych ludzi. Prosi o zapomogę.', opts: [{ id: 'daj', label: 'Dajcie 10 Złota', note: 'każdy bohater −2 Stres' }, { id: 'odmow', label: 'Odmówcie', note: 'każdy bohater +1 Stres' }] },
+  { key: 'kuglarz', title: 'Trupa kuglarzy', text: 'Do Osady zajeżdża trupa kuglarzy i proponuje występ.', opts: [{ id: 'zapros', label: 'Zaproście ich (3 Złota)', note: 'każdy bohater −1 Stres' }, { id: 'odpraw', label: 'Odprawcie' }] }
+];
+
 /* Zasady: statystyki bohatera, umiejętności, rozstrzyganie ataków, Stres i Próg Śmierci. */
 const CLS = DATA.classes;
 const MOD = {
@@ -927,6 +1116,7 @@ function newHero(clsIdx, opts = {}) {
     dd: false, exhausted: false, state: null, form: 'human', fatigue: 0, block: 0,
     fx: {}, notes: '', status: 'osada', dead: false, owner: null, created: Date.now()
   };
+  if (!opts.noStory && typeof rollStory === 'function') rollStory(h);
   if (opts.quirks) { const a = pickD(DATA.quirks_pos), b = pickD(DATA.quirks_neg); h.qp.push({ t: a.v, lock: false }); h.qn.push({ t: b.v, lock: false }); h._qroll = 'dziwactwa: ' + a.t + ', ' + b.t; }
   h.hp = heroStats(h).maxhp;
   return h;
@@ -1595,7 +1785,7 @@ function heroHeal(h, n, lines, crit) {
   const st = heroStats(h);
   n = Math.max(1, n + st.healIn);
   const before = h.hp; h.hp = Math.min(st.maxhp, h.hp + n);
-  if (before === 0 && h.dd) { h.dd = false; h.exh = Store.S.stol.fight ? 2 : 1; h.exhausted = true; lines.push(heroLabel(h) + ' schodzi z Progu Śmierci, ale ma **Wyczerpanie**.'); }
+  if (before === 0 && h.dd) { h.tally = Object.assign({ quests: 0, bosses: 0, ddSurvived: 0 }, h.tally); h.tally.ddSurvived++; h.dd = false; h.exh = Store.S.stol.fight ? 2 : 1; h.exhausted = true; lines.push(heroLabel(h) + ' schodzi z Progu Śmierci, ale ma **Wyczerpanie**.'); }
   if (crit) heroStress(h, -1, lines);
   return h.hp - before;
 }
@@ -1609,6 +1799,8 @@ function heroStress(h, n, lines, opts = {}) {
     if (Store.S.stol.fight && h.fx && h.fx.noFirst) { h.fx = Object.assign({}, h.fx, { noFirst: 0, optUsed: 1 }); lines.push(heroLabel(h) + ' nie czuje pierwszego Stresu w tej walce (Kpina z ciemności).'); return; }
     if (Store.S.stol.fight && !(h.fx && h.fx.optUsed) && h.qp.some(q => qname(q.t) === 'Optymista')) { h.fx = Object.assign({}, h.fx, { optUsed: 1 }); n -= 1; lines.push(heroLabel(h) + ' (Optymista): pierwszy Stres w walce −1.'); if (n <= 0) return; }
     const before = h.stress; h.stress = Math.min(st.heart, h.stress + n);
+    if (before < 5 && h.stress >= 5 && h.stress < 10) bark(h, 'stress5', lines);
+    if (before < 15 && h.stress >= 15 && h.stress < st.heart) bark(h, 'stress15', lines);
     if (before < 10 && h.stress >= 10 && (!h.state || h.state.kind === 'virtue' || h.state.temp)) resolveTest(h, lines);
     else if (before < 10 && h.stress >= 10 && h.state && h.state.kind === 'virtue') resolveTest(h, lines);
     if (h.stress >= st.heart) {
@@ -1628,6 +1820,7 @@ function resolveTest(h, lines) {
   if (ok) {
     const pv = pickD(DATA.virtues); const v = pv.v; h.state = { kind: 'virtue', name: v.name }; h.stress = 4;
     lines.push('**Próba Charakteru** ' + heroLabel(h) + ': k10 = **' + r + '** przy Szansie ' + st.virtue + ' → Cnota, rodzaj: ' + pv.t + ' → **' + v.name + '** (' + v.perm + '). Stres spada do 4.');
+    bark(h, 'virtue', lines, v.name);
     lines._cls = 'crit';
   } else if (CLS[h.cls].name === 'Biczownik') {
     h.state = { kind: 'ekstaza', name: 'Ekstaza bólu' };
@@ -1635,6 +1828,7 @@ function resolveTest(h, lines) {
   } else {
     const pa = pickD(DATA.afflictions); const a = pa.v; h.state = { kind: 'affliction', name: a.name };
     lines.push('**Próba Charakteru** ' + heroLabel(h) + ': k10 = **' + r + '** przy Szansie ' + st.virtue + ' → Przypadłość, rodzaj: ' + pa.t + ' → **' + a.name + '**. W walce: ' + a.combat + '.');
+    bark(h, 'affliction', lines, a.name);
     lines._cls = 'bad';
   }
 }
@@ -1740,7 +1934,7 @@ function heroUse(h0, idx, targetIds) {
       if (/Westalka leczy się o 1/.test(sk.eff)) heroHeal(h, 1, lines);
       if (/Ohyda −1 Stres/.test(sk.eff)) heroStress(h, -1, lines);
     });
-    if (crits) { heroStress(h, -1, lines); lines.push(heroLabel(h) + ' po krytyku: −1 Stres.'); }
+    if (crits) { heroStress(h, -1, lines); lines.push(heroLabel(h) + ' po krytyku: −1 Stres.'); if (d(3) === 1) bark(h, 'crit', lines); }
     const pb = sk.eff.match(/drużyna ((?:Celność|Szybkość|obrażenia|Unik|Kryt)[^;]*?) na (\d) tury/);
     if (pb) { stol.heroes.forEach(id => { const t = id === h.id ? h : getH(id); if (!t || t.dead) return; t.fx = Object.assign({}, t.fx); t.fx.buffs = (t.fx.buffs || []).filter(b => b[0] !== pb[1]).concat([[pb[1], +pb[2]]]); }); lines.push('Drużyna: ' + pb[1] + ' na ' + pb[2] + ' tury.'); sum.push('Drużyna: **' + pb[1] + '** na ' + pb[2] + ' tury.'); }
   } else {
@@ -1758,8 +1952,12 @@ function heroUse(h0, idx, targetIds) {
       if (t.id !== h.id && t.fx && t.fx.refuseHeal != null && t.fx.refuseHeal >= (stol.round || 0) && stol.fight && (v.inf.heal || v.stress)) { lines.push('→ ' + heroLabel(t) + ' **odmawia leczenia** (' + (t.state ? t.state.name : 'Przypadłość') + ').'); sum.push(heroLabel(t) + ': **odmawia leczenia** — umiejętność przepada.'); ev.push({ id: t.id, k: 'resist', txt: 'ODMAWIA' }); return; }
       if (v.inf.heal) {
         const hr = crit ? null : rollDice(inf.heal, v.healBonus);
-        const amt = crit ? Math.ceil(diceMax(inf.heal, v.healBonus) * 1.5) : hr.total;
-        const got = heroHeal(t, amt, lines, crit); bits.push('+' + got + ' Zdrowia' + (hr && inf.heal.n ? ' (k' + inf.heal.n + ' = ' + hr.roll + ')' : ''));
+        const bnd = t.id === h.id ? 0 : bondOf(h, t.id); const bb = bnd >= 2 ? 1 : bnd <= -2 ? -1 : 0;
+        const low = t.hp * 3 <= heroStats(t).maxhp;
+        const amt = Math.max(1, (crit ? Math.ceil(diceMax(inf.heal, v.healBonus) * 1.5) : hr.total) + bb);
+        if (bb) lines.push(bb > 0 ? '(przyjaźń: leczenie +1)' : '(niechęć: leczenie −1)');
+        const got = heroHeal(t, amt, lines, crit);
+        if (low && t.id !== h.id && stol.fight && d(2) === 1) bondAdd(h, t, 1, lines); bits.push('+' + got + ' Zdrowia' + (hr && inf.heal.n ? ' (k' + inf.heal.n + ' = ' + hr.roll + ')' : ''));
         const bl = sk.eff.match(/przy wyniku 1–(\d) leczony zaczyna krwawić \((\d)\)/);
         if (bl && hr && hr.roll <= +bl[1] && !t.dead) {
           t.fx = Object.assign({}, t.fx); addFx(t.fx, 'bleed', +bl[2] + (t.qn.some(q => qname(q.t) === 'Hemofilik') ? 1 : 0));
@@ -1952,12 +2150,15 @@ function afterDeaths(res) {
       else res.lines.push('Błyskotki poległego przepadają: ' + h.trinkets.map(t => t.name).join(', ') + '.');
       h.trinkets = [];
     }
-    ops.push(opSet('osada.cemetery', (Store.S.osada.cemetery || []).concat([{ name: heroLabel(h), cls: CLS[h.cls].name, level: h.level, cause: h.deathCause, week: Store.S.osada.week }])));
+    const epit = pick(EPITAPHS);
+    ops.push(opSet('osada.cemetery', (Store.S.osada.cemetery || []).concat([{ name: heroLabel(h), cls: CLS[h.cls].name, level: h.level, cause: h.deathCause, week: Store.S.osada.week, origin: h.story ? h.story.origin : '', dream: h.story && !h.story.done ? h.story.dreamText : '', epitaph: epit }])));
   });
   st.heroes.forEach(id => {
     const h = res.touched[id] || (res.touched[id] = clone(Store.S.heroes[id]));
-    const l = []; heroStress(h, 3 * ids.length, l); res.lines.push(heroLabel(h) + ' +' + 3 * ids.length + ' Stresu (śmierć towarzysza).'); l.forEach(x => res.lines.push(x));
+    const friends = ids.filter(id => bondOf(h, id) >= 2).length; const add = 3 * ids.length + 2 * friends;
+    const l = []; heroStress(h, add, l); res.lines.push(heroLabel(h) + ' +' + add + ' Stresu (śmierć towarzysza' + (friends ? ', w tym +2 za przyjaciela' : '') + ').'); l.forEach(x => res.lines.push(x));
   });
+  if (st.heroes.length) { const sv = res.touched[pick(st.heroes)]; if (sv && !sv.dead) bark(sv, 'allyDeath', res.lines); }
   if (wasActed) st.acted = rk();
   res.stol = st;
   return ops;
@@ -1974,6 +2175,7 @@ function commit(res, cls) {
   Object.values(res.touched).forEach(h => { if (h) ops.push(opSet('heroes.' + h.id, h)); });
   ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', cls: cls || res.lines._cls || '', text: res.lines.join(' ') } });
   Store.act(ops);
+  ancestorScan(res.lines.join(' '));
 }
 
 
@@ -2016,12 +2218,12 @@ function afflictionAct(h, stol, touched, lines, ev, sum) {
     if (cand.length) { const [i, t] = pick(cand); follow = { hid: h.id, idx: i, targets: t }; say = 'atakuje bez rozkazu: ' + CLS[h.cls].skills[i].name + '.'; } else act = 'taunt';
   }
   if (act === 'move') { const n = allies.length ? (i0 > 0 && (i0 === stol.heroes.length - 1 || d(2) === 1) ? -1 : 1) : 0; if (n) moveInList(stol.heroes, i0, n); say = 'nikomu nie ufa i sam zmienia pozycję.'; }
-  if (act === 'accuse') { if (allies.length) { const pt = pickD(allies); const t = T(pt.v); heroStress(t, 1, lines); say = 'rzuca oskarżenia o zdradę — ofiara ' + pt.t + ': ' + heroLabel(t) + ' dostaje +1 Stres.'; ev.push({ id: t.id, k: 'stress', txt: '+1 Stres' }); } else { act = 'skip'; } }
+  if (act === 'accuse') { if (allies.length) { const pt = pickD(allies); const t = T(pt.v); heroStress(t, 1, lines); bondAdd(h, t, -1, lines); say = 'rzuca oskarżenia o zdradę — ofiara ' + pt.t + ': ' + heroLabel(t) + ' dostaje +1 Stres.'; ev.push({ id: t.id, k: 'stress', txt: '+1 Stres' }); } else { act = 'skip'; } }
   if (act === 'refuse') { h.fx = Object.assign({}, h.fx, { refuseHeal: rd + 1 }); say = 'odtrąca pomoc: do swojej następnej tury odmawia leczenia.'; }
   if (act === 'noswap') { h.fx = Object.assign({}, h.fx, { noSwap: rd + 1 }); say = 'nie ruszy się dla nikogo: do swojej następnej tury odmawia zamiany pozycji.'; }
   if (act === 'retreat') { moveInList(stol.heroes, i0, 1); say = 'w panice cofa się o pozycję i pomija turę.'; }
   if (act === 'despair') { allies.forEach(id => { const t = T(id); heroStress(t, 1, lines); ev.push({ id, k: 'stress', txt: '+1 Stres' }); }); say = 'mówi, że wszyscy tu zginą — sojusznicy +1 Stres.'; }
-  if (act === 'taunt') { if (allies.length) { const pt = pickD(allies); const t = T(pt.v); heroStress(t, 2, lines); say = 'szydzi z sojusznika — ofiara ' + pt.t + ': ' + heroLabel(t) + ' dostaje +2 Stres.'; ev.push({ id: t.id, k: 'stress', txt: '+2 Stres' }); } else act = 'skip'; }
+  if (act === 'taunt') { if (allies.length) { const pt = pickD(allies); const t = T(pt.v); heroStress(t, 2, lines); bondAdd(h, t, -1, lines); say = 'szydzi z sojusznika — ofiara ' + pt.t + ': ' + heroLabel(t) + ' dostaje +2 Stres.'; ev.push({ id: t.id, k: 'stress', txt: '+2 Stres' }); } else act = 'skip'; }
   if (act === 'forward') { moveInList(stol.heroes, i0, -9); say = 'wysuwa się na sam przód szyku.'; }
   if (act === 'selfharm') { const r = d(4); heroDamage(h, r, lines, 'samookaleczenie'); say = 'rani się sam: ' + obrN(r) + ' (k4 = ' + r + ').'; ev.push({ id: h.id, k: 'hit', txt: '−' + r }); }
   if (act === 'skip') say = 'pomija turę.';
@@ -2209,6 +2411,7 @@ function enemyAuto(e0, entry) {
     const ai = BOSS_AI[e.name]; let want;
     const firstNow = !(stol.init || []).slice(0, Math.max(0, stol.turn)).some(x => x.id === e.id);
     if (!entry || firstNow) { want = ai.first; pre.push('Pierwsza tura w rundzie: atak sygnaturowy — **' + want + '**.'); }
+    else if (e.nextMove && e.nextMove.round === (stol.round || 0)) { want = e.nextMove.name; pre.push('Druga tura: zapowiedziany ruch (k6 = **' + e.nextMove.r + '**) → **' + want + '**.'); }
     else { const r = d(6); const row = ai.table.find(([a, b]) => r >= a && r <= b); want = row[2]; pre.push('Druga tura: k6 = **' + r + '** → **' + want + '**.'); }
     if (want === 'Do kotła!' && stol.cauldron && s.heroes[stol.cauldron] && !s.heroes[stol.cauldron].dead) { want = 'Chochla'; pre.push('Kocioł jest zajęty — Chochla.'); }
     if (want === 'Pieśń syreny' && stol.heroes.some(id => ((s.heroes[id] || {}).fx || {}).charm)) { want = 'Fala'; pre.push('Ktoś już jest zauroczony — Fala.'); }
@@ -2420,12 +2623,12 @@ function renderView() {
   renderInto(el, v.render());
   if (v.after) v.after(el);
 }
-function renderAll() { Store.ready = true; renderTabs(); renderTorch(); renderView(); renderSide(); }
+function renderAll() { Store.ready = true; if (UI.guideOff == null) UI.guideOff = !!LS.get('pio:guideOff'); renderTabs(); renderTorch(); renderGuide(); renderView(); renderSide(); autoDriver(); }
 Store.onChange(what => {
   if (what === 'peers') return renderTabs();
   if (what === 'log') { renderSide(); checkRollCard(); checkCaption(); return; }
   if (what === 'role') return renderAll();
-  renderTorch(); renderView(); renderSide(); renderTabs(); checkCaption(); checkRollCard();
+  renderTorch(); renderGuide(); renderView(); renderSide(); renderTabs(); checkCaption(); checkRollCard(); autoDriver();
 });
 
 /* ---------- dziennik, czat i kości ---------- */
@@ -2524,8 +2727,8 @@ Object.assign(ACT, {
   gloss: () => glossaryModal(),
   leave: () => confirmBox('Zmienić tryb gry?', 'Wrócisz do ekranu wyboru. Zapisany stan zostaje w tej przeglądarce.', 'Zmień', () => { LS.set('pio:ostatni', null); location.hash = ''; location.reload(); }),
   torch: el => Store.act([opSet('stol.torch', +el.dataset.v === Store.S.stol.torch ? +el.dataset.v - 1 : +el.dataset.v)]),
-  torchDim: () => { const t = Math.max(0, Store.S.stol.torch - 1); Store.act([opSet('stol.torch', t)]); rollLog('Drużyna przygasza pochodnię: Pochodnia **' + t + '** (' + torchInfo(t).name + ').', t <= 2 ? 'bad' : '', 'sys'); },
-  torch0: () => { Store.act([opSet('stol.torch', 0)]); rollLog('Drużyna gasi pochodnię. **Ciemność.**', 'bad', 'sys'); },
+  torchDim: () => { const t = Math.max(0, Store.S.stol.torch - 1); Store.act([opSet('stol.torch', t)]); if (t === 0) ancestorSay('ciemnosc'); rollLog('Drużyna przygasza pochodnię: Pochodnia **' + t + '** (' + torchInfo(t).name + ').', t <= 2 ? 'bad' : '', 'sys'); },
+  torch0: () => { Store.act([opSet('stol.torch', 0)]); rollLog('Drużyna gasi pochodnię. **Ciemność.**', 'bad', 'sys'); ancestorSay('ciemnosc'); },
   torchUse: () => {
     const w = Store.S.wyprawa; const n = (w.sup && w.sup.Pochodnie) || 0;
     const ops = [opSet('stol.torch', Math.min(10, Store.S.stol.torch + 3))];
@@ -2633,7 +2836,7 @@ function enemySlot(x) {
     <div class="cl">${e.corpse ? 'trzyma pozycję' : esc(e.type || '') + (e.dl ? ' · ' + DL_SHORT[e.dl] : '')}</div>
     ${bar('hp', e.hp, e.maxhp, e.hp + ' / ' + e.maxhp)}
     <div class="est num">Unik ${enemyDodge(e)} · Panc. ${enemyProt(e)} · Szyb. ${e.speed}</div>
-    <div class="chips">${chipsHtml(fxChips(e.fx))}</div>
+    <div class="chips">${chipsHtml(fxChips(e.fx))}${e.nextMove && e.nextMove.round === (Store.S.stol.round || 0) && Store.S.stol.fight ? `<span class="chip sm gold tell" tabindex="0" title="${esc('Szykuje na drugą turę: ' + e.nextMove.name + '. ' + (BOSS_TELL[e.nextMove.name] || ''))}" data-gloss="${esc('Szykuje na drugą turę: ' + e.nextMove.name + '. ' + (BOSS_TELL[e.nextMove.name] || ''))}">⚠ ${esc(e.nextMove.name)}</span>` : ''}</div>
   </div>`;
 }
 
@@ -2678,6 +2881,7 @@ VIEWS.stol = {
         <div class="row">
           ${W ? `<button class="btn sm" data-act="formation">Ustaw drużynę</button>` : ''}
           ${W && !s.fight ? `<button class="btn sm primary" data-act="fightStart" ${s.enemies.length && s.heroes.length ? '' : 'disabled'}>Rozpocznij walkę</button>` : ''}
+          ${gm ? `<button class="btn sm ${s.autoFight !== false ? 'gold' : 'ghost'}" data-act="autoToggle" title="Płynna walka: tura przechodzi sama po akcji, wrogowie działają według zasad">Płynna walka: ${s.autoFight !== false ? 'wł.' : 'wył.'}</button>` : ''}
           ${W && s.fight ? `<button class="btn sm" data-act="newRound">Nowa runda</button><button class="btn sm primary" data-act="nextTurn" ${s.init.length ? '' : 'disabled'}>Następna tura</button><button class="btn sm ghost" data-act="fightEnd">Zakończ walkę</button>` : ''}
         </div>
       </div>
@@ -2806,7 +3010,7 @@ document.addEventListener('drop', ev => {
   if (to < 0) { const p = +((sl.querySelector('.pos') || {}).textContent || 0); to = Math.min(st0.heroes.length - 1, Math.max(0, p - 1)); }
   if (from < 0 || to < 0 || from === to) return;
   if (st0.fight && Math.abs(from - to) > 1) return toast('W walce zamieniasz się tylko z sąsiadem.');
-  if (st0.fight) { const g = heroTurn(H(_dragId)); if (!g.ok) return toast(g.why); }
+  if (st0.fight) { const g = heroTurn(H(_dragId)); if (!g.ok) return toast(g.why); if (st0.heroes[to] && bondOf(H(_dragId), st0.heroes[to]) <= -2) return toast('Ci dwaj nie znoszą się — w walce nie zamienią się miejscami.'); }
   const other = st0.heroes[to] && H(st0.heroes[to]); const rd = st0.round || 0;
   const blk = [H(_dragId), other].find(x => x && x.fx && x.fx.noSwap != null && x.fx.noSwap >= rd && st0.fight);
   if (blk) return toast(heroLabel(blk) + ' odmawia zamiany pozycji.');
@@ -2863,6 +3067,7 @@ Object.assign(ACT, {
     const id = el.dataset.id || UI.sel.id; const st0 = Store.S.stol; const i = st0.heroes.indexOf(id); const j = i + +el.dataset.d; const rd = st0.round || 0;
     const blk = [id, st0.heroes[j]].map(H).find(x => x && x.fx && x.fx.noSwap != null && x.fx.noSwap >= rd && st0.fight);
     if (blk) return toast(heroLabel(blk) + ' odmawia zamiany pozycji (' + (blk.state ? blk.state.name : 'Przypadłość') + ').');
+    if (st0.fight && H(st0.heroes[j]) && bondOf(H(id), st0.heroes[j]) <= -2) return toast(heroLabel(H(id)) + ' i ' + heroLabel(H(st0.heroes[j])) + ' nie znoszą się — w walce nie zamienią się miejscami.');
     if (st0.fight) { const g = heroTurn(H(id)); if (!g.ok) return toast(g.why); }
     const mark = inTurns() ? turnKey() : null;
     setStol(st => { moveInList(st.heroes, i, +el.dataset.d); if (mark) st.acted = mark; }, heroLabel(H(id)) + ' zmienia pozycję.');
@@ -3041,7 +3246,8 @@ Object.assign(ACT, {
     init.sort((a, b) => (a.late - b.late) || (b.tot - a.tot) || (a.k === 'h' ? -1 : 1));
     s.init = init; s.turn = 0;
     const nm = x => x.k === 'h' ? heroLabel(H(x.id)) : (s.enemies.find(e => e.id === x.id) || {}).name;
-    const txt = '**Runda ' + s.round + '.** Inicjatywa (k10 + Szybkość): ' + init.map(x => nm(x) + ' ' + x.tot).join(', ') + (sur && sur !== 'nikt' ? ' — zaskoczeni działają na końcu.' : '.');
+    const tl = []; bossTelegraph(s, tl);
+    const txt = '**Runda ' + s.round + '.** Inicjatywa (k10 + Szybkość): ' + init.map(x => nm(x) + ' ' + x.tot).join(', ') + (sur && sur !== 'nikt' ? ' — zaskoczeni działają na końcu.' : '.') + (tl.length ? ' ' + tl.join(' ') : '');
     Store.act([opSet('stol', s), { log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', text: txt } }]);
     const first = init[0]; if (first) { const res = startTurn(first); if (res && !res.quiet) commit(res); runFollow(res); autoSkip(res); }
   },
@@ -3064,6 +3270,14 @@ Object.assign(ACT, {
     if ((s.fallen || []).length) {
       if (won) { ops.push(opSet('osada.trinkets', (Store.S.osada.trinkets || []).concat(s.fallen))); lines.push('Wygrana: błyskotki poległych wracają do magazynu (' + s.fallen.map(t => t.name).join(', ') + ').'); }
       else lines.push('Błyskotki poległych przepadają: ' + s.fallen.map(t => t.name).join(', ') + '.');
+    }
+    if (won && s.bossName && s.bossName !== 'Shambler') s.heroes.forEach(id => { const t = touched[id]; if (t && !t.dead) { t.tally = Object.assign({ quests: 0, bosses: 0, ddSurvived: 0 }, t.tally); t.tally.bosses++; } });
+    s.heroes.forEach(id => { const t = touched[id]; if (t) dreamCheck(t, lines, 'fight'); });
+    if (s.siege) {
+      const o = clone(Store.S.osada); o.siege = false;
+      if (won) { o.threat = 5; lines.push('**Oblężenie odparte.** Ciemność cofa się do lochów (5/10).'); }
+      else { const bl = Object.keys(o.b).filter(k => o.b[k] > 0); if (bl.length) { const pb = pickD(bl); o.b[pb.v]--; lines.push('**Oblężenie przegrane.** ' + pb.v + ' traci stopień (' + pb.t + ').'); } else lines.push('**Oblężenie przegrane.** Osada płonie, ale nie ma już czego burzyć.'); o.threat = 7; }
+      ops.push(opSet('osada', Object.assign(o, { trinkets: ((ops.find(x => x.p === 'osada.trinkets') || {}).v) || o.trinkets }))); s.siege = false;
     }
     if (won && s.bossName === 'Shambler') { const kiel = ALL_TRINKETS().find(t => t.kind === 'kiel'); if (kiel) { ops.push(opSet('osada.trinkets', ((ops.find(o => o.p === 'osada.trinkets') || {}).v || Store.S.osada.trinkets || []).concat([kiel]))); lines.push('**Shambler pokonany.** Nagroda: **Kieł spoza gwiazd** trafia do magazynu błyskotek.'); } }
     const w = Store.S.wyprawa;
@@ -3217,6 +3431,8 @@ VIEWS.bohaterowie = {
         <div class="sh-id">
           <input type="text" class="hname" id="hn-${h.id}" data-bind="${P}.name" value="${esc(h.name)}" placeholder="Imię bohatera" ${dis} aria-label="Imię bohatera">
           <div class="hcls">${esc(c.name)} <span class="muted">· ${esc(c.role || '')}</span></div>
+          ${h.story ? `<div class="hstory small"><span class="muted">${esc(h.story.origin)}.</span> Marzenie: ${esc(h.story.dreamText)} <span class="muted">(${h.story.done ? '<b>spełnione</b>' : 'cel: ' + esc(h.story.goal) + ' → pozytywne dziwactwo'})</span></div>` : can ? `<button class="btn sm ghost" data-act="storyRoll">Nadaj historię (pochodzenie i marzenie)</button>` : ''}
+          ${Object.entries(h.bonds || {}).filter(([id, n]) => n && H(id) && !H(id).dead).length ? `<div class="hbonds small">${Object.entries(h.bonds).filter(([id, n]) => n && H(id) && !H(id).dead).map(([id, n]) => `<span class="chip sm ${n >= 2 ? 'gold' : n <= -2 ? 'red' : ''}">${esc(heroLabel(H(id)))}: ${bondName(n)}</span>`).join('')}</div>` : ''}
           <div class="row lvl"><span class="lbl">Poziom</span>${[0, 1, 2, 3, 4, 5, 6].map(i => `<button class="lv ${i === h.level ? 'on' : ''}" data-act="setLevel" data-v="${i}" ${dis}>${i}</button>`).join('')}
             <span class="lbl">znaczniki</span>${[1, 2].map(i => `<i class="xp ${i <= h.xp ? 'on' : ''}"></i>`).join('')}
             ${can ? `<button class="btn sm ghost" data-act="addXp" data-v="1">+1</button><button class="btn sm ghost" data-act="addXp" data-v="2">+2</button><button class="btn sm ghost" data-act="addXp" data-v="3">+3</button>` : ''}</div>
@@ -3322,7 +3538,7 @@ function heroBusy(h) {
 }
 function svcState(h, b, sub) {
   const o = Store.S.osada; const qn = h.qn.map(q => qname(q.t)); const cn = CLS[h.cls].name;
-  const cost = Math.max(1, 4 - (b === 'Opactwo' && o.eventR === 1 ? 2 : 0)); const slots = 2 + ((o.b || {})[b] || 0); const left = Math.max(0, slots - ((o.svc || {})[sub] || 0));
+  const cost = Math.max(1, 4 - (b === 'Opactwo' && o.eventR === 1 ? 2 : 0) - (b === 'Opactwo' && o.abbeyDisc === o.week ? 1 : 0)); const slots = 2 + ((o.b || {})[b] || 0); const left = Math.max(0, slots - ((o.svc || {})[sub] || 0));
   const r = (why) => ({ ok: false, why, cost, slots, left });
   const busy = heroBusy(h); if (busy) return r(busy);
   if (b === 'Gospoda' && o.eventR === 5) return r('Gospoda zamknięta w tym tygodniu (pożar).');
@@ -3445,9 +3661,11 @@ Object.assign(ACT, {
       [{ t: 'Anuluj' }, { t: 'Załóż', cls: 'primary', fn: () => {
         const r = $('input[name=trk]:checked'); if (!r) { toast('Wybierz błyskotkę.'); return false; }
         const m2 = mag.slice(); const t = m2.splice(+r.value, 1)[0]; h.trinkets.push(t);
-        Store.act([opSet('heroes.' + h.id, h), opSet('osada.trinkets', m2)]);
+        const dl = []; dreamCheck(h, dl, 'trinket');
+        Store.act([opSet('heroes.' + h.id, h), opSet('osada.trinkets', m2)]); if (dl.length) rollLog(dl.join(' '), 'good', 'sys');
       } }]);
   },
+  storyRoll: () => { const h = curHero(); rollStory(h); saveHero(h); rollLog(heroLabel(h) + ': ' + h.story.origin + '. Marzenie: ' + h.story.dreamText + '.', '', 'sys'); },
   heroDelete: () => {
     const h = curHero();
     confirmBox('Usunąć ' + heroLabel(h) + '?', 'Bohater zniknie z rejestru na zawsze. Poległych lepiej zostawić na Cmentarzu.', 'Usuń', () => {
@@ -3668,7 +3886,7 @@ function genDungeon(q) {
   }
   const R = q.region === 'dd' ? null : REGIONS[q.region];
   const curioPool = R ? DATA.curios.filter(c => c.region === R.key || c.region === 'wszędzie').map(c => c.name) : ['Zakazana księga'];
-  rooms.slice(1).forEach(r => { const t = rollTable('komnata'); r.c = t.text; if (/osobliwość/.test(r.c)) r.curio = pick(curioPool); });
+  rooms.slice(1).forEach(r => { const t = rollTable('komnata'); r.c = t.text; if (/osobliwość/.test(r.c)) r.curio = pick(curioPool); if (r.c === 'pusta' && d(2) === 1) r.feature = pick(ROOM_FEATURES).key; });
   /* odległości od wejścia */
   const dist = { r0: 0 }; const qd = ['r0'];
   while (qd.length) { const c = qd.shift(); edges.forEach(e => { const o = e.a === c ? e.b : e.b === c ? e.a : null; if (o && dist[o] == null) { dist[o] = dist[c] + 1; qd.push(o); } }); }
@@ -3677,6 +3895,7 @@ function genDungeon(q) {
   if (q.goal === 'zbiorka') shuffle(rooms.slice(1).filter(r => r.c !== 'boss')).slice(0, 3).forEach(r => { r.item = R.gather; });
   if (q.goal === 'aktywacja') shuffle(rooms.slice(1).filter(r => r.c !== 'boss')).slice(0, 3).forEach(r => { r.c = /walka/.test(r.c) ? 'walka i osobliwość' : 'osobliwość'; r.curio = R.activate; r.goal = true; });
   const minY = Math.min(...rooms.map(r => r.y)); rooms.forEach(r => r.y -= minY);
+  const regKey = q.dd != null ? 'DD' : REGIONS[q.region].key; rooms.forEach(r => { r.desc = roomDesc(regKey, r.c); });
   return { rooms, edges };
 }
 function shuffle(a) { for (let i = a.length - 1; i > 0; i--) { const j = d(i + 1) - 1; [a[i], a[j]] = [a[j], a[i]]; } return a; }
@@ -3787,6 +4006,8 @@ VIEWS.wyprawa = {
     if (!r) return '';
     const W = Store.canWrite(); const w = Store.S.wyprawa;
     const bits = [];
+    if (r.desc) bits.push(`<p class="rdesc">${esc(r.desc)}</p>`);
+    if (r.feature && !r.featureDone) bits.push(featureBox(r));
     if (r.item && !r.itemTaken) bits.push(`<p>Leży tu: <b>${esc(r.item)}</b>. ${W ? `<button class="btn sm gold" data-act="takeItem">Zabierz</button>` : ''}</p>`);
     if (/walka|boss/.test(r.c) && !r.cleared) bits.push(`<p>${r.c === 'boss' ? 'Tu czeka boss.' : 'W komnacie czają się wrogowie.'} ${W ? `<button class="btn sm primary" data-act="roomFight">${r.c === 'boss' ? 'Boss!' : 'Do walki'}</button>` : ''}</p>`);
     const fightHere = /walka|boss/.test(r.c) && !r.cleared;
@@ -3800,7 +4021,7 @@ VIEWS.wyprawa = {
           <button class="btn sm" data-act="curio" data-m="roll" data-f="${f}">Dotknij (k10)</button>${cu.item !== 'brak' ? `<button class="btn sm gold" data-act="curio" data-m="item" data-f="${f}">Użyj: ${esc(cu.item)} (${(Store.S.wyprawa.sup || {})[CURIO_ITEM[cu.item]] || 0})</button>` : ''}<button class="btn sm ghost" data-act="curio" data-m="skip" data-f="${f}">Omiń</button></div>` : ''}</div>`);
     });
     if (r.c === 'skrzynia' && !r.opened) bits.push(`<p>Skrzynia. ${W ? `<button class="btn sm gold" data-act="chest">Otwórz</button>` : ''}</p>`);
-    if (/pusta|wejście/.test(r.c)) bits.push('<p class="muted">Pusto. Cisza i kurz.</p>');
+    if (/pusta|wejście/.test(r.c) && !r.desc) bits.push('<p class="muted">Pusto. Cisza i kurz.</p>');
     if (W) bits.push(`<div class="row">${Store.isGM() ? `<label class="chk" title="Poprawka MG — po wygranej walce komnata oczyszcza się sama"><input type="checkbox" data-act-change="roomClear" ${r.cleared ? 'checked' : ''}> oczyszczona</label>` : r.cleared ? '<span class="chip sm">oczyszczona</span>' : ''}
       ${(w.campsLeft || 0) > 0 && (r.cleared || !/walka|boss/.test(r.c)) ? `<button class="btn sm" data-act="camp">Rozbij obóz</button>` : ''}
       ${Store.isGM() ? `<button class="btn sm ghost" data-act="roomLoot" title="Dodatkowy rzut na łup — decyzja MG">Rzut na łup (MG)</button>` : ''}</div>`);
@@ -3838,7 +4059,7 @@ function eventBanner() {
   }
   const E = ROAD_EVENTS.find(e => e.key === p.key); if (!E) return '';
   return `<div class="eventbox"><div class="ev-h"><span class="lbl">Wydarzenie w drodze</span> <b>${esc(E.title)}</b></div><p>${esc(E.text)}</p>
-    ${W ? `<div class="row">${E.opts.map(o => { const lack = o.cost && Object.entries(o.cost).some(([k, v]) => (sup[k] || 0) < v); const c = o.cost ? Object.entries(o.cost).map(([k, v]) => '−' + v + ' ' + k.toLowerCase()).join(', ') : ''; return `<button class="btn ${o.cost ? 'gold' : ''}" data-act="evPick" data-o="${o.id}" ${lack ? 'disabled title="Brak w plecaku"' : ''}>${esc(o.label)}${c || o.note ? `<span class="small"> (${esc([c, o.note].filter(Boolean).join('; '))})</span>` : ''}</button>`; }).join('')}</div>` : '<p class="muted">Drużyna decyduje…</p>'}</div>`;
+    ${W ? voteRow('road:' + p.id, E.opts.map(o => { const lack = o.cost && Object.entries(o.cost).some(([k, v]) => (sup[k] || 0) < v); const c = o.cost ? Object.entries(o.cost).map(([k, v]) => '−' + v + ' ' + k.toLowerCase()).join(', ') : ''; return { id: o.id, label: o.label + (lack ? ' (brak w plecaku)' : ''), note: [c, o.note].filter(Boolean).join('; '), dis: lack }; }), 'road') : '<p class="muted">Drużyna decyduje…</p>'}</div>`;
 }
 function resolveRoad(optId) {
   const s = Store.S; const w = clone(s.wyprawa); const st = clone(s.stol); const p = w.pending; const E = ROAD_EVENTS.find(e => e.key === p.key);
@@ -3940,6 +4161,7 @@ Object.assign(ACT, {
     st.enemies = r.c === 'boss' ? bossSetup(region, q.dl, q.dd || 0) : rollEncounter(region, q.dl).list.filter(Boolean);
     st.roomId = r.id; st.looted = false; st.lootBonus = 0;
     Store.act([opSet('stol', st), { log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', cls: 'bad', text: (r.c === 'boss' ? '**Boss!** ' : 'Wrogowie w komnacie: ') + st.enemies.map(e => e.name).join(', ') + '. Przejdźcie na Stół.' } }]);
+    if (r.c === 'boss') ancestorSay('boss');
     location.hash = '#stol';
   },
   curio: el => resolveCurio(el.dataset.f || 'curio', el.dataset.m),
@@ -4103,7 +4325,8 @@ function crossTo(id) {
   if (st.enemies.some(x => !x.corpse) && !s.stol.enemies.some(x => !x.corpse)) { st.roomId = null; st.looted = false; }
   w.prev = w.at; w.at = id; dest.visited = true; dest.seen = true;
   if (UI._hiddenFind) { const hf = UI._hiddenFind; UI._hiddenFind = null; st.lastLoot = { id: uid(), t: Date.now(), why: hf.why, items: hf.items, tot: lootTotals(hf.x, DL_INFO[w.quest.dl].mult), dest: 'plecak wyprawy' }; }
-  lines.push('Drużyna wchodzi do komnaty: **' + dest.c + '**.');
+  lines.push('Drużyna wchodzi do komnaty: **' + dest.c + '**.' + (dest.desc && !dest.descShown ? ' *' + dest.desc + '*' : ''));
+  dest.descShown = true;
   Store.act([opSet('wyprawa', w)], { quiet: true });
   commit({ lines, stol: st, touched });
 }
@@ -4119,7 +4342,7 @@ function finishQuest(done) {
   if ((L.trinkets || []).length) { o.trinkets = (o.trinkets || []).concat(L.trinkets); lines.push('Do magazynu błyskotek: ' + L.trinkets.map(t => t.name).join(', ') + '.'); }
   (L.inne || []).forEach(x => { if (/błyskotka/.test(x)) lines.push('Do rozpatrzenia w Osadzie: ' + x + ' (dodaj do magazynu).'); });
   lines.push('**Powrót do Osady.** Łupy: ' + (L.zloto || 0) + ' Złota, klejnoty za ' + gemsGold + ' Złota' + (lootMem.length ? ', pamiątki: ' + lootMem.join(', ') : '') + '.');
-  const touched = {}; const pt = party();
+  const touched = {}; const pt = party(); o.lastQuestWeek = o.week;
   if (done) {
     o.gold += rw.gold; const rm = addMem(rw.mem);
     lines.push('Nagroda za zadanie: ' + rw.gold + ' Złota, pamiątki: ' + rm.join(', ') + '; doświadczenie +' + rw.xp + '.');
@@ -4131,7 +4354,8 @@ function finishQuest(done) {
     });
     if (q.goal === 'boss' && q.dd == null) o.bosses = Object.assign({}, o.bosses, { [q.region + q.dl]: true });
     if (q.dd != null) { o.dd = Math.max(o.dd || 0, q.dd + 1); pt.forEach(h => { const t = touched[h.id]; if (t && !t.dead) t.restUntil = o.week + 2; }); lines.push('Ocaleni z Najmroczniejszego Lochu przez 2 tygodnie nie zejdą do żadnego lochu.'); }
-    o.questsDone = (o.questsDone || 0) + 1;
+    o.questsDone = (o.questsDone || 0) + 1; o.lastQuestWeek = o.week; o.threat = Math.max(0, (o.threat || 0) - 2);
+    pt.forEach(h => { const t = touched[h.id]; if (t && !t.dead) { t.tally = Object.assign({ quests: 0, bosses: 0, ddSurvived: 0 }, t.tally); t.tally.quests++; } });
     const nextReg = ['ruiny', 'nory', 'knieja', 'zatoka'].find(r => !(o.regions || []).includes(r));
     if (nextReg) { o.regions = (o.regions || ['ruiny']).concat([nextReg]); lines.push('**Otwiera się nowy region: ' + REGIONS[nextReg].name + '.**'); }
   } else pt.forEach(h => { const t = touched[h.id] = clone(h); heroStress(t, 3, lines); lines.push(heroLabel(t) + ' +3 Stres (porzucona wyprawa).'); });
@@ -4140,7 +4364,7 @@ function finishQuest(done) {
   const qlines = pt.filter(h => !(touched[h.id] || h).dead).map(h => { const t = touched[h.id]; const q = rollQuirkFor(t); return q.txt; });
   if (qlines.length) lines.push('**Dziwactwa po wyprawie:** ' + qlines.join(' '));
   /* tydzień w Osadzie: rany się goją (Stres, Przypadłości, choroby i dziwactwa zostają) */
-  pt.forEach(h => { const t = touched[h.id]; if (!t || t.dead) return; t.hp = heroStats(t).maxhp; t.dd = false; t.exhausted = false; t.exh = 0; t.qbuff = []; });
+  pt.forEach(h => { const t = touched[h.id]; if (!t || t.dead) return; dreamCheck(t, lines, 'return'); t.hp = heroStats(t).maxhp; t.dd = false; t.exhausted = false; t.exh = 0; t.qbuff = []; });
   if (pt.some(h => !(touched[h.id] || h).dead)) lines.push('Przez tydzień w Osadzie rany się goją: ocaleni wracają do pełnego Zdrowia. Stres, Przypadłości, choroby i dziwactwa zostają.');
   o.lastReturn = Date.now();
   const card = { id: uid(), t: Date.now(), why: done ? 'Powrót z wykonanym zadaniem' : 'Powrót bez wykonania zadania', items: qlines, tot: [], dest: 'skarbiec Osady i karty bohaterów' };
@@ -4150,6 +4374,7 @@ function finishQuest(done) {
   UI.wsub = 'mapa';
   Store.act(ops, { quiet: true });
   commit({ lines, stol: null, touched }, done ? 'good' : 'bad');
+  ancestorSay('powrot');
 }
 
 /* ---------- osobliwości: skutki działają naprawdę ---------- */
@@ -4258,6 +4483,7 @@ function campPanel() {
       ${campSkillsOf(h).some(x => campTarget(x.eff) === 'ally') ? `<label class="small">cel: <select id="ctgt-${h.id}">${pt.map(x => `<option value="${x.id}">${esc(heroLabel(x))}</option>`).join('')}</select></label>` : ''}</div>
       <div class="row">${campSkillsOf(h).map(x => `<button class="btn sm ${used.includes(x.name) ? 'ghost' : ''}" data-act="campSkill" data-h="${h.id}" data-n="${esc(x.name)}" ${!can || used.includes(x.name) || x.pts > c.pts ? 'disabled' : ''} title="${esc(x.eff)}">${esc(x.name)} <span class="num">${x.pts}</span></button>`).join('')}</div>
       <div class="small dim">${campSkillsOf(h).map(x => '<b>' + esc(x.name) + '</b>: ' + esc(x.eff)).join(' · ')}</div></div>`; }).join('')}
+    ${campTalkBox()}
     ${W ? `<div class="row"><button class="btn primary" data-act="campNight">Noc${c.fireOut ? ' (ognisko zgaszone)' : ''}</button><span class="small muted">zasadzka przy k10 ${w.noAmbush ? '— niemożliwa (warta)' : c.fireOut ? '1–4' : pt.some(x => x.camp.includes('Czujność')) ? '1 (Czujność)' : '1–2'}</span></div>` : ''}
   </section>`;
 }
@@ -4356,7 +4582,7 @@ function sellValue(t) { const o = Store.S.osada; const base = t.kind === 'class'
 VIEWS.osada = {
   render() {
     const o = Store.S.osada; const gm = Store.isGM(); const W = Store.canWrite();
-    return `<div class="grid2">
+    return `${threatBar()}${hamletDecisionBox()}<div class="grid2">
       <section class="panel"><h2>Tydzień ${o.week}</h2>
         ${o.event ? `<p><b>Wydarzenie:</b> ${esc(o.event)}</p>` : '<p class="muted">Wydarzenie tygodnia jeszcze nie wylosowane.</p>'}
         ${o.cultists ? '<p class="small warn">Kultyści na trakcie: następna wyprawa ma dodatkową walkę w pierwszym korytarzu.</p>' : ''}${o.rumor ? '<p class="small">Plotka: następna wyprawa ma +1 rzut na łup.</p>' : ''}
@@ -4382,7 +4608,7 @@ VIEWS.osada = {
         ${W ? `<div class="row"><button class="btn sm primary" data-act="trkRoll">Losuj błyskotkę</button><button class="btn sm" data-act="trkAdd">Dodaj ręcznie</button><button class="btn sm ghost" data-act="trkSwap">Wóz: wymień 2 → 1</button></div>` : ''}
       </section>
       <section class="panel"><h2>Cmentarz</h2>
-        ${(o.cemetery || []).length ? `<ul class="cem">${o.cemetery.map(c => `<li><b>${esc(c.name)}</b> <span class="dim">${esc(c.cls)}, Poziom ${c.level}</span> <span class="muted small">— ${esc(c.cause || '')}${c.week ? ', tydzień ' + c.week : ''}</span></li>`).join('')}</ul><p class="small muted">MG odczytuje te imiona na początku sesji.</p>` : '<p class="muted">Nikt jeszcze nie spoczął. Jeszcze.</p>'}
+        ${(o.cemetery || []).length ? `<ul class="cem">${o.cemetery.map(c => `<li><b>${esc(c.name)}</b> <span class="dim">${esc(c.cls)}, Poziom ${c.level}</span> <span class="muted small">— ${esc(c.cause || '')}${c.week ? ', tydzień ' + c.week : ''}</span>${c.origin ? `<br><span class="small dim">${esc(c.origin)}${c.dream ? '; nie zdążył(a) spełnić marzenia: ' + esc(c.dream.replace(/^chce /, '')) : ''}.</span>` : ''}${c.epitaph ? `<br><i class="small">${esc(c.epitaph)}</i>` : ''}</li>`).join('')}</ul><p class="small muted">MG odczytuje te imiona na początku sesji.</p>` : '<p class="muted">Nikt jeszcze nie spoczął. Jeszcze.</p>'}
       </section>
     </div>
     ${gm ? `<section class="panel"><h2>Kopia gry <span class="hint">dla MG</span></h2>
@@ -4414,7 +4640,12 @@ Object.assign(ACT, {
     const n = 3 + (o.b['Dyliżans'] || 0); const lvl = (o.b['Dyliżans'] || 0) >= 3 ? 1 : 0;
     o.recruits = Array.from({ length: n }, () => { let r; do { r = d(20); } while (r > 17); return { cls: r - 1, roll: r, level: lvl, qp: pick(DATA.quirks_pos), qn: pick(DATA.quirks_neg) }; });
     if (ev.r === 4) o.recruits[0].level = 2;
-    const ops = [opSet('osada', o)]; const notes = [];
+    const tl = [];
+    if (o.debt && o.week >= o.debt.week) { if (o.gold >= o.debt.amount) { o.gold -= o.debt.amount; tl.push('Lichwiarz odbiera ' + o.debt.amount + ' Złota.'); } else { tl.push('**Lichwiarz** przychodzi po ' + o.debt.amount + ' Złota, a w skarbcu jest ' + o.gold + '. Zabiera wszystko, a jego ludzie straszą bohaterów: każdy +2 Stres.'); o.gold = 0; o.debtStress = true; } o.debt = null; }
+    threatTick(o, tl);
+    { const live = liveHeroes(); const okD = HAMLET_DECISIONS.filter(D => D.key === 'wdowa' ? (o.cemetery || []).length > 0 : D.key === 'medyk' ? live.some(h => (h.diseases || []).length) : D.key === 'zlodziej' ? (o.trinkets || []).length > 0 : D.key === 'lichwiarz' ? !o.debt : true);
+      o.decision = (o.questsDone || 0) >= 1 && okD.length && d(10) <= 7 ? { id: uid(), key: pick(okD).key } : null; }
+    const ops = [opSet('osada', o)]; const notes = tl.slice();
     /* tydzień w Osadzie: koniec leczenia, powroty, pełne Zdrowie, Niespokojne sny */
     liveHeroes().filter(h => h.status !== 'wyprawa').forEach(h => {
       const h2 = clone(h); let ch = false;
@@ -4423,8 +4654,11 @@ Object.assign(ACT, {
       if (h2.ban && h2.ban.until <= o.week) { h2.ban = null; ch = true; }
       const mx = heroStats(h2).maxhp; if (h2.hp < mx || h2.dd || h2.exhausted) { h2.hp = mx; h2.dd = false; h2.exhausted = false; h2.exh = 0; ch = true; }
       if (ev.r === 7) { const l = []; heroStress(h2, 1, l); ch = true; }
+      if (o.debtStress) { const l = []; heroStress(h2, 2, l); ch = true; }
       if (ch) ops.push(opSet('heroes.' + h.id, h2));
     });
+    o.debtStress = false;
+    if (o.decision) notes.push('Decyzja tygodnia: **' + HAMLET_DECISIONS.find(x => x.key === o.decision.key).title + '** (zakładka Osada).');
     ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'sys', text: '**Tydzień ' + o.week + '.** Wydarzenie: k10 = ' + ev.r + ' → ' + ev.text + '. Dyliżans przywozi ' + n + ' rekrutów. Bohaterowie w Osadzie wracają do pełnego Zdrowia.' + (notes.length ? ' ' + notes.join(' ') : '') } });
     Store.act(ops);
     rollBoard();
@@ -4488,7 +4722,8 @@ Object.assign(ACT, {
     modal(`<h3>${esc(t.name)}</h3><select id="tgh">${ok.map(h => `<option value="${h.id}">${esc(heroLabel(h))} — ${esc(CLS[h.cls].name)}</option>`).join('')}</select>`,
       [{ t: 'Anuluj' }, { t: 'Przekaż', cls: 'primary', fn: () => {
         const h = clone(H($('#tgh').value)); h.trinkets.push(t); const m = Store.S.osada.trinkets.slice(); m.splice(+el.dataset.i, 1);
-        Store.act([opSet('heroes.' + h.id, h), opSet('osada.trinkets', m)]);
+        const dl = []; dreamCheck(h, dl, 'trinket');
+        Store.act([opSet('heroes.' + h.id, h), opSet('osada.trinkets', m)]); if (dl.length) rollLog(dl.join(' '), 'good', 'sys');
       } }]);
   },
   trkSell: el => {
@@ -4595,6 +4830,10 @@ function voicePanel() {
 }
 const PRZODEK_SYS = 'Jesteś Przodkiem: zmarłym dziedzicem upadłego rodu w mrocznej grze fabularnej „Pochodnia i Obłęd” (gotycki horror: posiadłość, loch pod nią, osada, najemni bohaterowie, którzy giną). Przodek kopał zbyt głęboko i obudził coś pod domem; teraz zza grobu komentuje upadek rodu — z goryczą, pychą i czarnym humorem. Mówisz po polsku, poważnym, lekko archaicznym językiem, zwięźle, obrazowo. Piszesz wyłącznie własne, oryginalne zdania — nie cytujesz ani nie parafrazujesz żadnych gier, filmów ani książek. Nie używasz mechaniki gry (liczb, kości) w tekście.';
 
+Object.assign(ACT, {
+  przAutoT: () => Store.act([opSet('osada.przAuto', Store.S.osada.przAuto === false)]),
+  przVoiceT: () => Store.act([opSet('osada.przVoice', !Store.S.osada.przVoice)])
+});
 VIEWS.mg = {
   render() {
     if (!Store.isGM()) return '<section class="panel"><p class="muted">Ekran MG jest tylko dla prowadzącego.</p></section>';
@@ -4644,6 +4883,10 @@ VIEWS.mg = {
         <label class="fld"><span class="lbl">Kwestia</span><textarea id="ptext" rows="4">${esc(p.text)}</textarea></label>
         <div class="row"><button class="btn gold" data-act="przSay">Odczytaj na głos</button><button class="btn primary" data-act="przLog">Wyślij do stołu</button></div>
         <p class="small muted">Głos słychać na twoim urządzeniu. Gracze przez internet usłyszą go, jeśli udostępnisz dźwięk na Discordzie.</p>
+        <div class="box"><div class="ph">Przodek sam</div>
+          <div class="row"><button class="btn sm ${Store.S.osada.przAuto !== false ? 'gold' : 'ghost'}" data-act="przAutoT">Komentuje kluczowe chwile: ${Store.S.osada.przAuto !== false ? 'wł.' : 'wył.'}</button>
+          <button class="btn sm ${Store.S.osada.przVoice ? 'gold' : 'ghost'}" data-act="przVoiceT">Czyta na głos: ${Store.S.osada.przVoice ? 'wł.' : 'wył.'}</button></div>
+          <p class="small muted">Jedno zdanie przy krytyku, Progu Śmierci, śmierci, Przypadłości, Cnocie, zgaszonej pochodni, bossie i powrocie — najwyżej raz na 15 sekund. Głos czyta urządzenie MG.</p></div>
         ${voicePanel()}
       </section>
       <section class="panel"><h2>Ostatnie kwestie</h2><div class="log">${(Store.S.log || []).filter(e => e.kind === 'przodek').slice(-12).reverse().map(logLine).join('') || '<p class="muted">Przodek jeszcze milczy.</p>'}</div></section>
@@ -4888,6 +5131,295 @@ document.addEventListener('change', ev => {
   if (k === 'size2') f.size = el.checked ? 2 : 1; else f[k] = el.checked;
   saveFoe(f, false);
 });
+
+/* Płynna walka, „Co teraz?”, Przodek, kwestie i więzi bohaterów, wybory w komnatach, rozmowy przy ognisku,
+   decyzje Osady, marzenia bohaterów, zegar Ciemności i głosowanie drużyny. */
+
+/* ======================= płynna walka ======================= */
+/* Ruchy automatyczne wykonuje tylko klient MG, żeby w grze sieciowej nikt nie działał podwójnie. */
+let _autoKey = null;
+const autoOn = () => Store.S.stol.autoFight !== false;
+function autoDriver() {
+  if (!Store.ready || !Store.isGM() || !autoOn()) return;
+  const s = Store.S.stol; if (!s.fight || !(s.init || []).length) return;
+  if (!s.enemies.some(e => !e.corpse)) return;
+  const ce = curEntry(); if (!ce) return;
+  const key = turnKey();
+  if (s.acted === key) {
+    const k2 = key + ':next'; if (_autoKey === k2) return; _autoKey = k2;
+    setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key && s2.acted === key) ACT.nextTurn(); }, 1300);
+    return;
+  }
+  if (ce.k === 'e') {
+    const e = s.enemies.find(x => x.id === ce.id); if (!e || e.corpse) return;
+    if (e.fx && e.fx.lostTurn === (s.round || 0)) return; /* ogłuszony — przejdzie sam */
+    const k2 = key + ':enemy'; if (_autoKey === k2) return; _autoKey = k2;
+    setTimeout(() => {
+      const s2 = Store.S.stol; if (!s2.fight || turnKey() !== key || s2.acted === key || !autoOn()) return;
+      const e2 = s2.enemies.find(x => x.id === ce.id); if (!e2 || e2.corpse) return;
+      const res = enemyAuto(e2, curEntry()); if (res) actedCommit(res); else ACT.nextTurn();
+    }, 1400);
+  }
+}
+
+/* ======================= „Co teraz?” ======================= */
+function nextStep() {
+  const S = Store.S; const o = S.osada; const w = S.wyprawa; const st = S.stol; const live = liveHeroes();
+  const first = !(o.questsDone || 0);
+  const P = t => first ? ' <span class="prz">Przodek: ' + t + '</span>' : '';
+  if (live.length < 4 && !w.quest) return { tab: 'bohaterowie', sel: '[data-act=pickClass]', txt: 'Zbierzcie drużynę: w zakładce <b>Bohaterowie</b> przyjmijcie ' + (4 - live.length === 1 ? '1 bohatera' : (4 - live.length) + ' bohaterów') + ' (każdy gracz wybiera klasę).', prz: P('Najmij ludzi, których nie będziesz opłakiwał.') };
+  if (!o.started && o.week <= 1) return { tab: 'osada', sel: '[data-act=newWeek]', txt: 'Zacznijcie tydzień: <b>Osada → Nowy tydzień</b>. Przyjedzie dyliżans, a MG wylosuje zadania.', prz: P('Każdy tydzień zaczyna się tak samo: od rachunku strat.') };
+  if (st.fight) {
+    const living = st.enemies.filter(e => !e.corpse);
+    if (!living.length) return { tab: 'stol', sel: '.won [data-act=fightEnd]', txt: 'Wrogowie pokonani — <b>Zakończ walkę</b> (łup rzuci się sam, jeśli zapomnicie).' };
+    const ce = curEntry();
+    if (ce && ce.k === 'h') { const h = H(ce.id); const g = heroTurn(h); return { tab: 'stol', sel: '.slot.hero[data-id="' + ce.id + '"]', txt: g.lost ? esc(g.why) + ' Tura przejdzie sama.' : st.acted === turnKey() ? heroLabel(h) + ' już działał' + (autoOn() ? ' — tura przejdzie sama.' : ' — kliknijcie <b>Następna tura</b>.') : 'Tura: <b>' + esc(heroLabel(h)) + '</b> (' + esc(ownerName(h)) + '). Kliknij bohatera, potem umiejętność i cel. Złote kropki: skąd, czerwone: kogo trafia.', prz: P('Ostrożnie dobieraj cele. Martwy wróg nie oddaje ciosu.') }; }
+    if (ce && ce.k === 'e') { const e = st.enemies.find(x => x.id === ce.id); return { tab: 'stol', txt: 'Tura wroga: <b>' + esc(e ? e.name : '?') + '</b>. ' + (autoOn() ? 'Wróg działa sam według zasad.' : 'MG klika wroga i „Tura wroga — według zasad”.') }; }
+    return { tab: 'stol', txt: 'Walka trwa — <b>Następna tura</b>.' };
+  }
+  if (st.enemies.some(e => !e.corpse)) return { tab: 'stol', sel: '[data-act=fightStart]', txt: 'Na stole stoją wrogowie: <b>Stół → Rozpocznij walkę</b>. Najpierw ustawcie szyk.', prz: P('Pozycja znaczy więcej niż siła. Kto stoi z przodu, ten krwawi pierwszy.') };
+  if (w.quest) {
+    if (w.pending) return { tab: 'wyprawa', sel: '.eventbox', txt: 'Zdecydujcie: <b>' + esc(pendingTitle(w.pending)) + '</b> (na mapie wyprawy).' };
+    if (w.camp) return { tab: 'wyprawa', sel: '.campp', txt: 'Obóz: rozdajcie <b>Punkty Odpoczynku</b> (zostało ' + w.camp.pts + '), potem <b>Noc</b>.', prz: P('Ogień trzyma ciemność na dystans. Na krótko.') };
+    const r = w.rooms.find(x => x.id === w.at);
+    if (r && /walka|boss/.test(r.c) && !r.cleared) return { tab: 'wyprawa', sel: '[data-act=roomFight]', txt: r.c === 'boss' ? 'Komnata bossa. <b>Boss!</b> — a potem Stół.' : 'W komnacie czekają wrogowie: <b>Do walki</b>.' };
+    if (r && ((r.curio && !r.curioDone) || (r.ccurio && !r.ccurioDone))) return { tab: 'wyprawa', sel: '.curiobox', txt: 'Osobliwość: dotknijcie jej, użyjcie przedmiotu albo ominiecie.', prz: P('Ciekawość zabiła więcej moich ludzi niż miecze.') };
+    if (r && r.feature && !r.featureDone) return { tab: 'wyprawa', sel: '.featbox', txt: 'W komnacie jest coś do zrobienia: <b>' + esc((ROOM_FEATURES.find(f => f.key === r.feature) || {}).name || '') + '</b>.' };
+    if (r && r.c === 'skrzynia' && !r.opened) return { tab: 'wyprawa', sel: '[data-act=chest]', txt: 'Skrzynia: <b>Otwórz</b>.' };
+    if (r && r.item && !r.itemTaken) return { tab: 'wyprawa', sel: '[data-act=takeItem]', txt: 'Leży tu przedmiot zadania: <b>Zabierz</b>.' };
+    const g = goalProgress(w); if (g.ok) return { tab: 'wyprawa', sel: '[data-act=endQuest][data-v=done]', txt: 'Cel wykonany (' + esc(g.txt) + '). Możecie wracać: <b>Zadanie wykonane</b> — albo szukać łupów dalej.', prz: P('Wiedz, kiedy odejść. Chciwość to też pułapka.') };
+    if (st.torch <= 3 && (w.sup.Pochodnie || 0) > 0) return { tab: 'wyprawa', sel: '[data-act=torchUse]', txt: 'Robi się ciemno (Pochodnia ' + st.torch + '). Zapalcie <b>Pochodnię +3</b> albo idźcie w mroku po lepsze łupy. Cel: ' + esc(g.txt) + '.' };
+    return { tab: 'wyprawa', sel: '.scoutbar .scoutbtn, .room.reach', txt: 'Wybierzcie sąsiednią komnatę na mapie. <b>Zwiad</b> przed wejściem zdradza, co czeka. Cel: ' + esc(g.txt) + '.', prz: P('Każdy korytarz kosztuje światło. Światło to życie.') };
+  }
+  const sick = live.filter(h => h.stress >= 8 && h.status === 'osada');
+  if (o.lastReturn && sick.length && !(o.svc && Object.keys(o.svc).length)) return { tab: 'bohaterowie', txt: 'Po wyprawie: ' + sick.map(h => esc(heroLabel(h))).join(', ') + ' ' + (sick.length > 1 ? 'mają' : 'ma') + ' dużo Stresu — wyślijcie do Opactwa albo Gospody (karta bohatera). Potem <b>Nowy tydzień</b>.' };
+  if (o.decision) return { tab: 'osada', sel: '.hamdec', txt: 'W Osadzie czeka decyzja: <b>' + esc((HAMLET_DECISIONS.find(x => x.key === o.decision.key) || {}).title || '') + '</b>.' };
+  if (!(o.board || []).length) return { tab: 'osada', sel: '[data-act=newWeek]', txt: 'Tablica zadań jest pusta: <b>Osada → Nowy tydzień</b> (albo MG losuje tablicę).' };
+  if (st.heroes.length < Math.min(4, live.filter(h => !heroAway(h)).length)) return { tab: 'stol', sel: '[data-act=formation]', txt: 'Ustawcie drużynę: <b>Stół → Ustaw drużynę</b> (do czterech, pozycja 1 z przodu).' };
+  return { tab: 'wyprawa', sel: '[data-act=wsub][data-v=tablica]', txt: 'Wybierzcie zadanie: <b>Wyprawa → Tablica zadań</b>, spakujcie plecak i ruszajcie.', prz: P('Kupuj pochodnie. I nie licz, ilu wróci.') };
+}
+function renderGuide() {
+  const el = $('#guide'); if (!el) return;
+  if (!Store.ready || UI.guideOff) { el.innerHTML = UI.guideOff ? `<button class="btn sm ghost" data-act="guideToggle">Pokaż „Co teraz?”</button>` : ''; return; }
+  const n = nextStep();
+  el.innerHTML = `<div class="guidebar"><span class="lbl">Co teraz?</span> <span class="gtxt">${n.txt}${n.prz || ''}</span>
+    <span class="sp"></span>${n.tab ? `<button class="btn sm gold" data-act="guideGo">Pokaż</button>` : ''}<button class="btn sm ghost" data-act="guideToggle" title="Ukryj podpowiedzi">×</button></div>`;
+  UI._guide = n;
+}
+Object.assign(ACT, {
+  guideToggle: () => { UI.guideOff = !UI.guideOff; LS.set('pio:guideOff', UI.guideOff); renderGuide(); },
+  guideGo: () => {
+    const n = UI._guide; if (!n) return;
+    if (n.tab === 'wyprawa' && Store.S.wyprawa.quest) UI.wsub = 'loch';
+    if (n.tab && UI.view !== n.tab) location.hash = '#' + n.tab;
+    setTimeout(() => { const t = n.sel && $(n.sel); if (t) { t.scrollIntoView({ behavior: 'smooth', block: 'center' }); t.classList.add('pulse'); setTimeout(() => t.classList.remove('pulse'), 2400); } }, 120);
+  },
+  autoToggle: () => setStol(st => { st.autoFight = !(st.autoFight !== false); }, 'Walka ' + (autoOn() ? 'ręczna: MG prowadzi wrogów i przełącza tury.' : 'płynna: tury przechodzą same, wrogowie działają według zasad.'))
+});
+
+/* ======================= Przodek komentuje sam ======================= */
+let _przT = 0;
+const przAuto = () => Store.S.osada.przAuto !== false;
+function ancestorSay(kind, extra) {
+  if (!przAuto() || !Store.isGM()) return;
+  const now = Date.now(); if (now - _przT < 15000 && kind !== 'smierc') return; _przT = now;
+  const pool = { krytyk: ['Jeden cios — i porządek rzeczy przywrócony.', 'Tak się kończy każda pycha.', 'Ostrze nie pyta o imię.'], krytykw: ['Ciało pamięta każdą ranę. Dusza — jeszcze dłużej.', 'Ból jest nauczycielem. Okrutnym i dokładnym.'], prog: ['Stoi na krawędzi. Krawędź jest cierpliwa.', 'Jeszcze oddycha. Na razie.'], smierc: ['Kolejne imię na cmentarzu. Ziemia nie narzeka.', 'Odszedł tak, jak żył: w ciemności.'], przypadlosc: ['Umysł pękł cicho, jak lód pod butem.', 'Strach znalazł szczelinę. Zawsze znajduje.'], cnota: ['W tym jednym człowieku ciemność trafiła na mur.', 'Są jeszcze tacy, których nie da się złamać.'], ciemnosc: ['Teraz widzą to, co zawsze tu było.', 'Światło zgasło. Zaczyna się prawdziwa gra.'], powrot: ['Wrócili. Nie wszyscy w całości.', 'Osada przyjmuje ich z powrotem — i liczy braki.'], boss: ['To, co tu mieszka, czekało dłużej, niż wy żyjecie.', 'Oto serce tego miejsca. Uderzcie, póki bije.'] }[kind];
+  if (!pool) return;
+  const text = pick(pool);
+  Store.log({ kind: 'przodek', text });
+  try { if (Store.S.osada.przVoice) speak(text); } catch (e) { }
+}
+/* przegląd wyniku akcji: najważniejsze wydarzenie dostaje jedno zdanie Przodka */
+function ancestorScan(text) {
+  if (!text) return;
+  if (/nie żyje/.test(text)) return ancestorSay('smierc');
+  if (/Progu Śmierci/.test(text) && /staje na/.test(text)) return ancestorSay('prog');
+  if (/→ Przypadłość/.test(text)) return ancestorSay('przypadlosc');
+  if (/→ Cnota/.test(text)) return ancestorSay('cnota');
+  if (/używa:.*KRYTYK/.test(text)) return ancestorSay('krytyk');
+  if (/KRYTYK/.test(text) && !/używa:/.test(text)) return ancestorSay('krytykw');
+}
+
+/* ======================= kwestie i więzi bohaterów ======================= */
+function bark(h, kind, lines, sub) {
+  let list = BARKS[kind]; if (sub && list && !Array.isArray(list)) list = list[sub]; if (!Array.isArray(list) || !list.length) return;
+  lines.push('*„' + pick(list) + '”* — ' + heroLabel(h) + '.');
+}
+const bondOf = (h, id) => ((h.bonds || {})[id] || 0);
+function bondAdd(a, b, n, lines) {
+  if (!a || !b || a.id === b.id) return;
+  const before = bondOf(a, b.id);
+  a.bonds = Object.assign({}, a.bonds, { [b.id]: clamp(before + n, -3, 3) }); b.bonds = Object.assign({}, b.bonds, { [a.id]: clamp(bondOf(b, a.id) + n, -3, 3) });
+  const after = a.bonds[b.id];
+  if (before < 2 && after >= 2) lines.push('**' + heroLabel(a) + '** i **' + heroLabel(b) + '** zostają przyjaciółmi: leczenie między nimi +1, a śmierć jednego boli drugiego bardziej.');
+  if (before > -2 && after <= -2) lines.push('**' + heroLabel(a) + '** i **' + heroLabel(b) + '** nie znoszą się: nie zamienią się miejscami, leczenie między nimi −1.');
+}
+const bondName = n => n >= 2 ? 'przyjaźń' : n <= -2 ? 'niechęć' : n > 0 ? 'sympatia' : n < 0 ? 'chłód' : '';
+
+/* ======================= wybory w komnatach ======================= */
+function featureBox(r) {
+  const F = ROOM_FEATURES.find(f => f.key === r.feature); if (!F || r.featureDone) return '';
+  const W = Store.canWrite(); const pt = party();
+  return `<div class="featbox"><p><b>${esc(F.name)}.</b> ${esc(F.text)}</p>
+    ${W ? `<div class="row"><label class="lbl" for="fwho">Kto</label><select id="fwho">${pt.map(h => `<option value="${h.id}">${esc(heroLabel(h))}</option>`).join('')}</select></div>
+    ${voteRow('feat:' + r.id, F.opts, 'feature')}` : ''}</div>`;
+}
+function resolveFeature(optId) {
+  const s = Store.S; const w = clone(s.wyprawa); const st = clone(s.stol); const r = w.rooms.find(x => x.id === w.at); const F = ROOM_FEATURES.find(f => f.key === r.feature); if (!F) return;
+  const o = F.opts.find(x => x.id === optId); const lines = ['**' + F.name + '** — drużyna wybiera: **' + o.label + '**.']; const touched = {};
+  const T = id => touched[id] || (touched[id] = clone(s.heroes[id])); const pt = party();
+  const sel = $('#fwho'); const who = T(sel ? sel.value : pt[0].id);
+  let fight = false, loot = 0;
+  if (optId === 'szukaj') { const r1 = d(10); lines.push('k10 = **' + r1 + '** → ' + (r1 <= 4 ? 'coś cennego!' : r1 <= 8 ? 'tylko kamienie.' : '**hałas budzi wrogów!**')); if (r1 <= 4) loot = 1; if (r1 >= 9) fight = true; }
+  if (optId === 'sluchaj') { st.torch = Math.max(0, st.torch - 1); const adj = w.edges.filter(e => e.a === w.at || e.b === w.at).map(e => w.rooms.find(x => x.id === (e.a === w.at ? e.b : e.a))); adj.forEach(x => { x.seen = true; }); lines.push('Pochodnia −1. Za drzwiami: ' + adj.map(x => x.c).join(', ') + '.'); }
+  if (optId === 'ofiara') { if ((w.loot.zloto || 0) >= 5) { w.loot.zloto -= 5; lines.push('Zostawiacie 5 Złota z łupów.'); } else if ((w.sup.Prowiant || 0) > 0) { w.sup.Prowiant--; lines.push('Zostawiacie prowiant.'); } else { lines.push('Nie macie czego zostawić — przodkowie milczą.'); r.featureDone = true; Store.act([opSet('wyprawa', w)], { quiet: true }); return commit({ lines, stol: null, touched }); } pt.forEach(h => heroStress(T(h.id), -2, lines)); lines.push('Drużyna −2 Stres.'); }
+  if (optId === 'zabierz') { const g = d(6); w.loot = addLootTo(w.loot || {}, { gold: Math.ceil(g * DL_INFO[w.quest.dl].mult) }); pt.forEach(h => heroStress(T(h.id), 1, lines)); lines.push('k6 = **' + g + '** Złota do plecaka. Każdy +1 Stres — ktoś na was patrzy.'); }
+  if (optId === 'pij') { const r1 = d(10); lines.push('k10 = **' + r1 + '**.'); if (r1 <= 5) { pt.forEach(h => heroHeal(T(h.id), 2, lines)); lines.push('Woda jest czysta: każdy +2 Zdrowia.'); } else if (r1 >= 9) { const pv = pickD(pt); const t = T(pv.v.id); t.fx = Object.assign({}, t.fx); addFx(t.fx, 'blight', 1); lines.push('Woda była zatruta: ' + heroLabel(t) + ' (' + pv.t + ') — zaraza 1 w najbliższej walce.'); } else lines.push('Zwykła woda. Nic.'); }
+  if (optId === 'czytaj') { const r1 = d(10); lines.push(heroLabel(who) + ' czyta: k10 = **' + r1 + '**.'); if (r1 <= 5) { w.scoutBonus = (w.scoutBonus || 0) + 2; lines.push('Mapa w notatkach: następny zwiad +2.'); } else { heroStress(who, 2, lines); lines.push('Ostatnie strony opisują, jak umierał autor. ' + heroLabel(who) + ' +2 Stresu.'); } }
+  if (optId === 'spal') { st.torch = Math.min(10, st.torch + 1); lines.push('Pochodnia +1.'); }
+  if (optId === 'patrz') { const r1 = d(10); lines.push(heroLabel(who) + ' patrzy: k10 = **' + r1 + '**.'); if (r1 <= 3) { heroStress(who, -3, lines); lines.push('Widzi siebie sprzed lat. −3 Stresu.'); } else if (r1 >= 8) { heroStress(who, 3, lines); lines.push('Odbicie się uśmiecha. +3 Stresu.'); } else lines.push('Tylko zmęczona twarz.'); }
+  r.featureDone = true;
+  if (fight) { const region = w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key; st.region = region; st.dl = w.quest.dl; st.enemies = rollEncounter(region, w.quest.dl).list.filter(Boolean); st.roomId = null; st.looted = false; lines.push('Wrogowie: ' + st.enemies.map(e => e.name).join(', ') + '. Przejdźcie na Stół.'); }
+  Store.act([opSet('wyprawa', w)], { quiet: true });
+  commit({ lines, stol: st, touched }, fight ? 'bad' : '');
+  if (loot) rollLoot(loot, 'gruz');
+  if (fight) location.hash = '#stol';
+}
+
+/* ======================= rozmowy przy ognisku ======================= */
+function campTalkBox() {
+  const w = Store.S.wyprawa; const c = w.camp; if (!c) return '';
+  if (!c.talk) return Store.canWrite() && party().length >= 2 && !c.talked ? `<div class="row"><button class="btn sm" data-act="campTalk">Rozmowa przy ognisku</button><span class="small muted">raz na obóz, bez kosztu</span></div>` : '';
+  const T = CAMP_TALKS.find(x => x.key === c.talk.key); const A = H(c.talk.a), B = H(c.talk.b); if (!T || !A || !B) return '';
+  const f = t => t.replace(/\{A\}/g, heroLabel(A)).replace(/\{B\}/g, heroLabel(B));
+  return `<div class="talkbox"><p><b>Przy ognisku:</b> ${esc(f(T.text))}</p>${voteRow('talk:' + c.talk.id, T.opts.map(o => Object.assign({}, o, { label: f(o.label), note: o.note ? f(o.note) : '' })), 'talk')}</div>`;
+}
+function resolveTalk(optId) {
+  const s = Store.S; const w = clone(s.wyprawa); const c = w.camp; if (!c || !c.talk) return;
+  const T = CAMP_TALKS.find(x => x.key === c.talk.key); const touched = {}; const G = id => touched[id] || (touched[id] = clone(s.heroes[id]));
+  const A = G(c.talk.a), B = G(c.talk.b); const o = T.opts.find(x => x.id === optId);
+  const lines = ['**Przy ognisku:** ' + T.text.replace(/\{A\}/g, heroLabel(A)).replace(/\{B\}/g, heroLabel(B)) + ' Wybór: **' + o.label.replace(/\{A\}/g, heroLabel(A)).replace(/\{B\}/g, heroLabel(B)) + '**.'];
+  const nf = (h, b) => { h.nextFight = Object.assign({ buffs: [] }, h.nextFight); h.nextFight.buffs = h.nextFight.buffs.concat([[b, 99]]); };
+  ({
+    pogodz: () => { heroStress(A, -1, lines); heroStress(B, -1, lines); bondAdd(A, B, 1, lines); },
+    niech: () => { heroStress(A, -2, lines); heroStress(B, 2, lines); bondAdd(A, B, -1, lines); },
+    sluchaj: () => { heroStress(A, -2, lines); heroStress(B, -2, lines); bondAdd(A, B, 1, lines); },
+    spac: () => { heroHeal(A, 1, lines); heroHeal(B, 1, lines); },
+    kara: () => { heroStress(B, 2, lines); party().filter(h => h.id !== B.id).forEach(h => heroStress(G(h.id), -1, lines)); },
+    odpusc: () => { heroStress(A, 1, lines); bondAdd(A, B, -1, lines); },
+    opatrz: () => { heroHeal(B, 3, lines); bondAdd(A, B, 1, lines); },
+    przemilcz: () => { B.hp = Math.max(1, B.hp - 1); },
+    przyjmij: () => { nf(A, 'obrażenia +1'); nf(B, 'obrażenia +1'); bondAdd(A, B, 1, lines); },
+    zabron: () => { heroStress(A, -1, lines); heroStress(B, -1, lines); }
+  }[optId] || (() => { }))();
+  c.talk = null; c.talked = true;
+  Store.act([opSet('wyprawa', w)], { quiet: true });
+  commit({ lines, stol: null, touched }, 'good');
+}
+
+/* ======================= decyzje w Osadzie ======================= */
+function hamletDecisionBox() {
+  const o = Store.S.osada; if (!o.decision) return '';
+  const D = HAMLET_DECISIONS.find(x => x.key === o.decision.key); if (!D) return '';
+  return `<div class="hamdec eventbox"><div class="ev-h"><span class="lbl">Decyzja tygodnia</span> <b>${esc(D.title)}</b></div><p>${esc(D.text)}</p>${Store.canWrite() ? voteRow('ham:' + o.decision.id, D.opts, 'hamlet') : '<p class="muted">Rada rodu decyduje…</p>'}</div>`;
+}
+function resolveHamlet(optId) {
+  const s = Store.S; const o = clone(s.osada); const D = HAMLET_DECISIONS.find(x => x.key === o.decision.key); const op = D.opts.find(x => x.id === optId);
+  const lines = ['**' + D.title + '** — rada rodu postanawia: **' + op.label + '**.']; const touched = {};
+  const inTown = liveHeroes().filter(h => h.status !== 'wyprawa'); const T = id => touched[id] || (touched[id] = clone(s.heroes[id]));
+  const pay = n => { if (o.gold < n) { lines.push('W skarbcu jest tylko ' + o.gold + ' Złota — nie stać was.'); return false; } o.gold -= n; return true; };
+  if (optId === 'przyjmij') { o.abbeyDisc = o.week; if (inTown.length) { const r = d(10); lines.push('k10 = **' + r + '**' + (r <= 3 ? ' → kazania trafiają do serca…' : ' → nikt nie daje się porwać.')); if (r <= 3) { const pv = pickD(inTown); lines.push(gainQuirk(T(pv.v.id), 'qn', 'Fanatyk')); } } lines.push('Opactwo o 1 Złoto tańsze w tym tygodniu.'); }
+  if (optId === 'wygon' || (optId === 'odmow' && D.key === 'wdowa')) { inTown.forEach(h => heroStress(T(h.id), 1, lines)); lines.push('Każdy bohater w Osadzie +1 Stres.'); }
+  if (optId === 'pozycz') { o.gold += 20; o.debt = { amount: 30, week: o.week + 2 }; lines.push('+20 Złota. Lichwiarz wróci w tygodniu ' + o.debt.week + ' po 30.'); }
+  if (optId === 'zaplac') { if (pay(6)) { const sick = inTown.filter(h => (h.diseases || []).length); if (sick.length) { const pv = pickD(sick); const t = T(pv.v.id); lines.push('Medyk leczy (' + pv.t + ') ' + heroLabel(t) + ': ' + t.diseases[0] + '.'); t.diseases = t.diseases.slice(1); } else lines.push('Nikt nie jest chory — medyk i tak bierze zapłatę.'); } }
+  if (optId === 'straz') { if (pay(5)) lines.push('Straż czuwa. Nic nie ginie.'); }
+  if (optId === 'ryzyko') { const r = d(10); lines.push('k10 = **' + r + '**.'); if (r <= 4) { if ((o.trinkets || []).length) { const pt = pickD(o.trinkets.map((t, i) => i)); lines.push('Znika błyskotka (' + pt.t + '): ' + o.trinkets[pt.v].name + '.'); o.trinkets = o.trinkets.filter((x, i) => i !== pt.v); } else { const g = d(6) * 2; o.gold = Math.max(0, o.gold - g); lines.push('Znika ' + g + ' Złota.'); } } else lines.push('Złodziej odchodzi z pustymi rękami.'); }
+  if (optId === 'daj') { if (pay(10)) { inTown.forEach(h => heroStress(T(h.id), -2, lines)); lines.push('Każdy bohater w Osadzie −2 Stres.'); } }
+  if (optId === 'zapros') { if (pay(3)) { inTown.forEach(h => heroStress(T(h.id), -1, lines)); lines.push('Każdy bohater w Osadzie −1 Stres.'); } }
+  o.decision = null;
+  Store.act([opSet('osada', o)], { quiet: true });
+  commit({ lines, stol: null, touched }, 'sys');
+}
+
+/* ======================= marzenia bohaterów ======================= */
+function dreamCheck(h, lines, ev) {
+  if (!h.story || h.story.done || h.dead) return;
+  const t = h.tally || {}; const k = h.story.dream;
+  const ok = (k === 'boss' && t.bosses > 0) || (k === 'lvl3' && h.level >= 3) || (k === 'quests3' && t.quests >= 3) || (k === 'dd' && t.ddSurvived > 0) || (k === 'trinket' && (h.trinkets || []).length > 0) || (k === 'calm' && ev === 'return' && h.stress === 0);
+  if (!ok) return;
+  h.story.done = true;
+  lines.push('**Marzenie spełnione:** ' + heroLabel(h) + ' ' + h.story.dreamText.replace(/^chce /, 'chciał(a) ') + ' — i dopiął swego. ' + gainQuirk(h, 'qp'));
+}
+
+/* ======================= zegar Ciemności ======================= */
+function threatTick(o, lines, ops) {
+  const before = o.threat || 0;
+  const quested = (o.lastQuestWeek || 0) >= o.week - 1;
+  o.threat = clamp(before + (quested ? 0 : 1), 0, 10);
+  if (!quested && o.week > 2) lines.push('Nikt nie zszedł do lochu w zeszłym tygodniu — **Ciemność rośnie** (' + o.threat + '/10).');
+  if (o.threat >= 6 && o.threat < 10) {
+    const r = d(10); const lim = o.threat - 5;
+    if (r <= lim) { const g = d(6) * 2; o.gold = Math.max(0, o.gold - g); lines.push('**Napad na Osadę** (k10 = ' + r + ' ≤ ' + lim + '): stwory z lochu plądrują magazyny — tracicie ' + g + ' Złota.'); }
+    else lines.push('Ciemność krąży wokół palisady (k10 = ' + r + ', napad przy ≤ ' + lim + ').');
+  }
+  if (o.threat >= 10) { o.siege = true; lines.push('**Oblężenie!** Ciemność wylewa się z lochów prosto na Osadę. MG wystawia walkę na Stole — przegrana kosztuje stopień budynku.'); }
+}
+function threatBar() {
+  const o = Store.S.osada; const t = o.threat || 0;
+  return `<div class="threat"><span class="lbl">Ciemność</span><span class="tbar">${Array.from({ length: 10 }, (_, i) => `<i class="${i < t ? 'on' : ''} ${i >= 5 ? 'hi' : ''}"></i>`).join('')}</span><b class="num">${t}/10</b>
+    <span class="small muted">${t >= 10 ? 'oblężenie!' : t >= 6 ? 'napady na Osadę (k10 ≤ ' + (t - 5) + ' co tydzień)' : 'rośnie o 1 za każdy tydzień bez wyprawy, spada o 2 za wykonane zadanie'}</span>
+    ${o.siege && Store.isGM() ? `<button class="btn sm primary" data-act="siege">Wystaw oblężenie na Stole</button>` : ''}</div>`;
+}
+Object.assign(ACT, {
+  siege: () => {
+    const reg = pick(Store.S.osada.regions || ['ruiny']); const key = REGIONS[reg].key; const dl = Math.min(2, Math.floor((Store.S.osada.week || 1) / 8));
+    setStol(st => { st.region = key; st.dl = dl; st.enemies = rollEncounter(key, dl).list.filter(Boolean); st.siege = true; st.roomId = null; st.looted = false; }, '**Oblężenie Osady!** Z ' + REGIONS[reg].name + ' nadchodzą wrogowie. Wygrana odpycha Ciemność, przegrana kosztuje stopień budynku.', 'bad');
+    location.hash = '#stol';
+  }
+});
+
+/* ======================= głosowanie drużyny ======================= */
+const voterId = () => Store.me.id + (Store.mode === 'bc' || Store.mode === 'host' || Store.mode === 'client' ? ':' + TAB : '');
+const votingOn = () => Store.mode === 'host' || Store.mode === 'client' || Store.mode === 'bc';
+function voteRow(key, opts, kind) {
+  if (!votingOn()) return `<div class="row">${opts.map(o => `<button class="btn ${o.note ? 'gold' : ''}" data-act="choose" data-k="${esc(key)}" data-kind="${kind}" data-o="${o.id}" ${o.dis ? 'disabled' : ''}>${esc(o.label)}${o.note ? `<span class="small"> (${esc(o.note)})</span>` : ''}</button>`).join('')}</div>`;
+  const v = (Store.S.votes || {})[key] || {}; const me = voterId();
+  const tally = o => Object.values(v).filter(x => x === o).length;
+  return `<div class="votes">${opts.map(o => `<button class="btn ${v[me] === o.id ? 'gold' : ''}" data-act="vote" data-k="${esc(key)}" data-o="${o.id}">${esc(o.label)}${o.note ? `<span class="small"> (${esc(o.note)})</span>` : ''} <span class="vcount">${tally(o.id)}</span></button>`).join('')}
+    <div class="row"><span class="small muted">Głosujcie — każdy klika swój wybór. Głosów: ${Object.keys(v).length}.</span><button class="btn sm primary" data-act="voteEnd" data-k="${esc(key)}" data-kind="${kind}" ${Object.keys(v).length ? '' : 'disabled'}>Rozstrzygnij głosowanie</button></div></div>`;
+}
+const CHOICE = { feature: resolveFeature, talk: resolveTalk, hamlet: resolveHamlet, road: o => resolveRoad(o) };
+Object.assign(ACT, {
+  choose: el => { const f = CHOICE[el.dataset.kind]; if (f) f(el.dataset.o); },
+  vote: el => { const k = el.dataset.k; const v = Object.assign({}, (Store.S.votes || {})[k]); const me = voterId(); if (v[me] === el.dataset.o) delete v[me]; else v[me] = el.dataset.o; Store.act([opSet('votes', Object.assign({}, Store.S.votes, { [k]: v }))], {}); },
+  voteEnd: el => {
+    const k = el.dataset.k; const v = (Store.S.votes || {})[k] || {}; const counts = {};
+    Object.values(v).forEach(o => counts[o] = (counts[o] || 0) + 1);
+    const max = Math.max(...Object.values(counts)); const top = Object.keys(counts).filter(o => counts[o] === max);
+    let win = top[0]; let note = 'Głosowanie: ' + Object.entries(counts).map(([o, n]) => o + ' ' + n).join(', ') + '.';
+    if (top.length > 1) { const p = pickD(top); win = p.v; note += ' Remis — rozstrzyga kość: ' + p.t + '.'; }
+    rollLog(note, '', 'sys');
+    const vs = Object.assign({}, Store.S.votes); delete vs[k]; Store.act([opSet('votes', vs)], { quiet: true });
+    const f = CHOICE[el.dataset.kind]; if (f) f(win);
+  },
+  campTalk: () => {
+    const pt = party(); if (pt.length < 2) return;
+    const w = clone(Store.S.wyprawa); if (!w.camp || w.camp.talk) return;
+    const pa = pickD(pt); let rest = pt.filter(h => h.id !== pa.v.id); const pb = pickD(rest); const T = pick(CAMP_TALKS);
+    w.camp.talk = { id: uid(), key: T.key, a: pa.v.id, b: pb.v.id };
+    Store.act([opSet('wyprawa', w)]); rollLog('Przy ognisku zaczyna się rozmowa (' + pa.t + ', ' + pb.t + '): ' + T.text.replace(/\{A\}/g, heroLabel(pa.v)).replace(/\{B\}/g, heroLabel(pb.v)), '', 'sys');
+  }
+});
+
+/* ======================= zapowiedzi bossów ======================= */
+/* na początku rundy boss losuje drugi ruch i zdradza go jednym zdaniem — drużyna ma czas zareagować */
+function bossTelegraph(st, lines) {
+  st.enemies.filter(e => e.boss && !e.corpse && BOSS_AI[e.name]).forEach(e => {
+    const ai = BOSS_AI[e.name]; const r = d(6); const row = ai.table.find(([a, b]) => r >= a && r <= b);
+    e.nextMove = { r, name: row[2], round: st.round };
+    lines.push('**Zapowiedź** — ' + e.name + ': pierwszy ruch to ' + ai.first + '; drugi (k6 = **' + r + '**): **' + row[2] + '**. *' + (BOSS_TELL[row[2]] || '') + '*');
+  });
+}
 
 boot();
 

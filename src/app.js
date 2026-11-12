@@ -122,12 +122,12 @@ function renderView() {
   renderInto(el, v.render());
   if (v.after) v.after(el);
 }
-function renderAll() { Store.ready = true; renderTabs(); renderTorch(); renderView(); renderSide(); }
+function renderAll() { Store.ready = true; if (UI.guideOff == null) UI.guideOff = !!LS.get('pio:guideOff'); renderTabs(); renderTorch(); renderGuide(); renderView(); renderSide(); autoDriver(); }
 Store.onChange(what => {
   if (what === 'peers') return renderTabs();
   if (what === 'log') { renderSide(); checkRollCard(); checkCaption(); return; }
   if (what === 'role') return renderAll();
-  renderTorch(); renderView(); renderSide(); renderTabs(); checkCaption(); checkRollCard();
+  renderTorch(); renderGuide(); renderView(); renderSide(); renderTabs(); checkCaption(); checkRollCard(); autoDriver();
 });
 
 /* ---------- dziennik, czat i kości ---------- */
@@ -226,8 +226,8 @@ Object.assign(ACT, {
   gloss: () => glossaryModal(),
   leave: () => confirmBox('Zmienić tryb gry?', 'Wrócisz do ekranu wyboru. Zapisany stan zostaje w tej przeglądarce.', 'Zmień', () => { LS.set('pio:ostatni', null); location.hash = ''; location.reload(); }),
   torch: el => Store.act([opSet('stol.torch', +el.dataset.v === Store.S.stol.torch ? +el.dataset.v - 1 : +el.dataset.v)]),
-  torchDim: () => { const t = Math.max(0, Store.S.stol.torch - 1); Store.act([opSet('stol.torch', t)]); rollLog('Drużyna przygasza pochodnię: Pochodnia **' + t + '** (' + torchInfo(t).name + ').', t <= 2 ? 'bad' : '', 'sys'); },
-  torch0: () => { Store.act([opSet('stol.torch', 0)]); rollLog('Drużyna gasi pochodnię. **Ciemność.**', 'bad', 'sys'); },
+  torchDim: () => { const t = Math.max(0, Store.S.stol.torch - 1); Store.act([opSet('stol.torch', t)]); if (t === 0) ancestorSay('ciemnosc'); rollLog('Drużyna przygasza pochodnię: Pochodnia **' + t + '** (' + torchInfo(t).name + ').', t <= 2 ? 'bad' : '', 'sys'); },
+  torch0: () => { Store.act([opSet('stol.torch', 0)]); rollLog('Drużyna gasi pochodnię. **Ciemność.**', 'bad', 'sys'); ancestorSay('ciemnosc'); },
   torchUse: () => {
     const w = Store.S.wyprawa; const n = (w.sup && w.sup.Pochodnie) || 0;
     const ops = [opSet('stol.torch', Math.min(10, Store.S.stol.torch + 3))];

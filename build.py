@@ -2,7 +2,7 @@ import json, re, sys
 src = 'src/'
 css = open(src+'common.css',encoding='utf-8').read() + '\n' + open(src+'app.css',encoding='utf-8').read()
 data = json.load(open(src+'data.json',encoding='utf-8'))
-js_files = ['common.js','world.js','rules.js','portraits.js','net.js','combat.js','app.js','v_stol.js','v_hero.js','v_wyprawa.js','v_osada.js','v_mg.js','v_foes.js']
+js_files = ['common.js','world.js','flavor.js','rules.js','portraits.js','net.js','combat.js','app.js','v_stol.js','v_hero.js','v_wyprawa.js','v_osada.js','v_mg.js','v_foes.js','story.js']
 js = '\n'.join(open(src+f,encoding='utf-8').read() for f in js_files) + '\nboot();\n'
 tpl = open(src+'index.tpl.html',encoding='utf-8').read()
 import os

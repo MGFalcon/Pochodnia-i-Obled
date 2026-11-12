@@ -87,7 +87,7 @@ function enemySlot(x) {
     <div class="cl">${e.corpse ? 'trzyma pozycję' : esc(e.type || '') + (e.dl ? ' · ' + DL_SHORT[e.dl] : '')}</div>
     ${bar('hp', e.hp, e.maxhp, e.hp + ' / ' + e.maxhp)}
     <div class="est num">Unik ${enemyDodge(e)} · Panc. ${enemyProt(e)} · Szyb. ${e.speed}</div>
-    <div class="chips">${chipsHtml(fxChips(e.fx))}</div>
+    <div class="chips">${chipsHtml(fxChips(e.fx))}${e.nextMove && e.nextMove.round === (Store.S.stol.round || 0) && Store.S.stol.fight ? `<span class="chip sm gold tell" tabindex="0" title="${esc('Szykuje na drugą turę: ' + e.nextMove.name + '. ' + (BOSS_TELL[e.nextMove.name] || ''))}" data-gloss="${esc('Szykuje na drugą turę: ' + e.nextMove.name + '. ' + (BOSS_TELL[e.nextMove.name] || ''))}">⚠ ${esc(e.nextMove.name)}</span>` : ''}</div>
   </div>`;
 }
 
@@ -132,6 +132,7 @@ VIEWS.stol = {
         <div class="row">
           ${W ? `<button class="btn sm" data-act="formation">Ustaw drużynę</button>` : ''}
           ${W && !s.fight ? `<button class="btn sm primary" data-act="fightStart" ${s.enemies.length && s.heroes.length ? '' : 'disabled'}>Rozpocznij walkę</button>` : ''}
+          ${gm ? `<button class="btn sm ${s.autoFight !== false ? 'gold' : 'ghost'}" data-act="autoToggle" title="Płynna walka: tura przechodzi sama po akcji, wrogowie działają według zasad">Płynna walka: ${s.autoFight !== false ? 'wł.' : 'wył.'}</button>` : ''}
           ${W && s.fight ? `<button class="btn sm" data-act="newRound">Nowa runda</button><button class="btn sm primary" data-act="nextTurn" ${s.init.length ? '' : 'disabled'}>Następna tura</button><button class="btn sm ghost" data-act="fightEnd">Zakończ walkę</button>` : ''}
         </div>
       </div>
@@ -260,7 +261,7 @@ document.addEventListener('drop', ev => {
   if (to < 0) { const p = +((sl.querySelector('.pos') || {}).textContent || 0); to = Math.min(st0.heroes.length - 1, Math.max(0, p - 1)); }
   if (from < 0 || to < 0 || from === to) return;
   if (st0.fight && Math.abs(from - to) > 1) return toast('W walce zamieniasz się tylko z sąsiadem.');
-  if (st0.fight) { const g = heroTurn(H(_dragId)); if (!g.ok) return toast(g.why); }
+  if (st0.fight) { const g = heroTurn(H(_dragId)); if (!g.ok) return toast(g.why); if (st0.heroes[to] && bondOf(H(_dragId), st0.heroes[to]) <= -2) return toast('Ci dwaj nie znoszą się — w walce nie zamienią się miejscami.'); }
   const other = st0.heroes[to] && H(st0.heroes[to]); const rd = st0.round || 0;
   const blk = [H(_dragId), other].find(x => x && x.fx && x.fx.noSwap != null && x.fx.noSwap >= rd && st0.fight);
   if (blk) return toast(heroLabel(blk) + ' odmawia zamiany pozycji.');
@@ -317,6 +318,7 @@ Object.assign(ACT, {
     const id = el.dataset.id || UI.sel.id; const st0 = Store.S.stol; const i = st0.heroes.indexOf(id); const j = i + +el.dataset.d; const rd = st0.round || 0;
     const blk = [id, st0.heroes[j]].map(H).find(x => x && x.fx && x.fx.noSwap != null && x.fx.noSwap >= rd && st0.fight);
     if (blk) return toast(heroLabel(blk) + ' odmawia zamiany pozycji (' + (blk.state ? blk.state.name : 'Przypadłość') + ').');
+    if (st0.fight && H(st0.heroes[j]) && bondOf(H(id), st0.heroes[j]) <= -2) return toast(heroLabel(H(id)) + ' i ' + heroLabel(H(st0.heroes[j])) + ' nie znoszą się — w walce nie zamienią się miejscami.');
     if (st0.fight) { const g = heroTurn(H(id)); if (!g.ok) return toast(g.why); }
     const mark = inTurns() ? turnKey() : null;
     setStol(st => { moveInList(st.heroes, i, +el.dataset.d); if (mark) st.acted = mark; }, heroLabel(H(id)) + ' zmienia pozycję.');
@@ -495,7 +497,8 @@ Object.assign(ACT, {
     init.sort((a, b) => (a.late - b.late) || (b.tot - a.tot) || (a.k === 'h' ? -1 : 1));
     s.init = init; s.turn = 0;
     const nm = x => x.k === 'h' ? heroLabel(H(x.id)) : (s.enemies.find(e => e.id === x.id) || {}).name;
-    const txt = '**Runda ' + s.round + '.** Inicjatywa (k10 + Szybkość): ' + init.map(x => nm(x) + ' ' + x.tot).join(', ') + (sur && sur !== 'nikt' ? ' — zaskoczeni działają na końcu.' : '.');
+    const tl = []; bossTelegraph(s, tl);
+    const txt = '**Runda ' + s.round + '.** Inicjatywa (k10 + Szybkość): ' + init.map(x => nm(x) + ' ' + x.tot).join(', ') + (sur && sur !== 'nikt' ? ' — zaskoczeni działają na końcu.' : '.') + (tl.length ? ' ' + tl.join(' ') : '');
     Store.act([opSet('stol', s), { log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', text: txt } }]);
     const first = init[0]; if (first) { const res = startTurn(first); if (res && !res.quiet) commit(res); runFollow(res); autoSkip(res); }
   },
@@ -518,6 +521,14 @@ Object.assign(ACT, {
     if ((s.fallen || []).length) {
       if (won) { ops.push(opSet('osada.trinkets', (Store.S.osada.trinkets || []).concat(s.fallen))); lines.push('Wygrana: błyskotki poległych wracają do magazynu (' + s.fallen.map(t => t.name).join(', ') + ').'); }
       else lines.push('Błyskotki poległych przepadają: ' + s.fallen.map(t => t.name).join(', ') + '.');
+    }
+    if (won && s.bossName && s.bossName !== 'Shambler') s.heroes.forEach(id => { const t = touched[id]; if (t && !t.dead) { t.tally = Object.assign({ quests: 0, bosses: 0, ddSurvived: 0 }, t.tally); t.tally.bosses++; } });
+    s.heroes.forEach(id => { const t = touched[id]; if (t) dreamCheck(t, lines, 'fight'); });
+    if (s.siege) {
+      const o = clone(Store.S.osada); o.siege = false;
+      if (won) { o.threat = 5; lines.push('**Oblężenie odparte.** Ciemność cofa się do lochów (5/10).'); }
+      else { const bl = Object.keys(o.b).filter(k => o.b[k] > 0); if (bl.length) { const pb = pickD(bl); o.b[pb.v]--; lines.push('**Oblężenie przegrane.** ' + pb.v + ' traci stopień (' + pb.t + ').'); } else lines.push('**Oblężenie przegrane.** Osada płonie, ale nie ma już czego burzyć.'); o.threat = 7; }
+      ops.push(opSet('osada', Object.assign(o, { trinkets: ((ops.find(x => x.p === 'osada.trinkets') || {}).v) || o.trinkets }))); s.siege = false;
     }
     if (won && s.bossName === 'Shambler') { const kiel = ALL_TRINKETS().find(t => t.kind === 'kiel'); if (kiel) { ops.push(opSet('osada.trinkets', ((ops.find(o => o.p === 'osada.trinkets') || {}).v || Store.S.osada.trinkets || []).concat([kiel]))); lines.push('**Shambler pokonany.** Nagroda: **Kieł spoza gwiazd** trafia do magazynu błyskotek.'); } }
     const w = Store.S.wyprawa;

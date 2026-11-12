@@ -65,6 +65,8 @@ VIEWS.bohaterowie = {
         <div class="sh-id">
           <input type="text" class="hname" id="hn-${h.id}" data-bind="${P}.name" value="${esc(h.name)}" placeholder="Imię bohatera" ${dis} aria-label="Imię bohatera">
           <div class="hcls">${esc(c.name)} <span class="muted">· ${esc(c.role || '')}</span></div>
+          ${h.story ? `<div class="hstory small"><span class="muted">${esc(h.story.origin)}.</span> Marzenie: ${esc(h.story.dreamText)} <span class="muted">(${h.story.done ? '<b>spełnione</b>' : 'cel: ' + esc(h.story.goal) + ' → pozytywne dziwactwo'})</span></div>` : can ? `<button class="btn sm ghost" data-act="storyRoll">Nadaj historię (pochodzenie i marzenie)</button>` : ''}
+          ${Object.entries(h.bonds || {}).filter(([id, n]) => n && H(id) && !H(id).dead).length ? `<div class="hbonds small">${Object.entries(h.bonds).filter(([id, n]) => n && H(id) && !H(id).dead).map(([id, n]) => `<span class="chip sm ${n >= 2 ? 'gold' : n <= -2 ? 'red' : ''}">${esc(heroLabel(H(id)))}: ${bondName(n)}</span>`).join('')}</div>` : ''}
           <div class="row lvl"><span class="lbl">Poziom</span>${[0, 1, 2, 3, 4, 5, 6].map(i => `<button class="lv ${i === h.level ? 'on' : ''}" data-act="setLevel" data-v="${i}" ${dis}>${i}</button>`).join('')}
             <span class="lbl">znaczniki</span>${[1, 2].map(i => `<i class="xp ${i <= h.xp ? 'on' : ''}"></i>`).join('')}
             ${can ? `<button class="btn sm ghost" data-act="addXp" data-v="1">+1</button><button class="btn sm ghost" data-act="addXp" data-v="2">+2</button><button class="btn sm ghost" data-act="addXp" data-v="3">+3</button>` : ''}</div>
@@ -170,7 +172,7 @@ function heroBusy(h) {
 }
 function svcState(h, b, sub) {
   const o = Store.S.osada; const qn = h.qn.map(q => qname(q.t)); const cn = CLS[h.cls].name;
-  const cost = Math.max(1, 4 - (b === 'Opactwo' && o.eventR === 1 ? 2 : 0)); const slots = 2 + ((o.b || {})[b] || 0); const left = Math.max(0, slots - ((o.svc || {})[sub] || 0));
+  const cost = Math.max(1, 4 - (b === 'Opactwo' && o.eventR === 1 ? 2 : 0) - (b === 'Opactwo' && o.abbeyDisc === o.week ? 1 : 0)); const slots = 2 + ((o.b || {})[b] || 0); const left = Math.max(0, slots - ((o.svc || {})[sub] || 0));
   const r = (why) => ({ ok: false, why, cost, slots, left });
   const busy = heroBusy(h); if (busy) return r(busy);
   if (b === 'Gospoda' && o.eventR === 5) return r('Gospoda zamknięta w tym tygodniu (pożar).');
@@ -293,9 +295,11 @@ Object.assign(ACT, {
       [{ t: 'Anuluj' }, { t: 'Załóż', cls: 'primary', fn: () => {
         const r = $('input[name=trk]:checked'); if (!r) { toast('Wybierz błyskotkę.'); return false; }
         const m2 = mag.slice(); const t = m2.splice(+r.value, 1)[0]; h.trinkets.push(t);
-        Store.act([opSet('heroes.' + h.id, h), opSet('osada.trinkets', m2)]);
+        const dl = []; dreamCheck(h, dl, 'trinket');
+        Store.act([opSet('heroes.' + h.id, h), opSet('osada.trinkets', m2)]); if (dl.length) rollLog(dl.join(' '), 'good', 'sys');
       } }]);
   },
+  storyRoll: () => { const h = curHero(); rollStory(h); saveHero(h); rollLog(heroLabel(h) + ': ' + h.story.origin + '. Marzenie: ' + h.story.dreamText + '.', '', 'sys'); },
   heroDelete: () => {
     const h = curHero();
     confirmBox('Usunąć ' + heroLabel(h) + '?', 'Bohater zniknie z rejestru na zawsze. Poległych lepiej zostawić na Cmentarzu.', 'Usuń', () => {

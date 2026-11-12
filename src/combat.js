@@ -77,7 +77,7 @@ function heroHeal(h, n, lines, crit) {
   const st = heroStats(h);
   n = Math.max(1, n + st.healIn);
   const before = h.hp; h.hp = Math.min(st.maxhp, h.hp + n);
-  if (before === 0 && h.dd) { h.dd = false; h.exh = Store.S.stol.fight ? 2 : 1; h.exhausted = true; lines.push(heroLabel(h) + ' schodzi z Progu Śmierci, ale ma **Wyczerpanie**.'); }
+  if (before === 0 && h.dd) { h.tally = Object.assign({ quests: 0, bosses: 0, ddSurvived: 0 }, h.tally); h.tally.ddSurvived++; h.dd = false; h.exh = Store.S.stol.fight ? 2 : 1; h.exhausted = true; lines.push(heroLabel(h) + ' schodzi z Progu Śmierci, ale ma **Wyczerpanie**.'); }
   if (crit) heroStress(h, -1, lines);
   return h.hp - before;
 }
@@ -91,6 +91,8 @@ function heroStress(h, n, lines, opts = {}) {
     if (Store.S.stol.fight && h.fx && h.fx.noFirst) { h.fx = Object.assign({}, h.fx, { noFirst: 0, optUsed: 1 }); lines.push(heroLabel(h) + ' nie czuje pierwszego Stresu w tej walce (Kpina z ciemności).'); return; }
     if (Store.S.stol.fight && !(h.fx && h.fx.optUsed) && h.qp.some(q => qname(q.t) === 'Optymista')) { h.fx = Object.assign({}, h.fx, { optUsed: 1 }); n -= 1; lines.push(heroLabel(h) + ' (Optymista): pierwszy Stres w walce −1.'); if (n <= 0) return; }
     const before = h.stress; h.stress = Math.min(st.heart, h.stress + n);
+    if (before < 5 && h.stress >= 5 && h.stress < 10) bark(h, 'stress5', lines);
+    if (before < 15 && h.stress >= 15 && h.stress < st.heart) bark(h, 'stress15', lines);
     if (before < 10 && h.stress >= 10 && (!h.state || h.state.kind === 'virtue' || h.state.temp)) resolveTest(h, lines);
     else if (before < 10 && h.stress >= 10 && h.state && h.state.kind === 'virtue') resolveTest(h, lines);
     if (h.stress >= st.heart) {
@@ -110,6 +112,7 @@ function resolveTest(h, lines) {
   if (ok) {
     const pv = pickD(DATA.virtues); const v = pv.v; h.state = { kind: 'virtue', name: v.name }; h.stress = 4;
     lines.push('**Próba Charakteru** ' + heroLabel(h) + ': k10 = **' + r + '** przy Szansie ' + st.virtue + ' → Cnota, rodzaj: ' + pv.t + ' → **' + v.name + '** (' + v.perm + '). Stres spada do 4.');
+    bark(h, 'virtue', lines, v.name);
     lines._cls = 'crit';
   } else if (CLS[h.cls].name === 'Biczownik') {
     h.state = { kind: 'ekstaza', name: 'Ekstaza bólu' };
@@ -117,6 +120,7 @@ function resolveTest(h, lines) {
   } else {
     const pa = pickD(DATA.afflictions); const a = pa.v; h.state = { kind: 'affliction', name: a.name };
     lines.push('**Próba Charakteru** ' + heroLabel(h) + ': k10 = **' + r + '** przy Szansie ' + st.virtue + ' → Przypadłość, rodzaj: ' + pa.t + ' → **' + a.name + '**. W walce: ' + a.combat + '.');
+    bark(h, 'affliction', lines, a.name);
     lines._cls = 'bad';
   }
 }
@@ -222,7 +226,7 @@ function heroUse(h0, idx, targetIds) {
       if (/Westalka leczy się o 1/.test(sk.eff)) heroHeal(h, 1, lines);
       if (/Ohyda −1 Stres/.test(sk.eff)) heroStress(h, -1, lines);
     });
-    if (crits) { heroStress(h, -1, lines); lines.push(heroLabel(h) + ' po krytyku: −1 Stres.'); }
+    if (crits) { heroStress(h, -1, lines); lines.push(heroLabel(h) + ' po krytyku: −1 Stres.'); if (d(3) === 1) bark(h, 'crit', lines); }
     const pb = sk.eff.match(/drużyna ((?:Celność|Szybkość|obrażenia|Unik|Kryt)[^;]*?) na (\d) tury/);
     if (pb) { stol.heroes.forEach(id => { const t = id === h.id ? h : getH(id); if (!t || t.dead) return; t.fx = Object.assign({}, t.fx); t.fx.buffs = (t.fx.buffs || []).filter(b => b[0] !== pb[1]).concat([[pb[1], +pb[2]]]); }); lines.push('Drużyna: ' + pb[1] + ' na ' + pb[2] + ' tury.'); sum.push('Drużyna: **' + pb[1] + '** na ' + pb[2] + ' tury.'); }
   } else {
@@ -240,8 +244,12 @@ function heroUse(h0, idx, targetIds) {
       if (t.id !== h.id && t.fx && t.fx.refuseHeal != null && t.fx.refuseHeal >= (stol.round || 0) && stol.fight && (v.inf.heal || v.stress)) { lines.push('→ ' + heroLabel(t) + ' **odmawia leczenia** (' + (t.state ? t.state.name : 'Przypadłość') + ').'); sum.push(heroLabel(t) + ': **odmawia leczenia** — umiejętność przepada.'); ev.push({ id: t.id, k: 'resist', txt: 'ODMAWIA' }); return; }
       if (v.inf.heal) {
         const hr = crit ? null : rollDice(inf.heal, v.healBonus);
-        const amt = crit ? Math.ceil(diceMax(inf.heal, v.healBonus) * 1.5) : hr.total;
-        const got = heroHeal(t, amt, lines, crit); bits.push('+' + got + ' Zdrowia' + (hr && inf.heal.n ? ' (k' + inf.heal.n + ' = ' + hr.roll + ')' : ''));
+        const bnd = t.id === h.id ? 0 : bondOf(h, t.id); const bb = bnd >= 2 ? 1 : bnd <= -2 ? -1 : 0;
+        const low = t.hp * 3 <= heroStats(t).maxhp;
+        const amt = Math.max(1, (crit ? Math.ceil(diceMax(inf.heal, v.healBonus) * 1.5) : hr.total) + bb);
+        if (bb) lines.push(bb > 0 ? '(przyjaźń: leczenie +1)' : '(niechęć: leczenie −1)');
+        const got = heroHeal(t, amt, lines, crit);
+        if (low && t.id !== h.id && stol.fight && d(2) === 1) bondAdd(h, t, 1, lines); bits.push('+' + got + ' Zdrowia' + (hr && inf.heal.n ? ' (k' + inf.heal.n + ' = ' + hr.roll + ')' : ''));
         const bl = sk.eff.match(/przy wyniku 1–(\d) leczony zaczyna krwawić \((\d)\)/);
         if (bl && hr && hr.roll <= +bl[1] && !t.dead) {
           t.fx = Object.assign({}, t.fx); addFx(t.fx, 'bleed', +bl[2] + (t.qn.some(q => qname(q.t) === 'Hemofilik') ? 1 : 0));
@@ -434,12 +442,15 @@ function afterDeaths(res) {
       else res.lines.push('Błyskotki poległego przepadają: ' + h.trinkets.map(t => t.name).join(', ') + '.');
       h.trinkets = [];
     }
-    ops.push(opSet('osada.cemetery', (Store.S.osada.cemetery || []).concat([{ name: heroLabel(h), cls: CLS[h.cls].name, level: h.level, cause: h.deathCause, week: Store.S.osada.week }])));
+    const epit = pick(EPITAPHS);
+    ops.push(opSet('osada.cemetery', (Store.S.osada.cemetery || []).concat([{ name: heroLabel(h), cls: CLS[h.cls].name, level: h.level, cause: h.deathCause, week: Store.S.osada.week, origin: h.story ? h.story.origin : '', dream: h.story && !h.story.done ? h.story.dreamText : '', epitaph: epit }])));
   });
   st.heroes.forEach(id => {
     const h = res.touched[id] || (res.touched[id] = clone(Store.S.heroes[id]));
-    const l = []; heroStress(h, 3 * ids.length, l); res.lines.push(heroLabel(h) + ' +' + 3 * ids.length + ' Stresu (śmierć towarzysza).'); l.forEach(x => res.lines.push(x));
+    const friends = ids.filter(id => bondOf(h, id) >= 2).length; const add = 3 * ids.length + 2 * friends;
+    const l = []; heroStress(h, add, l); res.lines.push(heroLabel(h) + ' +' + add + ' Stresu (śmierć towarzysza' + (friends ? ', w tym +2 za przyjaciela' : '') + ').'); l.forEach(x => res.lines.push(x));
   });
+  if (st.heroes.length) { const sv = res.touched[pick(st.heroes)]; if (sv && !sv.dead) bark(sv, 'allyDeath', res.lines); }
   if (wasActed) st.acted = rk();
   res.stol = st;
   return ops;
@@ -456,6 +467,7 @@ function commit(res, cls) {
   Object.values(res.touched).forEach(h => { if (h) ops.push(opSet('heroes.' + h.id, h)); });
   ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', cls: cls || res.lines._cls || '', text: res.lines.join(' ') } });
   Store.act(ops);
+  ancestorScan(res.lines.join(' '));
 }
 
 
@@ -498,12 +510,12 @@ function afflictionAct(h, stol, touched, lines, ev, sum) {
     if (cand.length) { const [i, t] = pick(cand); follow = { hid: h.id, idx: i, targets: t }; say = 'atakuje bez rozkazu: ' + CLS[h.cls].skills[i].name + '.'; } else act = 'taunt';
   }
   if (act === 'move') { const n = allies.length ? (i0 > 0 && (i0 === stol.heroes.length - 1 || d(2) === 1) ? -1 : 1) : 0; if (n) moveInList(stol.heroes, i0, n); say = 'nikomu nie ufa i sam zmienia pozycję.'; }
-  if (act === 'accuse') { if (allies.length) { const pt = pickD(allies); const t = T(pt.v); heroStress(t, 1, lines); say = 'rzuca oskarżenia o zdradę — ofiara ' + pt.t + ': ' + heroLabel(t) + ' dostaje +1 Stres.'; ev.push({ id: t.id, k: 'stress', txt: '+1 Stres' }); } else { act = 'skip'; } }
+  if (act === 'accuse') { if (allies.length) { const pt = pickD(allies); const t = T(pt.v); heroStress(t, 1, lines); bondAdd(h, t, -1, lines); say = 'rzuca oskarżenia o zdradę — ofiara ' + pt.t + ': ' + heroLabel(t) + ' dostaje +1 Stres.'; ev.push({ id: t.id, k: 'stress', txt: '+1 Stres' }); } else { act = 'skip'; } }
   if (act === 'refuse') { h.fx = Object.assign({}, h.fx, { refuseHeal: rd + 1 }); say = 'odtrąca pomoc: do swojej następnej tury odmawia leczenia.'; }
   if (act === 'noswap') { h.fx = Object.assign({}, h.fx, { noSwap: rd + 1 }); say = 'nie ruszy się dla nikogo: do swojej następnej tury odmawia zamiany pozycji.'; }
   if (act === 'retreat') { moveInList(stol.heroes, i0, 1); say = 'w panice cofa się o pozycję i pomija turę.'; }
   if (act === 'despair') { allies.forEach(id => { const t = T(id); heroStress(t, 1, lines); ev.push({ id, k: 'stress', txt: '+1 Stres' }); }); say = 'mówi, że wszyscy tu zginą — sojusznicy +1 Stres.'; }
-  if (act === 'taunt') { if (allies.length) { const pt = pickD(allies); const t = T(pt.v); heroStress(t, 2, lines); say = 'szydzi z sojusznika — ofiara ' + pt.t + ': ' + heroLabel(t) + ' dostaje +2 Stres.'; ev.push({ id: t.id, k: 'stress', txt: '+2 Stres' }); } else act = 'skip'; }
+  if (act === 'taunt') { if (allies.length) { const pt = pickD(allies); const t = T(pt.v); heroStress(t, 2, lines); bondAdd(h, t, -1, lines); say = 'szydzi z sojusznika — ofiara ' + pt.t + ': ' + heroLabel(t) + ' dostaje +2 Stres.'; ev.push({ id: t.id, k: 'stress', txt: '+2 Stres' }); } else act = 'skip'; }
   if (act === 'forward') { moveInList(stol.heroes, i0, -9); say = 'wysuwa się na sam przód szyku.'; }
   if (act === 'selfharm') { const r = d(4); heroDamage(h, r, lines, 'samookaleczenie'); say = 'rani się sam: ' + obrN(r) + ' (k4 = ' + r + ').'; ev.push({ id: h.id, k: 'hit', txt: '−' + r }); }
   if (act === 'skip') say = 'pomija turę.';
@@ -691,6 +703,7 @@ function enemyAuto(e0, entry) {
     const ai = BOSS_AI[e.name]; let want;
     const firstNow = !(stol.init || []).slice(0, Math.max(0, stol.turn)).some(x => x.id === e.id);
     if (!entry || firstNow) { want = ai.first; pre.push('Pierwsza tura w rundzie: atak sygnaturowy — **' + want + '**.'); }
+    else if (e.nextMove && e.nextMove.round === (stol.round || 0)) { want = e.nextMove.name; pre.push('Druga tura: zapowiedziany ruch (k6 = **' + e.nextMove.r + '**) → **' + want + '**.'); }
     else { const r = d(6); const row = ai.table.find(([a, b]) => r >= a && r <= b); want = row[2]; pre.push('Druga tura: k6 = **' + r + '** → **' + want + '**.'); }
     if (want === 'Do kotła!' && stol.cauldron && s.heroes[stol.cauldron] && !s.heroes[stol.cauldron].dead) { want = 'Chochla'; pre.push('Kocioł jest zajęty — Chochla.'); }
     if (want === 'Pieśń syreny' && stol.heroes.some(id => ((s.heroes[id] || {}).fx || {}).charm)) { want = 'Fala'; pre.push('Ktoś już jest zauroczony — Fala.'); }

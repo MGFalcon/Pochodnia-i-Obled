@@ -405,3 +405,30 @@ label.chk.sick { opacity: .45; filter: grayscale(.8); cursor: not-allowed; }
 .campp .camph { border-top: 1px solid #3a2a24; padding: 8px 0; }
 .campp .ch-h { display: flex; flex-wrap: wrap; gap: 8px; align-items: baseline; justify-content: space-between; margin-bottom: 4px; }
 .hint.bad { color: var(--blood2); }
+/* „Co teraz?” */
+.guide { margin: 0 0 12px; }
+.guidebar { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 8px 14px; border: 1px solid var(--gold2); border-radius: var(--r); background: linear-gradient(90deg, rgba(60,44,20,.55), rgba(20,15,12,.6)); font-size: 15px; }
+.guidebar .lbl { color: var(--gold); }
+.guidebar .gtxt { flex: 1 1 420px; }
+.guidebar .prz { display: block; font-style: italic; color: var(--bone2); font-size: 13px; margin-top: 2px; }
+.pulse { animation: pulse 0.6s ease-in-out 4; outline: 2px solid var(--gold); outline-offset: 3px; }
+@keyframes pulse { 50% { outline-color: transparent; } }
+@media (prefers-reduced-motion: reduce) { .pulse { animation: none; } }
+/* klimat i wybory */
+.rdesc { font-style: italic; color: var(--bone2); margin: 0 0 8px; }
+.featbox, .talkbox { border-top: 1px solid #3a2a24; padding-top: 8px; margin-top: 6px; }
+.votes .btn { margin: 0 6px 6px 0; }
+.vcount { display: inline-block; min-width: 1.4em; margin-left: 6px; padding: 0 5px; border-radius: 9px; background: rgba(0,0,0,.4); font-size: 12px; text-align: center; }
+.chip.tell { border-color: var(--gold2); }
+.hstory { margin: 4px 0; line-height: 1.4; }
+.hbonds { display: flex; flex-wrap: wrap; gap: 4px; margin: 4px 0; }
+/* zegar Ciemności */
+.threat { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; margin: 0 0 12px; padding: 8px 14px; border: 1px solid var(--rule2); border-radius: var(--r); background: rgba(20,15,12,.6); }
+.threat .tbar { display: inline-flex; gap: 3px; }
+.threat .tbar i { width: 14px; height: 10px; border-radius: 2px; background: #2a201b; border: 1px solid var(--rule2); }
+.threat .tbar i.on { background: #6b5a8e; border-color: #8d7bb5; }
+.threat .tbar i.on.hi { background: var(--blood2); border-color: var(--blood2); }
+.hamdec { margin: 0 0 12px; }
+/* imiona bohaterów i nazwy wrogów mieszczą się w wąskich polach */
+.slot .nm { font-size: clamp(13px, 1.25vw + 6px, 18px); overflow-wrap: normal; word-break: normal; hyphens: manual; }
+@media (max-width: 600px) { .slot .nm { font-size: clamp(11px, 3.3vw, 15px); } .slot .cl { font-size: 11px; } }
