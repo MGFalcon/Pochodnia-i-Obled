@@ -10,7 +10,7 @@ function posDots(list, cls, side, label) {
   const order = side === 'hero' ? [4, 3, 2, 1] : [1, 2, 3, 4];
   label = label || (/from/.test(cls) ? 'Używa z pozycji bohatera' : side === 'hero' ? 'Trafia bohaterów na pozycjach' : 'Trafia wrogów na pozycjach');
   const tip = label + ': ' + (list && list.length ? list.join(', ') : '—');
-  return `<span class="pdots ${cls} side-${side}" title="${tip}">${order.map(i => `<i class="${list && list.includes(i) ? 'on' : ''}">${i}</i>`).join('')}</span>`;
+  return `<span class="pdots ${cls} side-${side}" title="${tip}">${order.map(i => `<i class="${list && list.includes(i) ? 'on' : ''}"></i>`).join('')}</span>`;
 }
 function skillPosTxt(v) { return 'z ' + v.s.z + (v.inf.to ? ' → w ' + v.s.w : ' · ' + v.s.w); }
 function gchip(c, t, label) { const k = glossKey(t); const g = glossText(k, label || t); return `<span class="chip sm ${c}" ${g ? `title="${esc(g)}" data-gloss="${esc(g)}" tabindex="0"` : ''}>${esc(t)}</span>`; }
@@ -139,7 +139,7 @@ VIEWS.stol = {
       ${ekst ? `<p class="warn">Ekstaza bólu: musi atakować i nie leczy innych.</p>` : ''}
       <h2>${esc(heroLabel(h))} <span class="hint">${pos ? 'pozycja ' + pos : 'poza szykiem'} · ${esc(ownerName(h))}</span></h2>
       ${!can ? `<p class="muted">To bohater innego gracza — możesz go obejrzeć, ale działa nim jego gracz albo MG.</p>` : ''}
-      <p class="legend-pos"><span class="pdots from"><i class="on">1</i></span> złote — z której pozycji bohatera (ułożone jak na polu: 4 3 2 1, pozycja 1 z przodu) · <span class="pdots to"><i class="on">1</i></span> czerwone — które pozycje wroga trafia (1 2 3 4, od przodu)</p>
+      <p class="legend-pos"><span class="pdots from"><i class="on"></i></span> złote — z której pozycji bohatera (ułożone jak na polu: 4 3 2 1, pozycja 1 z przodu) · <span class="pdots to"><i class="on"></i></span> czerwone — które pozycje wroga trafia (1 2 3 4, od przodu)</p>
       <div class="skills">${skills.map(i => {
         const v = skillView(h, i, st); const okPos = pos && v.inf.from.includes(pos);
         const lim = /2 razy na walkę/.test(v.s.eff) ? 2 : /raz na walkę/.test(v.s.eff) ? 1 : 0; const used = ((h.fx || {}).used || {})[i] || 0; const spent = (lim && used >= lim) || lost || (ekst && !v.inf.attack);

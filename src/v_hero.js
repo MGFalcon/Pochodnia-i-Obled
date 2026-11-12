@@ -106,7 +106,7 @@ VIEWS.bohaterowie = {
           </div>
         </div>
         <div class="col">
-          <div class="box"><div class="ph">Umiejętności bojowe <span class="hint">zabierasz ${nChosen} z 4</span></div><p class="legend-pos"><span class="pdots from"><i class="on">1</i></span> złote — z której pozycji bohatera (4 3 2 1, jak na polu) · <span class="pdots to"><i class="on">1</i></span> czerwone — które pozycje wroga trafia (1 2 3 4)</p>
+          <div class="box"><div class="ph">Umiejętności bojowe <span class="hint">zabierasz ${nChosen} z 4</span></div><p class="legend-pos"><span class="pdots from"><i class="on"></i></span> złote — z której pozycji bohatera (4 3 2 1, jak na polu) · <span class="pdots to"><i class="on"></i></span> czerwone — które pozycje wroga trafia (1 2 3 4)</p>
             <div class="sk-list">${c.skills.map((s, i) => {
               const v = skillView(h, i, st); const on = h.skills.includes(i);
               return `<div class="sk ${on ? 'on' : ''}">

@@ -385,8 +385,7 @@ label.chk.sick { opacity: .45; filter: grayscale(.8); cursor: not-allowed; }
 .slot.dragging { opacity: .5; }
 .slot.dragover { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold) inset; }
 
-.pdots i { width: 13px; height: 13px; font-style: normal; font-size: 8px; line-height: 11px; text-align: center; color: var(--bone3); font-family: var(--f-body); }
-.pdots.from i.on, .pdots.to i.on { color: var(--ink); font-weight: 700; }
+.pdots i { width: 10px; height: 10px; }
 .sep { color: var(--bone3); font-size: 11px; }
 .ptxt { font-size: 12px; color: var(--bone3); }
 .sp2 { flex-wrap: wrap; row-gap: 2px; }
