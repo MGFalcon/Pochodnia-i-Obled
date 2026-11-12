@@ -4,7 +4,15 @@ function bar(cls, v, max, label) {
   const p = max ? clamp(v / max, 0, 1) * 100 : 0;
   return `<div class="bar ${cls}"><i style="width:${p}%"></i><span>${label}</span></div>`;
 }
-function posDots(list, cls) { return `<span class="pdots ${cls}">${[1, 2, 3, 4].map(i => `<i class="${list && list.includes(i) ? 'on' : ''}"></i>`).join('')}</span>`; }
+function posDots(list, cls, side, label) {
+  /* side: 'hero' = szyk bohaterów (rysowany 4 3 2 1, jak na polu), 'enemy' = szyk wrogów (1 2 3 4) */
+  side = side || (/from/.test(cls) ? 'hero' : 'enemy');
+  const order = side === 'hero' ? [4, 3, 2, 1] : [1, 2, 3, 4];
+  label = label || (/from/.test(cls) ? 'Używa z pozycji bohatera' : side === 'hero' ? 'Trafia bohaterów na pozycjach' : 'Trafia wrogów na pozycjach');
+  const tip = label + ': ' + (list && list.length ? list.join(', ') : '—');
+  return `<span class="pdots ${cls} side-${side}" title="${tip}">${order.map(i => `<i class="${list && list.includes(i) ? 'on' : ''}">${i}</i>`).join('')}</span>`;
+}
+function skillPosTxt(v) { return 'z ' + v.s.z + (v.inf.to ? ' → w ' + v.s.w : ' · ' + v.s.w); }
 function gchip(c, t, label) { const k = glossKey(t); const g = glossText(k, label || t); return `<span class="chip sm ${c}" ${g ? `title="${esc(g)}" data-gloss="${esc(g)}" tabindex="0"` : ''}>${esc(t)}</span>`; }
 function chipsHtml(list) { return list.map(([c, t]) => gchip(c, t)).join(''); }
 function stateChip(h) {
@@ -131,12 +139,13 @@ VIEWS.stol = {
       ${ekst ? `<p class="warn">Ekstaza bólu: musi atakować i nie leczy innych.</p>` : ''}
       <h2>${esc(heroLabel(h))} <span class="hint">${pos ? 'pozycja ' + pos : 'poza szykiem'} · ${esc(ownerName(h))}</span></h2>
       ${!can ? `<p class="muted">To bohater innego gracza — możesz go obejrzeć, ale działa nim jego gracz albo MG.</p>` : ''}
+      <p class="legend-pos"><span class="pdots from"><i class="on">1</i></span> złote — z której pozycji bohatera (ułożone jak na polu: 4 3 2 1, pozycja 1 z przodu) · <span class="pdots to"><i class="on">1</i></span> czerwone — które pozycje wroga trafia (1 2 3 4, od przodu)</p>
       <div class="skills">${skills.map(i => {
         const v = skillView(h, i, st); const okPos = pos && v.inf.from.includes(pos);
         const lim = /2 razy na walkę/.test(v.s.eff) ? 2 : /raz na walkę/.test(v.s.eff) ? 1 : 0; const used = ((h.fx || {}).used || {})[i] || 0; const spent = (lim && used >= lim) || lost || (ekst && !v.inf.attack);
         return `<button class="skill" data-act="useSkill" data-i="${i}" ${can && okPos && !spent && Store.S.stol.heroes.includes(h.id) ? '' : 'disabled'} title="${esc(spent ? 'Wykorzystane w tej walce' : !okPos ? 'Nie z tej pozycji' : v.s.eff || '')}">
           <span class="sn">${esc(v.s.name)}${!okPos && pos ? ' <span class="nopos">nie z poz. ' + pos + '</span>' : ''}</span>
-          <span class="sp2">${posDots(v.inf.from, 'from')}${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(v.s.w)}</span>`}</span>
+          <span class="sp2">${posDots(v.inf.from, 'from')}<span class="sep">▸</span>${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(v.s.w)}</span>`}<span class="ptxt">${esc(skillPosTxt(v))}</span></span>
           <span class="sv num">${v.cel != null ? 'Cel. ' + v.cel : ''}${v.dmg ? ' · ' + v.dmg : ''}${v.heal ? ' · leczy ' + v.heal : ''}${v.stress ? ' · −' + v.stress + ' Stres' : ''}${lim ? ' · ' + (lim - used) + '/' + lim + ' w walce' : ''}</span>
         </button>`;
       }).join('')}</div>
@@ -166,7 +175,7 @@ VIEWS.stol = {
     return `<section class="panel act">
       <h2>${esc(e.name)} <span class="hint">${e.boss ? 'boss · 2 tury na rundę' : esc(e.pos ? 'pozycje ' + e.pos : '')}</span></h2>
       <p class="dim num">Zdrowie ${e.hp}/${e.maxhp} · Unik ${enemyDodge(e)} · Pancerz ${enemyProt(e)} · Szybkość ${e.speed} · Krzepa ${e.krzepa} · Odporność ${e.odp}${e.noBleed ? ' · niewrażliwy na krwawienie' : ''}</p>
-      <div class="atks">${(e.attacks || []).map((a, i) => `<div class="atk"><div>${attackText(a)}</div>${gm && a.w ? `<div class="row">
+      <div class="atks">${(e.attacks || []).map((a, i) => `<div class="atk"><div>${a.w ? `<span class="sp2">${posDots(posList(a.w), a.aoe ? 'to multi' : 'to', 'hero')}<span class="ptxt">w bohaterów ${esc(a.w)}</span></span> ` : ''}${attackText(a)}</div>${gm && a.w ? `<div class="row">
         ${a.aoe ? `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="all">Atakuj pozycje ${esc(a.w)}</button>` : `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="rand">Losowy cel</button><button class="btn sm" data-act="eAtk" data-i="${i}" data-m="pick">Wybierz cel</button>`}
       </div>` : gm ? `<div class="row"><button class="btn sm" data-act="eSay" data-i="${i}">Ogłoś</button></div>` : ''}</div>`).join('') || '<p class="muted">Zwłoki nic nie robią.</p>'}</div>
       ${e.notes && e.notes.length ? `<div class="bnotes">${e.notes.map(n => `<p>${md(n.replace(/^([^:]+):/, '**$1:**'))}</p>`).join('')}</div>` : ''}

@@ -384,3 +384,15 @@ label.chk.sick { opacity: .45; filter: grayscale(.8); cursor: not-allowed; }
 .slot.hero[draggable="true"] { cursor: grab; }
 .slot.dragging { opacity: .5; }
 .slot.dragover { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold) inset; }
+
+.pdots i { width: 13px; height: 13px; font-style: normal; font-size: 8px; line-height: 11px; text-align: center; color: var(--bone3); font-family: var(--f-body); }
+.pdots.from i.on, .pdots.to i.on { color: var(--ink); font-weight: 700; }
+.sep { color: var(--bone3); font-size: 11px; }
+.ptxt { font-size: 12px; color: var(--bone3); }
+.sp2 { flex-wrap: wrap; row-gap: 2px; }
+.sp2 .ptxt, .sk-m .ptxt { flex-basis: 100%; white-space: nowrap; }
+.sk-m .ptxt { flex-basis: auto; }
+.pdots.stand i.on { background: var(--bone2); border-color: var(--bone2); color: var(--ink); font-weight: 700; }
+.atk .sp2 { display: inline-flex; align-items: center; gap: 6px; margin-right: 6px; flex-wrap: nowrap; }
+.atk .sp2 .ptxt { flex-basis: auto; }
+.legend-pos { font-size: 12px; color: var(--bone3); }

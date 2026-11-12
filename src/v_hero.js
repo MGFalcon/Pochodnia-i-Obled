@@ -106,13 +106,13 @@ VIEWS.bohaterowie = {
           </div>
         </div>
         <div class="col">
-          <div class="box"><div class="ph">Umiejętności bojowe <span class="hint">zabierasz ${nChosen} z 4</span></div>
+          <div class="box"><div class="ph">Umiejętności bojowe <span class="hint">zabierasz ${nChosen} z 4</span></div><p class="legend-pos"><span class="pdots from"><i class="on">1</i></span> złote — z której pozycji bohatera (4 3 2 1, jak na polu) · <span class="pdots to"><i class="on">1</i></span> czerwone — które pozycje wroga trafia (1 2 3 4)</p>
             <div class="sk-list">${c.skills.map((s, i) => {
               const v = skillView(h, i, st); const on = h.skills.includes(i);
               return `<div class="sk ${on ? 'on' : ''}">
                 <button class="sk-t" data-act="skillToggle" data-i="${i}" ${dis} aria-pressed="${on}" title="${on ? 'Zabrana na wyprawę' : 'Zostaje w Osadzie'}"></button>
                 <div class="sk-b"><div class="sk-n">${esc(s.name)}${s.form ? ` <span class="chip sm">${esc(s.form)}</span>` : ''}${v.tb ? ' <span class="chip sm gold">błyskotka +1</span>' : ''}</div>
-                <div class="sk-m">${posDots(v.inf.from, 'from')}${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(s.w)}</span>`}
+                <div class="sk-m">${posDots(v.inf.from, 'from')}<span class="sep">▸</span>${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(s.w)}</span>`}<span class="ptxt">${esc(skillPosTxt(v))}</span>
                   <span class="num">${v.cel != null ? 'Cel. ' + v.cel : ''}${v.dmg ? ' · ' + v.dmg : ''}${v.heal && !v.dmg ? ' · leczy ' + v.heal : ''}${v.stress && !v.dmg ? ' · −' + v.stress + ' Stres' : ''} · kryt ≤ ${v.crit}</span></div>
                 <div class="sk-e dim">${esc(effectText(v)) || '—'}</div></div></div>`;
             }).join('')}</div>
