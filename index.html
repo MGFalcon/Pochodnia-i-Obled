@@ -554,6 +554,14 @@ label.chk.sick { opacity: .45; filter: grayscale(.8); cursor: not-allowed; }
 .ev-eat { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
 .eventbox .btn .small { font-family: var(--f-body); font-size: 12px; opacity: .85; }
 
+.mvbtns { position: absolute; top: 3px; right: 4px; display: flex; gap: 3px; z-index: 2; }
+.mv { width: 24px; height: 22px; border: 1px solid var(--rule2); background: rgba(14,12,11,.85); color: var(--bone); border-radius: 3px; cursor: pointer; padding: 0; font-size: 11px; line-height: 1; }
+.mv:hover:not([disabled]) { border-color: var(--gold); color: var(--gold); }
+.mv[disabled] { opacity: .25; cursor: default; }
+.slot.hero[draggable="true"] { cursor: grab; }
+.slot.dragging { opacity: .5; }
+.slot.dragover { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold) inset; }
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><radialGradient id="pbg" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#3a2c24"/><stop offset="1" stop-color="#0e0c0b"/></radialGradient><radialGradient id="pvig" cx="50%" cy="45%" r="65%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".65"/></radialGradient></defs></svg>
@@ -2279,7 +2287,9 @@ function heroSlot(id, pos) {
   const P = UI.pend; const tgt = P && P.need === 'ally' && Store.S.stol.heroes.includes(id);
   const tgtE = UI.epend && UI.epend.valid.includes(id);
   const sel = UI.sel.k === 'h' && UI.sel.id === id;
-  return `<div class="slot hero ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt || tgtE ? 'tgt' : ''} ${h.dd ? 'dd' : ''}" data-act="${tgt ? 'pickAlly' : tgtE ? 'pickHeroT' : 'selH'}" data-id="${id}" tabindex="0">
+  const mv = canHero(h) && !tgt && !tgtE; const n = s.heroes.length;
+  return `<div class="slot hero ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt || tgtE ? 'tgt' : ''} ${h.dd ? 'dd' : ''}" data-act="${tgt ? 'pickAlly' : tgtE ? 'pickHeroT' : 'selH'}" data-id="${id}" tabindex="0" ${mv ? 'draggable="true"' : ''}>
+    ${mv && n > 1 ? `<div class="mvbtns"><button class="mv" data-act="slotMove" data-id="${id}" data-d="1" ${pos < n ? '' : 'disabled'} title="Do tyłu (zamiana z pozycją ${pos + 1})" aria-label="Do tyłu">◀</button><button class="mv" data-act="slotMove" data-id="${id}" data-d="-1" ${pos > 1 ? '' : 'disabled'} title="Do przodu (zamiana z pozycją ${pos - 1})" aria-label="Do przodu">▶</button></div>` : ''}
     <div class="pos">${pos}</div>
     <div class="pt">${portraitHtml(h, 'pt-img')}</div>
     <div class="nm">${esc(heroLabel(h))}</div>
@@ -2397,8 +2407,8 @@ VIEWS.stol = {
         </button>`;
       }).join('')}</div>
       ${can ? `<div class="row acts">
-        <button class="btn sm" data-act="heroMove" data-d="-1" ${pos > 1 ? '' : 'disabled'}>◀ do przodu</button>
-        <button class="btn sm" data-act="heroMove" data-d="1" ${pos && pos < Store.S.stol.heroes.length ? '' : 'disabled'}>do tyłu ▶</button>
+        <button class="btn sm" data-act="heroMove" data-d="1" ${pos && pos < Store.S.stol.heroes.length ? '' : 'disabled'} title="Zamiana z sąsiadem z tyłu (dalej od wrogów)">◀ do tyłu</button>
+        <button class="btn sm" data-act="heroMove" data-d="-1" ${pos > 1 ? '' : 'disabled'} title="Zamiana z sąsiadem z przodu (bliżej wrogów)">do przodu ▶</button>
         <button class="btn sm" data-act="heroPass">Pas</button>
         ${ohyda ? `<button class="btn sm gold" data-act="transform">${h.form === 'beast' ? 'Wróć do ludzkiej postaci' : 'Przemiana w bestię'}</button>` : ''}
         <button class="btn sm" data-act="retreat">Odwrót</button>
@@ -2463,6 +2473,23 @@ VIEWS.stol = {
 };
 
 /* ---------- akcje stołu ---------- */
+/* przeciąganie bohaterów w szyku: poza walką dowolna zamiana, w walce tylko z sąsiadem */
+let _dragId = null;
+document.addEventListener('dragstart', ev => { const sl = ev.target.closest && ev.target.closest('.slot.hero[draggable]'); if (!sl) return; _dragId = sl.dataset.id; try { ev.dataTransfer.setData('text/plain', _dragId); ev.dataTransfer.effectAllowed = 'move'; } catch (e) { } sl.classList.add('dragging'); });
+document.addEventListener('dragend', () => { _dragId = null; $$('.slot.dragover, .slot.dragging').forEach(x => x.classList.remove('dragover', 'dragging')); });
+document.addEventListener('dragover', ev => { const sl = ev.target.closest && ev.target.closest('.side-h .slot'); if (!sl || !_dragId) return; ev.preventDefault(); $$('.slot.dragover').forEach(x => x !== sl && x.classList.remove('dragover')); sl.classList.add('dragover'); });
+document.addEventListener('drop', ev => {
+  const sl = ev.target.closest && ev.target.closest('.side-h .slot'); if (!sl || !_dragId) return; ev.preventDefault();
+  const st0 = Store.S.stol; const from = st0.heroes.indexOf(_dragId); const toId = sl.dataset.id; let to = toId ? st0.heroes.indexOf(toId) : -1;
+  if (to < 0) { const p = +((sl.querySelector('.pos') || {}).textContent || 0); to = Math.min(st0.heroes.length - 1, Math.max(0, p - 1)); }
+  if (from < 0 || to < 0 || from === to) return;
+  if (st0.fight && Math.abs(from - to) > 1) return toast('W walce zamieniasz się tylko z sąsiadem.');
+  const other = st0.heroes[to] && H(st0.heroes[to]); const rd = st0.round || 0;
+  const blk = [H(_dragId), other].find(x => x && x.fx && x.fx.noSwap != null && x.fx.noSwap >= rd && st0.fight);
+  if (blk) return toast(heroLabel(blk) + ' odmawia zamiany pozycji.');
+  const id = _dragId;
+  setStol(st => { const a = st.heroes.indexOf(id), b = to; [st.heroes[a], st.heroes[b]] = [st.heroes[b], st.heroes[a]]; }, heroLabel(H(id)) + ' zamienia się miejscami' + (other ? ' z: ' + heroLabel(other) : '') + '.');
+});
 function runFollow(res) { if (!res || !res.followUp) return; const fu = res.followUp; setTimeout(() => { const hh = H(fu.hid); if (hh && !hh.dead) commit(heroUse(hh, fu.idx, fu.targets || [])); }, 700); }
 function setStol(fn, logText, cls) { const st = clone(Store.S.stol); fn(st); const ops = [opSet('stol', st)]; if (logText) ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', cls: cls || '', text: logText } }); Store.act(ops); }
 function validEnemyTargets(v) {
@@ -2507,8 +2534,9 @@ Object.assign(ACT, {
   pickEnemy: el => { const P = UI.pend; UI.pend = null; if (P.multi) return commit(heroUse(H(P.hid), P.idx, P.valid)); commit(heroUse(H(P.hid), P.idx, [el.dataset.id])); },
   fireMulti: () => { const P = UI.pend; UI.pend = null; commit(heroUse(H(P.hid), P.idx, P.valid)); },
   pickAlly: el => { const P = UI.pend; UI.pend = null; commit(heroUse(H(P.hid), P.idx, [el.dataset.id])); },
+  slotMove: el => { UI.sel = { k: 'h', id: el.dataset.id }; ACT.heroMove(el); },
   heroMove: el => {
-    const id = UI.sel.id; const st0 = Store.S.stol; const i = st0.heroes.indexOf(id); const j = i + +el.dataset.d; const rd = st0.round || 0;
+    const id = el.dataset.id || UI.sel.id; const st0 = Store.S.stol; const i = st0.heroes.indexOf(id); const j = i + +el.dataset.d; const rd = st0.round || 0;
     const blk = [id, st0.heroes[j]].map(H).find(x => x && x.fx && x.fx.noSwap != null && x.fx.noSwap >= rd && st0.fight);
     if (blk) return toast(heroLabel(blk) + ' odmawia zamiany pozycji (' + (blk.state ? blk.state.name : 'Przypadłość') + ').');
     setStol(st => { moveInList(st.heroes, i, +el.dataset.d); }, heroLabel(H(id)) + ' zmienia pozycję.');

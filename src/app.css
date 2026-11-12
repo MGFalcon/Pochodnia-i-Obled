@@ -376,3 +376,11 @@ label.chk.sick { opacity: .45; filter: grayscale(.8); cursor: not-allowed; }
 .ev-h b { font-family: var(--f-display); font-size: 26px; color: var(--pale); margin-left: 6px; }
 .ev-eat { display: flex; flex-direction: column; gap: 6px; margin: 8px 0; }
 .eventbox .btn .small { font-family: var(--f-body); font-size: 12px; opacity: .85; }
+
+.mvbtns { position: absolute; top: 3px; right: 4px; display: flex; gap: 3px; z-index: 2; }
+.mv { width: 24px; height: 22px; border: 1px solid var(--rule2); background: rgba(14,12,11,.85); color: var(--bone); border-radius: 3px; cursor: pointer; padding: 0; font-size: 11px; line-height: 1; }
+.mv:hover:not([disabled]) { border-color: var(--gold); color: var(--gold); }
+.mv[disabled] { opacity: .25; cursor: default; }
+.slot.hero[draggable="true"] { cursor: grab; }
+.slot.dragging { opacity: .5; }
+.slot.dragover { border-color: var(--gold); box-shadow: 0 0 0 2px var(--gold) inset; }
