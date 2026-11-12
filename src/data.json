@@ -1,0 +1,2053 @@
+{
+ "classes": [
+  {
+   "n": 1,
+   "name": "Krzyżowiec",
+   "desc": "Rycerz krucjaty, który wrócił z wojny do domu pełnego potworów. Przodownik, pogromca nieumarłych, opora drużyny.",
+   "stats": {
+    "prot": 0,
+    "hp": 17,
+    "dodge": 0,
+    "speed": 1,
+    "crit": 1,
+    "krzepa": 5,
+    "odp": 4,
+    "death": 7
+   },
+   "skills": [
+    {
+     "name": "Cios miecza",
+     "form": null,
+     "z": "1–2",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k6+1",
+     "eff": "+2 obrażeń przeciw Nieumarłym"
+    },
+    {
+     "name": "Święta szarża",
+     "form": null,
+     "z": "3–4",
+     "w": "2–4",
+     "cel": 7,
+     "obr": "k6",
+     "eff": "Krzyżowiec przesuwa się o 1 do przodu"
+    },
+    {
+     "name": "Oskarżenie",
+     "form": null,
+     "z": "1–2",
+     "w": "1+2",
+     "cel": 7,
+     "obr": "k4",
+     "eff": "+1 obrażeń przeciw Nieumarłym"
+    },
+    {
+     "name": "Ogłuszający cios",
+     "form": null,
+     "z": "1–2",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "ogłuszenie"
+    },
+    {
+     "name": "Okrzyk wiary",
+     "form": null,
+     "z": "1–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "−2 Stres i +1 Zdrowia"
+    },
+    {
+     "name": "Polowa modlitwa",
+     "form": null,
+     "z": "1–2",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "leczy k4"
+    }
+   ],
+   "notes": [],
+   "camp": [
+    {
+     "name": "Żarliwe kazanie",
+     "pts": 4,
+     "eff": "drużyna −2 Stres"
+    },
+    {
+     "name": "Ślub rycerski",
+     "pts": 3,
+     "eff": "sojusznik Śmierć +1 i Krzepa +2 na następną walkę"
+    }
+   ],
+   "pos": "1–2",
+   "role": "przodownik, pogromca nieumarłych, ulga w stresie"
+  },
+  {
+   "n": 2,
+   "name": "Rozbójnik",
+   "desc": "Zbieg z szubienicy z pistoletem i kordem. Gra z każdej pozycji, żyje z krytyków.",
+   "stats": {
+    "prot": 0,
+    "hp": 14,
+    "dodge": 2,
+    "speed": 5,
+    "crit": 2,
+    "krzepa": 3,
+    "odp": 3,
+    "death": 7
+   },
+   "skills": [
+    {
+     "name": "Cięcie",
+     "form": null,
+     "z": "1–3",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k6+1",
+     "eff": ""
+    },
+    {
+     "name": "Strzał z pistoletu",
+     "form": null,
+     "z": "2–4",
+     "w": "2–4",
+     "cel": 7,
+     "obr": "k6",
+     "eff": "Kryt +1 przy tym ataku"
+    },
+    {
+     "name": "Śrut",
+     "form": null,
+     "z": "2–3",
+     "w": "1+2+3",
+     "cel": 6,
+     "obr": "k2",
+     "eff": ""
+    },
+    {
+     "name": "Otwarta żyła",
+     "form": null,
+     "z": "1–3",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "krwawienie 2"
+    },
+    {
+     "name": "Strzał z przyłożenia",
+     "form": null,
+     "z": "1",
+     "w": "1",
+     "cel": 8,
+     "obr": "k8+1",
+     "eff": "Rozbójnik cofa się o 1"
+    },
+    {
+     "name": "Pojedynek",
+     "form": null,
+     "z": "2–4",
+     "w": "1–3",
+     "cel": 7,
+     "obr": "k4",
+     "eff": "przesuwa się o 1 do przodu; do końca rundy oddaje k4 każdemu, kto go zaatakuje"
+    }
+   ],
+   "notes": [],
+   "camp": [
+    {
+     "name": "Czyszczenie broni",
+     "pts": 2,
+     "eff": "sam Celność +1 i Kryt +1 na następną walkę"
+    },
+    {
+     "name": "Czujny bandyta",
+     "pts": 3,
+     "eff": "nocna zasadzka niemożliwa"
+    }
+   ],
+   "pos": "1–4",
+   "role": "krytyki, gra z każdej pozycji"
+  },
+  {
+   "n": 3,
+   "name": "Doktor Plagi",
+   "desc": "Uczony w masce z dziobem, który leczy dymem i trucizną. Zaraza i ogłuszenie z tylnych pozycji.",
+   "stats": {
+    "prot": 0,
+    "hp": 13,
+    "dodge": 1,
+    "speed": 4,
+    "crit": 1,
+    "krzepa": 3,
+    "odp": 6,
+    "death": 6
+   },
+   "skills": [
+    {
+     "name": "Trujący wybuch",
+     "form": null,
+     "z": "2–4",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "zaraza 3, Celność celu −1 na 3 tury"
+    },
+    {
+     "name": "Granat zarazy",
+     "form": null,
+     "z": "3–4",
+     "w": "3+4",
+     "cel": 7,
+     "obr": "k2",
+     "eff": "zaraza 3"
+    },
+    {
+     "name": "Oślepiający gaz",
+     "form": null,
+     "z": "3–4",
+     "w": "3+4",
+     "cel": 7,
+     "obr": null,
+     "eff": "ogłuszenie; 2 razy na walkę"
+    },
+    {
+     "name": "Nacięcie",
+     "form": null,
+     "z": "1–3",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "krwawienie 2"
+    },
+    {
+     "name": "Polowa medycyna",
+     "form": null,
+     "z": "3–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "leczy 1, usuwa krwawienie i zarazę"
+    },
+    {
+     "name": "Opary odwagi",
+     "form": null,
+     "z": "2–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "Szybkość +2 i obrażenia +1 na 3 tury"
+    }
+   ],
+   "notes": [],
+   "camp": [
+    {
+     "name": "Pijawki",
+     "pts": 3,
+     "eff": "sojusznik +3 Zdrowia; przy k10 1–5 usuwa jedną chorobę"
+    },
+    {
+     "name": "Eksperymentalne opary",
+     "pts": 3,
+     "eff": "drużyna Odporność +3 na następną walkę"
+    }
+   ],
+   "pos": "2–4",
+   "role": "zaraza, ogłuszenia tyłów, usuwanie efektów"
+  },
+  {
+   "n": 4,
+   "name": "Westalka",
+   "desc": "Zakonnica z młotem i modlitewnikiem. Główne źródło leczenia — i pierwszy cel każdego mądrego wroga.",
+   "stats": {
+    "prot": 0,
+    "hp": 14,
+    "dodge": 0,
+    "speed": 1,
+    "crit": 1,
+    "krzepa": 4,
+    "odp": 4,
+    "death": 7
+   },
+   "skills": [
+    {
+     "name": "Uderzenie młotem",
+     "form": null,
+     "z": "1–2",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4+1",
+     "eff": "+1 obrażeń przeciw Nieumarłym"
+    },
+    {
+     "name": "Oślepiające światło",
+     "form": null,
+     "z": "2–4",
+     "w": "1–3",
+     "cel": 6,
+     "obr": "1",
+     "eff": "ogłuszenie, Pochodnia +1"
+    },
+    {
+     "name": "Wyrok",
+     "form": null,
+     "z": "3–4",
+     "w": "1–4",
+     "cel": 7,
+     "obr": "k4",
+     "eff": "Westalka leczy się o 1"
+    },
+    {
+     "name": "Boska łaska",
+     "form": null,
+     "z": "3–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "leczy k6"
+    },
+    {
+     "name": "Boska pociecha",
+     "form": null,
+     "z": "2–4",
+     "w": "cała drużyna",
+     "cel": null,
+     "obr": null,
+     "eff": "leczy k2 każdego"
+    },
+    {
+     "name": "Pięść światłości",
+     "form": null,
+     "z": "1–2",
+     "w": "1–3",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "drużyna Celność +1 na 2 tury"
+    }
+   ],
+   "notes": [],
+   "camp": [
+    {
+     "name": "Modlitwa",
+     "pts": 2,
+     "eff": "sojusznik −3 Stres; nie działa na Bezbożnika"
+    },
+    {
+     "name": "Sanktuarium",
+     "pts": 4,
+     "eff": "każdy +3 Zdrowia i znika Wyczerpanie"
+    }
+   ],
+   "pos": "2–4",
+   "role": "główna uzdrowicielka"
+  },
+  {
+   "n": 5,
+   "name": "Piekielnica",
+   "desc": "Barbarzyńska wojowniczka z glewią. Największe obrażenia z przodu, ale jej najsilniejsze ciosy wyczerpują.",
+   "stats": {
+    "prot": 0,
+    "hp": 18,
+    "dodge": 2,
+    "speed": 4,
+    "crit": 1,
+    "krzepa": 4,
+    "odp": 4,
+    "death": 7
+   },
+   "skills": [
+    {
+     "name": "Zamach",
+     "form": null,
+     "z": "1–2",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k6+1",
+     "eff": ""
+    },
+    {
+     "name": "Żelazny łabędź",
+     "form": null,
+     "z": "1",
+     "w": "4",
+     "cel": 8,
+     "obr": "k6+1",
+     "eff": "sięga ostatniej pozycji z pierwszej"
+    },
+    {
+     "name": "Jeśli krwawi",
+     "form": null,
+     "z": "1–3",
+     "w": "1–3",
+     "cel": 7,
+     "obr": "k4+1",
+     "eff": "krwawienie 2"
+    },
+    {
+     "name": "Przełamanie",
+     "form": null,
+     "z": "1–3",
+     "w": "2+3+4",
+     "cel": 6,
+     "obr": "k4",
+     "eff": "przesuwa się o 1 do przodu; potem Zmęczenie"
+    },
+    {
+     "name": "Ryk barbarzyńcy",
+     "form": null,
+     "z": "1–2",
+     "w": "1+2",
+     "cel": 7,
+     "obr": null,
+     "eff": "ogłuszenie; raz na walkę, potem Zmęczenie"
+    },
+    {
+     "name": "Przypływ adrenaliny",
+     "form": null,
+     "z": "1–4",
+     "w": "sama",
+     "cel": null,
+     "obr": null,
+     "eff": "leczy k4, usuwa krwawienie i zarazę, obrażenia +1 na 3 tury; raz na walkę"
+    }
+   ],
+   "notes": [
+    "Zmęczenie Piekielnicy: −1 Celności i −1 obrażeń do końca walki, sumuje się."
+   ],
+   "camp": [
+    {
+     "name": "Ofiara krwi",
+     "pts": 2,
+     "eff": "sama −2 Zdrowia, drużyna −1 Stres"
+    },
+    {
+     "name": "Ostrzenie",
+     "pts": 2,
+     "eff": "sama Kryt +1 na następną walkę"
+    }
+   ],
+   "pos": "1–3",
+   "role": "największe obrażenia z przodu"
+  },
+  {
+   "n": 6,
+   "name": "Okultysta",
+   "desc": "Uczony, który zawarł pakt z czymś spoza świata. Klątwy, znaki i leczenie, na którym nie da się polegać.",
+   "stats": {
+    "prot": 0,
+    "hp": 13,
+    "dodge": 2,
+    "speed": 6,
+    "crit": 1,
+    "krzepa": 3,
+    "odp": 4,
+    "death": 6
+   },
+   "skills": [
+    {
+     "name": "Ofiarny sztylet",
+     "form": null,
+     "z": "1–2",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4+1",
+     "eff": "+2 obrażeń przeciw Plugawym"
+    },
+    {
+     "name": "Klątwa słabości",
+     "form": null,
+     "z": "1–4",
+     "w": "1–4",
+     "cel": 8,
+     "obr": null,
+     "eff": "cel: obrażenia −1 i Celność −1 na 3 tury"
+    },
+    {
+     "name": "Dłonie z otchłani",
+     "form": null,
+     "z": "2–4",
+     "w": "1–2",
+     "cel": 7,
+     "obr": "k4",
+     "eff": "ogłuszenie"
+    },
+    {
+     "name": "Klątwa podatności",
+     "form": null,
+     "z": "1–4",
+     "w": "1–4",
+     "cel": 8,
+     "obr": null,
+     "eff": "Znak, Unik celu −1 na 3 tury"
+    },
+    {
+     "name": "Pocisk z otchłani",
+     "form": null,
+     "z": "3–4",
+     "w": "3+4",
+     "cel": 7,
+     "obr": "k4",
+     "eff": "+2 obrażeń przeciw Plugawym"
+    },
+    {
+     "name": "Plugawe zszycie",
+     "form": null,
+     "z": "2–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "leczy k8; przy wyniku 1–3 leczony zaczyna krwawić (2)"
+    }
+   ],
+   "notes": [],
+   "camp": [
+    {
+     "name": "Mroczny rytuał",
+     "pts": 3,
+     "eff": "sojusznik −3 Stres, ale przy k10 1–2 dostaje +2 zamiast"
+    },
+    {
+     "name": "Zakazana wiedza",
+     "pts": 2,
+     "eff": "Zwiad +3 w pierwszym korytarzu po obozie"
+    }
+   ],
+   "pos": "1–4",
+   "role": "klątwy, Znak, ryzykowne leczenie"
+  },
+  {
+   "n": 7,
+   "name": "Rabuś Grobów",
+   "desc": "Złodziejka krypt, zwinna jak cień. Najwyższy Unik, rzuty nożami i trucizna; rozbraja pułapki (+2).",
+   "stats": {
+    "prot": 0,
+    "hp": 13,
+    "dodge": 3,
+    "speed": 6,
+    "crit": 2,
+    "krzepa": 3,
+    "odp": 4,
+    "death": 6
+   },
+   "skills": [
+    {
+     "name": "Rzut nożem",
+     "form": null,
+     "z": "3–4",
+     "w": "2–4",
+     "cel": 8,
+     "obr": "k6+1",
+     "eff": "Kryt +1 przy tym ataku"
+    },
+    {
+     "name": "Wachlarz ostrzy",
+     "form": null,
+     "z": "2–3",
+     "w": "2+3",
+     "cel": 7,
+     "obr": "k4+1",
+     "eff": ""
+    },
+    {
+     "name": "Zatruta strzałka",
+     "form": null,
+     "z": "2–4",
+     "w": "1–4",
+     "cel": 8,
+     "obr": "1",
+     "eff": "zaraza 3"
+    },
+    {
+     "name": "Wypad",
+     "form": null,
+     "z": "3–4",
+     "w": "1–3",
+     "cel": 8,
+     "obr": "k8",
+     "eff": "przesuwa się o 2 do przodu"
+    },
+    {
+     "name": "Kilof w twarz",
+     "form": null,
+     "z": "1–3",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "ignoruje Pancerz"
+    },
+    {
+     "name": "Rozpłynięcie w cieniu",
+     "form": null,
+     "z": "1–2",
+     "w": "sama",
+     "cel": null,
+     "obr": null,
+     "eff": "cofa się o 2, Unik +3 na 2 tury"
+    }
+   ],
+   "notes": [],
+   "camp": [
+    {
+     "name": "Złodziejski nos",
+     "pts": 2,
+     "eff": "przy następnej skrzyni lub osobliwości rzucasz dwa razy i wybierasz"
+    },
+    {
+     "name": "Wisielczy humor",
+     "pts": 3,
+     "eff": "drużyna −1 Stres"
+    }
+   ],
+   "pos": "2–4",
+   "role": "unik, trucizna, rozbrajanie pułapek"
+  },
+  {
+   "n": 8,
+   "name": "Zbrojny",
+   "desc": "Weteran wielu wojen, który już niczego się nie boi. Osłania sojuszników, kontratakuje i dowodzi.",
+   "stats": {
+    "prot": 1,
+    "hp": 17,
+    "dodge": 1,
+    "speed": 1,
+    "crit": 1,
+    "krzepa": 6,
+    "odp": 4,
+    "death": 7
+   },
+   "skills": [
+    {
+     "name": "Miażdżenie",
+     "form": null,
+     "z": "1–2",
+     "w": "1–3",
+     "cel": 8,
+     "obr": "k6",
+     "eff": ""
+    },
+    {
+     "name": "Wał tarczy",
+     "form": null,
+     "z": "1–3",
+     "w": "1",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "odrzut 1, Zbrojny przesuwa się o 1 do przodu"
+    },
+    {
+     "name": "Osłona",
+     "form": null,
+     "z": "1–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "Ochrona sojusznika na 2 tury, sam Pancerz +1"
+    },
+    {
+     "name": "Odwet",
+     "form": null,
+     "z": "1–3",
+     "w": "sam",
+     "cel": null,
+     "obr": null,
+     "eff": "do końca rundy oddaje k4 każdemu, kto go zaatakuje"
+    },
+    {
+     "name": "Rozkaz",
+     "form": null,
+     "z": "1–4",
+     "w": "drużyna",
+     "cel": null,
+     "obr": null,
+     "eff": "Celność +1 i Kryt +1 na 3 tury"
+    },
+    {
+     "name": "Podtrzymanie ducha",
+     "form": null,
+     "z": "1–4",
+     "w": "drużyna",
+     "cel": null,
+     "obr": null,
+     "eff": "każdy −1 Stres, Unik +1 na 2 tury"
+    }
+   ],
+   "notes": [],
+   "camp": [
+    {
+     "name": "Taktyka",
+     "pts": 3,
+     "eff": "drużyna Unik +1 na następną walkę"
+    },
+    {
+     "name": "Opowieści weterana",
+     "pts": 2,
+     "eff": "sojusznik −2 Stres i Szansa Cnoty +1 przy następnej Próbie"
+    }
+   ],
+   "pos": "1–2",
+   "role": "obrońca, rozkazy dla drużyny"
+  },
+  {
+   "n": 9,
+   "name": "Trędowaty",
+   "desc": "Król, który oddał koronę i szuka spokoju ducha mimo choroby. Najtwardszy bohater w grze, z najmocniejszymi ciosami — o ile w ogóle trafi.",
+   "stats": {
+    "prot": 0,
+    "hp": 19,
+    "dodge": 0,
+    "speed": 0,
+    "crit": 1,
+    "krzepa": 6,
+    "odp": 7,
+    "death": 7
+   },
+   "skills": [
+    {
+     "name": "Rąbnięcie",
+     "form": null,
+     "z": "1–2",
+     "w": "1–2",
+     "cel": 6,
+     "obr": "k8+2",
+     "eff": ""
+    },
+    {
+     "name": "Zamach toporem",
+     "form": null,
+     "z": "1–2",
+     "w": "1+2",
+     "cel": 6,
+     "obr": "k6",
+     "eff": ""
+    },
+    {
+     "name": "Oczyszczenie",
+     "form": null,
+     "z": "1–2",
+     "w": "1–2",
+     "cel": 7,
+     "obr": "k6",
+     "eff": "odrzut 1; zwłoki rozpadają się od razu"
+    },
+    {
+     "name": "Wytrwałość",
+     "form": null,
+     "z": "1–2",
+     "w": "sam",
+     "cel": null,
+     "obr": null,
+     "eff": "Pancerz +1 na 3 tury, Znak na sobie"
+    },
+    {
+     "name": "Zemsta",
+     "form": null,
+     "z": "1–4",
+     "w": "sam",
+     "cel": null,
+     "obr": null,
+     "eff": "Celność +2 i obrażenia +2, Unik −2 na 3 tury"
+    },
+    {
+     "name": "Powaga",
+     "form": null,
+     "z": "1–4",
+     "w": "sam",
+     "cel": null,
+     "obr": null,
+     "eff": "leczy k6, −1 Stres"
+    }
+   ],
+   "notes": [],
+   "camp": [
+    {
+     "name": "Zdjęcie maski",
+     "pts": 3,
+     "eff": "drużyna −2 Stres, sam +1 Stres"
+    },
+    {
+     "name": "Zaduma",
+     "pts": 2,
+     "eff": "sam −4 Stres"
+    }
+   ],
+   "pos": "1–2",
+   "role": "najwięcej Zdrowia, ogromne ciosy, słaba celność"
+  },
+  {
+   "n": 10,
+   "name": "Błazen",
+   "desc": "Wędrowny grajek z ostrzem w rękawie. Podtrzymuje drużynę pieśnią, a w odpowiedniej chwili wychodzi na środek sceny po finałowy cios.",
+   "stats": {
+    "prot": 0,
+    "hp": 13,
+    "dodge": 3,
+    "speed": 6,
+    "crit": 2,
+    "krzepa": 3,
+    "odp": 4,
+    "death": 6
+   },
+   "skills": [
+    {
+     "name": "Sztylet pod żebro",
+     "form": null,
+     "z": "2–4",
+     "w": "1–3",
+     "cel": 8,
+     "obr": "k4+1",
+     "eff": "przesuwa się o 1 do przodu; Kryt +1 przy tym ataku"
+    },
+    {
+     "name": "Żniwa",
+     "form": null,
+     "z": "2–3",
+     "w": "2+3",
+     "cel": 7,
+     "obr": "k4",
+     "eff": "krwawienie 2"
+    },
+    {
+     "name": "Ballada bojowa",
+     "form": null,
+     "z": "3–4",
+     "w": "drużyna",
+     "cel": null,
+     "obr": null,
+     "eff": "Celność +1 i Kryt +1 na 3 tury"
+    },
+    {
+     "name": "Pokrzepiająca melodia",
+     "form": null,
+     "z": "3–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "−3 Stres"
+    },
+    {
+     "name": "Solo",
+     "form": null,
+     "z": "2–4",
+     "w": "sam",
+     "cel": null,
+     "obr": null,
+     "eff": "przesuwa się na pozycję 1, Unik +3 do końca rundy, Znak na sobie"
+    },
+    {
+     "name": "Finał",
+     "form": null,
+     "z": "1",
+     "w": "1–4",
+     "cel": 8,
+     "obr": "k8+3",
+     "eff": "cofa się na pozycję 4; potem Zmęczenie"
+    }
+   ],
+   "notes": [
+    "Zmęczenie Błazna: −2 Celności i −2 obrażeń do końca walki, sumuje się. Solo i Finał to jego znak rozpoznawczy: jedna tura na wejście na scenę, druga na cios."
+   ],
+   "camp": [
+    {
+     "name": "Wieczorny występ",
+     "pts": 3,
+     "eff": "drużyna −2 Stres"
+    },
+    {
+     "name": "Kpina z ciemności",
+     "pts": 2,
+     "eff": "sojusznik nie dostaje pierwszego Stresu w następnej walce"
+    }
+   ],
+   "pos": "2–4",
+   "role": "krwawienie, pieśni, kombinacja Solo i Finał"
+  },
+  {
+   "n": 11,
+   "name": "Psiarz",
+   "desc": "Dawny stróż prawa z wiernym ogarem u boku. Pies tropi, oznacza i broni, a jego pan pilnuje, żeby drużyna nie zasnęła na warcie.",
+   "stats": {
+    "prot": 0,
+    "hp": 14,
+    "dodge": 2,
+    "speed": 5,
+    "crit": 1,
+    "krzepa": 4,
+    "odp": 4,
+    "death": 6
+   },
+   "skills": [
+    {
+     "name": "Atak ogara",
+     "form": null,
+     "z": "2–4",
+     "w": "1–4",
+     "cel": 8,
+     "obr": "k6+1",
+     "eff": "+2 obrażeń przeciw Bestiom i celom ze Znakiem"
+    },
+    {
+     "name": "Gwizd na cel",
+     "form": null,
+     "z": "2–4",
+     "w": "1–4",
+     "cel": 8,
+     "obr": null,
+     "eff": "Znak, Pancerz celu −1 na 3 tury"
+    },
+    {
+     "name": "Szczucie",
+     "form": null,
+     "z": "2–4",
+     "w": "1+2+3+4",
+     "cel": 6,
+     "obr": "1",
+     "eff": "krwawienie 2"
+    },
+    {
+     "name": "Pałka",
+     "form": null,
+     "z": "1–2",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "ogłuszenie"
+    },
+    {
+     "name": "Pies obronny",
+     "form": null,
+     "z": "2–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "Ochrona sojusznika na 2 tury"
+    },
+    {
+     "name": "Lizanie ran",
+     "form": null,
+     "z": "1–4",
+     "w": "sam",
+     "cel": null,
+     "obr": null,
+     "eff": "leczy k4, usuwa krwawienie i zarazę"
+    }
+   ],
+   "notes": [],
+   "camp": [
+    {
+     "name": "Psia warta",
+     "pts": 3,
+     "eff": "nocna zasadzka niemożliwa"
+    },
+    {
+     "name": "Pies terapeutyczny",
+     "pts": 2,
+     "eff": "sojusznik −3 Stres"
+    }
+   ],
+   "pos": "2–4",
+   "role": "Znak, ochrona sojuszników, pogromca bestii"
+  },
+  {
+   "n": 12,
+   "name": "Łowca Nagród",
+   "desc": "Najemnik, który poluje na wszystko, za co ktoś zapłaci. Specjalista od ludzi, ogłuszeń i wyciągania wrogów z tylnych szeregów.",
+   "stats": {
+    "prot": 0,
+    "hp": 18,
+    "dodge": 2,
+    "speed": 3,
+    "crit": 1,
+    "krzepa": 5,
+    "odp": 4,
+    "death": 7
+   },
+   "skills": [
+    {
+     "name": "Odbiór nagrody",
+     "form": null,
+     "z": "1–3",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k6+1",
+     "eff": "+2 obrażeń przeciw Ludziom, +2 przeciw celom ze Znakiem"
+    },
+    {
+     "name": "Znak śmierci",
+     "form": null,
+     "z": "1–4",
+     "w": "1–4",
+     "cel": 8,
+     "obr": null,
+     "eff": "Znak, Pancerz celu −1 na 3 tury"
+    },
+    {
+     "name": "Chodź no tu",
+     "form": null,
+     "z": "1–3",
+     "w": "2–4",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "przyciągnięcie 2"
+    },
+    {
+     "name": "Cios pod brodę",
+     "form": null,
+     "z": "1–2",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "ogłuszenie, odrzut 1"
+    },
+    {
+     "name": "Dobicie",
+     "form": null,
+     "z": "1–3",
+     "w": "1–3",
+     "cel": 8,
+     "obr": "k6",
+     "eff": "+3 obrażeń przeciw ogłuszonym"
+    },
+    {
+     "name": "Kolczatki",
+     "form": null,
+     "z": "3–4",
+     "w": "3+4",
+     "cel": 7,
+     "obr": "1",
+     "eff": "Szybkość celów −2 na 3 tury"
+    }
+   ],
+   "notes": [],
+   "camp": [
+    {
+     "name": "Rozpoznanie",
+     "pts": 2,
+     "eff": "następny Zwiad +3"
+    },
+    {
+     "name": "Plan zasadzki",
+     "pts": 3,
+     "eff": "w pierwszej rundzie następnej walki drużyna ma Celność +2"
+    }
+   ],
+   "pos": "1–3",
+   "role": "pogromca ludzi, ogłuszenia, przyciąganie tyłów"
+  },
+  {
+   "n": 13,
+   "name": "Kuszniczka",
+   "desc": "Weteranka oblężeń, która nie chybia dwa razy. Stoi na tyłach szyku, zdejmuje najgroźniejszych wrogów i łata rannych.",
+   "stats": {
+    "prot": 0,
+    "hp": 14,
+    "dodge": 0,
+    "speed": 1,
+    "crit": 1,
+    "krzepa": 4,
+    "odp": 4,
+    "death": 7
+   },
+   "skills": [
+    {
+     "name": "Strzał snajperski",
+     "form": null,
+     "z": "3–4",
+     "w": "2–4",
+     "cel": 8,
+     "obr": "k8",
+     "eff": "Kryt +1 przy tym ataku; +2 obrażeń przeciw celom ze Znakiem"
+    },
+    {
+     "name": "Ogień zaporowy",
+     "form": null,
+     "z": "3–4",
+     "w": "3+4",
+     "cel": 7,
+     "obr": "k2",
+     "eff": "Celność i Szybkość celów −1 na 3 tury"
+    },
+    {
+     "name": "Strzał na oślep",
+     "form": null,
+     "z": "3–4",
+     "w": "1–4",
+     "cel": 6,
+     "obr": "k8+2",
+     "eff": ""
+    },
+    {
+     "name": "Znak snajpera",
+     "form": null,
+     "z": "3–4",
+     "w": "1–4",
+     "cel": 8,
+     "obr": null,
+     "eff": "Znak, Unik celu −1 na 3 tury"
+    },
+    {
+     "name": "Opatrunek polowy",
+     "form": null,
+     "z": "1–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "leczy k4, usuwa krwawienie"
+    },
+    {
+     "name": "Raca",
+     "form": null,
+     "z": "3–4",
+     "w": "drużyna",
+     "cel": null,
+     "obr": null,
+     "eff": "Pochodnia +2, każdy −1 Stres, sojusznicy tracą ogłuszenie"
+    }
+   ],
+   "notes": [],
+   "camp": [
+    {
+     "name": "Plan marszu",
+     "pts": 3,
+     "eff": "przy wejściu do następnej komnaty drużyna nie może zostać zaskoczona"
+    },
+    {
+     "name": "Nowa cięciwa",
+     "pts": 2,
+     "eff": "sama Kryt +1 na następną walkę"
+    }
+   ],
+   "pos": "3–4",
+   "role": "strzelczyni wyborowa, opatrunki"
+  },
+  {
+   "n": 14,
+   "name": "Antykwariuszka",
+   "desc": "Uczona i kolekcjonerka, która zeszła do lochu po skarby, nie po chwałę. W walce jest najsłabsza ze wszystkich, ale drużyna z nią wraca z pełniejszym plecakiem.",
+   "stats": {
+    "prot": 0,
+    "hp": 12,
+    "dodge": 3,
+    "speed": 5,
+    "crit": 1,
+    "krzepa": 3,
+    "odp": 5,
+    "death": 6
+   },
+   "skills": [
+    {
+     "name": "Nerwowe dźgnięcie",
+     "form": null,
+     "z": "2–4",
+     "w": "1–2",
+     "cel": 7,
+     "obr": "k2",
+     "eff": "Antykwariuszka cofa się o 1"
+    },
+    {
+     "name": "Gnilne opary",
+     "form": null,
+     "z": "2–4",
+     "w": "1–4",
+     "cel": 7,
+     "obr": "1",
+     "eff": "zaraza 2"
+    },
+    {
+     "name": "Oślepiający proszek",
+     "form": null,
+     "z": "2–4",
+     "w": "1–4",
+     "cel": 7,
+     "obr": null,
+     "eff": "Celność celu −2 na 2 tury"
+    },
+    {
+     "name": "Kryj mnie!",
+     "form": null,
+     "z": "2–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "wskazany sojusznik przejmuje ataki w nią na 2 tury (Ochrona), ona Unik +2"
+    },
+    {
+     "name": "Ożywcze opary",
+     "form": null,
+     "z": "2–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "leczy k4, Szybkość +1 na 2 tury"
+    },
+    {
+     "name": "Wzmacniające opary",
+     "form": null,
+     "z": "2–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "leczy 1, Pancerz +1 na 2 tury"
+    }
+   ],
+   "notes": [
+    "**Oko do skarbów.** Gdy Antykwariuszka jest w drużynie, każda skrzynia i dobra osobliwość daje +1 rzut na łup, a jedno miejsce w plecaku mieści 20 Złota zamiast 10. Na pozycji 1 nie ma ani jednej umiejętności."
+   ],
+   "camp": [
+    {
+     "name": "Zapasy z sakwy",
+     "pts": 2,
+     "eff": "drużyna dostaje 2 losowe zapasy"
+    },
+    {
+     "name": "Grzebanie w znaleziskach",
+     "pts": 4,
+     "eff": "po następnym udanym Zwiadzie ukryta komnata jest przy 1–3, a nie tylko przy 1"
+    }
+   ],
+   "pos": "2–4",
+   "role": "wsparcie i więcej łupów"
+  },
+  {
+   "n": 15,
+   "name": "Ohyda",
+   "desc": "Człowiek, w którym siedzi bestia, i który sam zakuł się w łańcuchy. Walczy w dwóch postaciach, a jego przemiana przeraża nawet sojuszników.",
+   "stats": {
+    "prot": 0,
+    "hp": 18,
+    "dodge": 1,
+    "speed": 4,
+    "crit": 1,
+    "krzepa": 5,
+    "odp": 5,
+    "death": 7
+   },
+   "skills": [
+    {
+     "name": "Kajdany",
+     "form": "człowiek",
+     "z": "1–4",
+     "w": "1–3",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "ogłuszenie"
+    },
+    {
+     "name": "Żółć bestii",
+     "form": "człowiek",
+     "z": "1–4",
+     "w": "2–4",
+     "cel": 7,
+     "obr": "k2",
+     "eff": "zaraza 2"
+    },
+    {
+     "name": "Rozgrzeszenie",
+     "form": "człowiek",
+     "z": "1–4",
+     "w": "1–4",
+     "cel": 7,
+     "obr": "k4",
+     "eff": "Ohyda −1 Stres"
+    },
+    {
+     "name": "Szał",
+     "form": "bestia",
+     "z": "1–2",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k8+2",
+     "eff": ""
+    },
+    {
+     "name": "Taranowanie",
+     "form": "bestia",
+     "z": "1–2",
+     "w": "1",
+     "cel": 7,
+     "obr": "k6",
+     "eff": "odrzut 1, Ohyda przesuwa się o 1 do przodu"
+    },
+    {
+     "name": "Wycie",
+     "form": "bestia",
+     "z": "1–2",
+     "w": "1+2",
+     "cel": 7,
+     "obr": null,
+     "eff": "Celność celów −1 na 3 tury"
+    }
+   ],
+   "notes": [
+    "**Przemiana.** Zamiast akcji Ohyda może przybrać postać bestii albo wrócić do ludzkiej. Bestia leczy się o k4 przy przemianie i ma obrażenia +1, Szybkość +2 i Unik +1, ale używa wyłącznie umiejętności bestii. Pierwsza przemiana w każdej walce daje każdemu sojusznikowi +1 Stresu. Po walce Ohyda zawsze wraca do ludzkiej postaci. Na wyprawę wybiera 4 z 6 umiejętności, więc warto zabrać obie postacie.",
+    "**Nie do pogodzenia z wiarą.** Ohyda nie zejdzie do lochu w jednej drużynie z Krzyżowcem, Westalką ani Biczownikiem, a w Osadzie nie wejdzie do Opactwa."
+   ],
+   "camp": [
+    {
+     "name": "Łańcuchy na noc",
+     "pts": 2,
+     "eff": "sam −3 Stres"
+    },
+    {
+     "name": "Ostrzeżenie",
+     "pts": 3,
+     "eff": "drużyna nie dostaje Stresu z jego pierwszej przemiany w następnej walce"
+    }
+   ],
+   "pos": "1–4",
+   "role": "dwie postacie: człowiek i bestia"
+  },
+  {
+   "n": 16,
+   "name": "Biczownik",
+   "desc": "Pokutnik, który leczy innych własną krwią. Im bliżej śmierci, tym jest groźniejszy, a najtrudniej go dobić na Progu Śmierci.",
+   "stats": {
+    "prot": 0,
+    "hp": 15,
+    "dodge": 1,
+    "speed": 4,
+    "crit": 1,
+    "krzepa": 5,
+    "odp": 6,
+    "death": 8
+   },
+   "skills": [
+    {
+     "name": "Kara",
+     "form": null,
+     "z": "1–3",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4+1",
+     "eff": "krwawienie 1"
+    },
+    {
+     "name": "Deszcz smutku",
+     "form": null,
+     "z": "3–4",
+     "w": "1+2+3",
+     "cel": 7,
+     "obr": "k2",
+     "eff": "krwawienie 1"
+    },
+    {
+     "name": "Gniew bicza",
+     "form": null,
+     "z": "1–2",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "+3 obrażeń, gdy Biczownik ma 4 Zdrowia lub mniej"
+    },
+    {
+     "name": "Upust krwi",
+     "form": null,
+     "z": "1–4",
+     "w": "1–4",
+     "cel": 7,
+     "obr": "k4",
+     "eff": "Biczownik leczy się o połowę zadanych obrażeń (w górę)"
+    },
+    {
+     "name": "Odkupienie",
+     "form": null,
+     "z": "2–4",
+     "w": "sojusznik",
+     "cel": null,
+     "obr": null,
+     "eff": "sojusznik leczy k6, Biczownik traci 2 Zdrowia (nie poniżej 1)"
+    },
+    {
+     "name": "Dar bicza",
+     "form": null,
+     "z": "1–4",
+     "w": "drużyna",
+     "cel": null,
+     "obr": null,
+     "eff": "tylko przy Zdrowiu 4 lub mniej: każdy sojusznik leczy k4 i −1 Stres, Biczownik +2 Stres"
+    }
+   ],
+   "notes": [
+    "**Ekstaza bólu.** Przy porażce Próby Charakteru Biczownik nie dostaje zwykłej Przypadłości, tylko wpada w Ekstazę. Co turę musi atakować, nie leczy innych i traci 1 Zdrowia na początku tury (nie poniżej 1), ale Stres z ataków wrogów go nie dotyczy. Ekstaza mija tak samo jak Przypadłość. W Osadzie Biczownik leczy Stres wyłącznie w Opactwie."
+   ],
+   "camp": [
+    {
+     "name": "Pokuta",
+     "pts": 2,
+     "eff": "sam −3 Stres i −2 Zdrowia"
+    },
+    {
+     "name": "Kazanie o cierpieniu",
+     "pts": 3,
+     "eff": "sojusznik Odporność +2 i Śmierć +1 na następną walkę"
+    }
+   ],
+   "pos": "1–4",
+   "role": "krwawienie, silniejszy im bliżej śmierci"
+  },
+  {
+   "n": 17,
+   "name": "Łamaczka Tarcz",
+   "desc": "Wojowniczka z dalekich piasków, która przebija każdy pancerz. Walczy unikiem i blokami, wdzierając się między szeregi wroga.",
+   "stats": {
+    "prot": 0,
+    "hp": 14,
+    "dodge": 3,
+    "speed": 5,
+    "crit": 1,
+    "krzepa": 4,
+    "odp": 4,
+    "death": 6
+   },
+   "skills": [
+    {
+     "name": "Przebicie",
+     "form": null,
+     "z": "1–2",
+     "w": "1+2",
+     "cel": 7,
+     "obr": "k4+1",
+     "eff": "ignoruje Pancerz"
+    },
+    {
+     "name": "Pchnięcie",
+     "form": null,
+     "z": "1–3",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k6+1",
+     "eff": "ignoruje Pancerz"
+    },
+    {
+     "name": "Pocałunek żmii",
+     "form": null,
+     "z": "3–4",
+     "w": "1–2",
+     "cel": 8,
+     "obr": "k4",
+     "eff": "przesuwa się o 2 do przodu, zaraza 2"
+    },
+    {
+     "name": "Nadzianie",
+     "form": null,
+     "z": "1",
+     "w": "1–3",
+     "cel": 7,
+     "obr": "k8",
+     "eff": "ignoruje Pancerz, cofa się o 2"
+    },
+    {
+     "name": "Urzeczenie",
+     "form": null,
+     "z": "2–4",
+     "w": "2–4",
+     "cel": 8,
+     "obr": "1",
+     "eff": "przyciągnięcie 1, zaraza 1"
+    },
+    {
+     "name": "Taniec węża",
+     "form": null,
+     "z": "1–4",
+     "w": "sama",
+     "cel": null,
+     "obr": null,
+     "eff": "2 żetony Bloku"
+    }
+   ],
+   "notes": [
+    "**Blok.** Żeton Bloku anuluje jedno trafienie w Łamaczkę Tarcz, ale nie działa na krytyk. Bohaterka może mieć najwyżej 3 żetony; przepadają po walce."
+   ],
+   "camp": [
+    {
+     "name": "Wężowa skóra",
+     "pts": 2,
+     "eff": "sama zaczyna następną walkę z 1 żetonem Bloku"
+    },
+    {
+     "name": "Opowieść z piasków",
+     "pts": 3,
+     "eff": "drużyna −1 Stres"
+    }
+   ],
+   "pos": "1–3",
+   "role": "ignoruje Pancerz, unik i blok"
+  }
+ ],
+ "quirks_pos": [
+  "Twardziel: Zdrowie +2",
+  "Zwinny: Unik +1",
+  "Szybki: Szybkość +1",
+  "Celne oko: Celność +1 przy ataku w pozycje 3–4",
+  "Pogromca nieumarłych: +1 obrażeń przeciw Nieumarłym",
+  "Łowca bestii: +1 obrażeń przeciw Bestiom",
+  "Niezłomny duch: Szansa Cnoty +1",
+  "Twardy żołądek: przy Głodzie je tylko co drugi raz",
+  "Optymista: pierwszy Stres w każdej walce −1",
+  "Nocny marek: przy Pochodni 2 lub niżej Celność +1"
+ ],
+ "quirks_neg": [
+  "Strach przed ciemnością: przy Pochodni 3 lub niżej dodatkowo +1 Stres za korytarz",
+  "Kleptoman: przy skrzyni k10 1–3 — łup znika w jego kieszeni",
+  "Ciekawski: musi dotknąć osobliwości przy k10 1–5",
+  "Hemofilik: każde krwawienie na nim +1",
+  "Słabe serce: zawał już przy Stresie 18",
+  "Fanatyk: leczy Stres tylko w Opactwie",
+  "Pijak albo Hazardzista: leczy Stres tylko w Barze albo przy Hazardzie",
+  "Bezbożnik: nie wejdzie do Opactwa",
+  "Lęk przed nieumarłymi: +1 Stres na początku walki z Nieumarłymi",
+  "Klaustrofobia: w Ruinach i Norach +1 Stres na początku walki"
+ ],
+ "diseases": [
+  "Pełzający kaszel: Szybkość −1",
+  "Febra: Celność −1",
+  "Tasiemiec: przy Głodzie zjada 2 prowianty",
+  "Letarg: maks. Zdrowie −2",
+  "Wścieklizna: obrażenia +1, Unik −1, Szansa Cnoty −1",
+  "Klątwa bestii: przy Pochodni 0 działa jak Przypadłość Obłęd"
+ ],
+ "afflictions": [
+  {
+   "name": "Paranoja",
+   "combat": "odmawia leczenia, sam zmienia pozycję, oskarża sojusznika (+1 Stres)",
+   "out": "odmawia jedzenia od innych, nie oddaje łupów"
+  },
+  {
+   "name": "Egoizm",
+   "combat": "pomija turę, leczy tylko siebie, odmawia zamiany pozycji",
+   "out": "zjada 2 prowianty, chowa złoto"
+  },
+  {
+   "name": "Obłęd",
+   "combat": "losowa umiejętność w losowy cel",
+   "out": "dotyka osobliwości bez pytania"
+  },
+  {
+   "name": "Lęk",
+   "combat": "cofa się o 1 pozycję, pomija turę",
+   "out": "domaga się odwrotu, odmawia wejścia do komnaty"
+  },
+  {
+   "name": "Beznadzieja",
+   "combat": "pomija turę, odmawia leczenia, załamuje innych (+1 Stres wszystkim)",
+   "out": "nie je, spowalnia marsz"
+  },
+  {
+   "name": "Agresja",
+   "combat": "szydzi (+2 Stres wskazanemu), atakuje bez rozkazu",
+   "out": "kłóci się, w obozie +1 Stres każdemu"
+  },
+  {
+   "name": "Masochizm",
+   "combat": "odmawia leczenia, wysuwa się na przód, rani się (k4)",
+   "out": "sam wchodzi w pułapki"
+  }
+ ],
+ "virtues": [
+  {
+   "name": "Niezłomny",
+   "perm": "Śmierć +2, Krzepa +2",
+   "proc": "drużyna −1 Stres"
+  },
+  {
+   "name": "Odważny",
+   "perm": "każdy otrzymany Stres −1",
+   "proc": "drużyna −1 Stres"
+  },
+  {
+   "name": "Skupiony",
+   "perm": "Celność +1, Kryt +1",
+   "proc": "wskazany sojusznik: Kryt +1 do końca rundy"
+  },
+  {
+   "name": "Potężny",
+   "perm": "obrażenia +1",
+   "proc": "wskazany sojusznik: obrażenia +1 do końca rundy"
+  },
+  {
+   "name": "Witalny",
+   "perm": "Odporność +2",
+   "proc": "leczy 2 Zdrowia sobie i usuwa z siebie krwawienie i zarazę"
+  }
+ ],
+ "bestiary": {
+  "Ruiny": {
+   "enemies": [
+    {
+     "name": "Kościany żołdak",
+     "hp": 6,
+     "dodge": 1,
+     "prot": 0,
+     "speed": 3,
+     "type": "Nieumarły",
+     "pos": "1–3",
+     "attacks": "Cięcie: W 1–2, Cel. 8, k4+1"
+    },
+    {
+     "name": "Kościany obrońca",
+     "hp": 8,
+     "dodge": 0,
+     "prot": 2,
+     "speed": 1,
+     "type": "Nieumarły",
+     "pos": "1–2",
+     "attacks": "Tarcza: W 1–2, Cel. 7, k4, ogłuszenie · Osłona: tylny sojusznik pod Ochroną przez 2 rundy"
+    },
+    {
+     "name": "Kościany kusznik",
+     "hp": 6,
+     "dodge": 1,
+     "prot": 1,
+     "speed": 3,
+     "type": "Nieumarły",
+     "pos": "3–4",
+     "attacks": "Bełt: W 1–4, Cel. 7, k6+1 (woli cele z tyłu)"
+    },
+    {
+     "name": "Kościany dworzanin",
+     "hp": 5,
+     "dodge": 2,
+     "prot": 0,
+     "speed": 6,
+     "type": "Nieumarły",
+     "pos": "2–4",
+     "attacks": "Kuszenie pucharem: W 1–4, Cel. 8, +2 Stres · Cięcie: W 1–2, Cel. 8, k4, krwawienie 1"
+    },
+    {
+     "name": "Kultysta akolita",
+     "hp": 7,
+     "dodge": 2,
+     "prot": 0,
+     "speed": 5,
+     "type": "Człowiek",
+     "pos": "2–4",
+     "attacks": "Inwokacja: W 1–4, Cel. 8, +2 Stres · Bluźnierczy znak: W 1–4, Cel. 8, Znak"
+    }
+   ],
+   "boss": {
+    "name": "Uczeń Nekromanty",
+    "line": "Zdrowie 42 · Unik 2 · Szybkość 4 · Człowiek · zaczyna na pozycji 3 za dwoma Kościanymi żołdakami",
+    "moves": [
+     "**Pocisk duszy:** W 1–4, Cel. 8, k8+1 i +1 Stres.",
+     "**Wezwanie kości:** przyzywa Kościanego żołdaka na przód szyku; gdy szyk jest pełny, używa Pocisku duszy.",
+     "**Klątwa grobu:** W 1+2+3+4, Cel. 7, +2 Stres i groza 1.",
+     "**Ucieczka w mrok:** jeśli zaczyna turę na pozycji 1–2 i ma kogoś za sobą, cofa się na tył zamiast ataku.",
+     "**Wzór ruchów:** pierwsza tura — Pocisk duszy; druga — k6: 1–2 Wezwanie kości, 3–4 Pocisk duszy, 5–6 Klątwa grobu."
+    ]
+   },
+   "notes": [
+    "Wszystkie szkielety są niewrażliwe na krwawienie."
+   ]
+  },
+  "Nory": {
+   "enemies": [
+    {
+     "name": "Świński rąbacz",
+     "hp": 9,
+     "dodge": 0,
+     "prot": 0,
+     "speed": 2,
+     "type": "Człowiek, Bestia",
+     "pos": "1–2",
+     "attacks": "Rąbnięcie: W 1–2, Cel. 8, k6+2"
+    },
+    {
+     "name": "Świński mizerak",
+     "hp": 5,
+     "dodge": 1,
+     "prot": 0,
+     "speed": 4,
+     "type": "Człowiek, Bestia",
+     "pos": "2–4",
+     "attacks": "Rzut nieczystościami: W 1–4, Cel. 8, 1, choroba"
+    },
+    {
+     "name": "Ścierwojad",
+     "hp": 7,
+     "dodge": 2,
+     "prot": 0,
+     "speed": 5,
+     "type": "Bestia",
+     "pos": "1–3",
+     "attacks": "Ukąszenie: W 1–2, Cel. 8, k4, krwawienie 2"
+    }
+   ],
+   "boss": {
+    "name": "Świński Książę",
+    "line": "Zdrowie 64 · Unik 0 · Pancerz 1 · Szybkość 2 · Człowiek i Bestia · zajmuje pozycje 1–2, na pozycji 3 stoi jego Giermek (Zdrowie 8 · Unik 3 · Szybkość 6)",
+    "moves": [
+     "**Zgniecenie:** W 1–2, Cel. 8, k10+5.",
+     "**Zamach cielskiem:** W 1+2, Cel. 8, k6+2.",
+     "**Rzut ochłapem:** W 3–4, Cel. 7, k6+1 i choroba (rzut Odporności).",
+     "**Ryk świni:** W 1+2+3+4, Cel. 7, +3 Stres.",
+     "**Giermek:** Proporzec (Książę Celność +1 i obrażenia +1 na 2 tury) albo Ukłucie (W 1–4, Cel. 8, k2). Gdy Giermek zginie, Książę wpada w szał: obrażenia +2 do końca walki.",
+     "**Wzór ruchów:** pierwsza tura — Zgniecenie; druga — k6: 1–3 Zamach cielskiem, 4–5 Rzut ochłapem, 6 Ryk świni."
+    ]
+   },
+   "notes": []
+  },
+  "Knieja": {
+   "enemies": [
+    {
+     "name": "Bandzior",
+     "hp": 8,
+     "dodge": 1,
+     "prot": 0,
+     "speed": 3,
+     "type": "Człowiek",
+     "pos": "1–2",
+     "attacks": "Cięcie: W 1–2, Cel. 8, k6, krwawienie 1"
+    },
+    {
+     "name": "Bandyta strzelec",
+     "hp": 6,
+     "dodge": 1,
+     "prot": 0,
+     "speed": 4,
+     "type": "Człowiek",
+     "pos": "3–4",
+     "attacks": "Salwa: W 1+2+3+4, Cel. 6, 1 obrażenie"
+    },
+    {
+     "name": "Grzybowy drapacz",
+     "hp": 7,
+     "dodge": 1,
+     "prot": 0,
+     "speed": 2,
+     "type": "Plugawy",
+     "pos": "1–2",
+     "attacks": "Pazury: W 1–2, Cel. 8, k4, zaraza 2"
+    }
+   ],
+   "boss": {
+    "name": "Wiedźma z kotłem",
+    "line": "Zdrowie 44 · Unik 1 · Szybkość 3 · Człowiek · stoi na pozycji 1, za nią Grzybowy drapacz i Bandyta strzelec",
+    "moves": [
+     "**Do kotła!:** W 1–4, Cel. 8. Trafiony bohater ląduje w kotle: nie działa, nie można go atakować, a na początku każdej swojej tury traci k4+1 Zdrowia. Wychodzi, gdy drużyna zada Wiedźmie 12 obrażeń w jednej rundzie, albo po 3 swoich turach. W kotle mieści się jeden bohater.",
+     "**Chochla:** W 1–2, Cel. 8, k8+2.",
+     "**Złe oko:** W 1–4, Cel. 8, +3 Stres.",
+     "**Wzór ruchów:** pierwsza tura — Do kotła! (gdy kocioł jest zajęty, Chochla); druga — k6: 1–3 i 6 Chochla, 4–5 Złe oko."
+    ]
+   },
+   "notes": []
+  },
+  "Zatoka": {
+   "enemies": [
+    {
+     "name": "Pelagiczny łowca",
+     "hp": 8,
+     "dodge": 2,
+     "prot": 0,
+     "speed": 4,
+     "type": "Plugawy",
+     "pos": "1–2",
+     "attacks": "Harpun: W 1–2, Cel. 8, k4, krwawienie 2"
+    },
+    {
+     "name": "Topielec",
+     "hp": 10,
+     "dodge": 0,
+     "prot": 1,
+     "speed": 1,
+     "type": "Nieumarły",
+     "pos": "1–3",
+     "attacks": "Uścisk: W 1–2, Cel. 7, k6, ogłuszenie"
+    },
+    {
+     "name": "Pelagiczny szaman",
+     "hp": 6,
+     "dodge": 2,
+     "prot": 0,
+     "speed": 5,
+     "type": "Plugawy",
+     "pos": "3–4",
+     "attacks": "Pieśń otchłani: W 1–4, Cel. 8, +2 Stres"
+    }
+   ],
+   "boss": {
+    "name": "Syrena",
+    "line": "Zdrowie 36 · Unik 3 · Szybkość 5 · Plugawa · stoi na pozycji 3 za dwoma Pelagicznymi łowcami",
+    "moves": [
+     "**Pieśń syreny:** W 1–4, Cel. 8. Bohater, który nie odeprze jej Krzepą, jest zauroczony przez 2 swoje tury: w każdej atakuje losowego sojusznika swoją najmocniejszą umiejętnością. Zauroczony może być jeden bohater naraz.",
+     "**Fala:** W 1+2+3+4, Cel. 7, k4.",
+     "**Szept otchłani:** W 1–4, Cel. 8, +3 Stres.",
+     "**Wzór ruchów:** pierwsza tura — Pieśń syreny (gdy ktoś już jest zauroczony, Fala); druga — k6: 1–3 i 6 Fala, 4–5 Szept otchłani."
+    ]
+   },
+   "notes": []
+  },
+  "Shambler": {
+   "line": "Zdrowie 34 · Unik 2 · Pancerz 1 · Szybkość 3 · Plugawy · 2 pozycje · zasady bossów, ale wolno od niego uciec (zwykły Odwrót; nagroda przepada). W symulacji, przy Pochodni 0 i drużynie po lochu: Poziom 2 wygrywa ok. 45% walk i w pozostałych ucieka, Poziom 4 z rangami 3 wygrywa ok. 75%, Poziom 6 z rangami 4 — ok. 90%.",
+   "moves": [
+    "**Przyzwanie macek:** wolne pozycje zajmują Macki (Zdrowie 6 · Unik 1 · Szybkość 4; atak W 1–2, Cel. 7, k4).",
+    "**Uderzenie zewsząd:** W 1+2+3+4, Cel. 6, k4.",
+    "**Spojrzenie spoza gwiazd:** W 1–4, Cel. 8, +3 Stres.",
+    "**Wzór ruchów:** pierwsza tura — Uderzenie zewsząd; druga — k6: 1–2 Przyzwanie macek, 3–4 Uderzenie zewsząd, 5–6 Spojrzenie spoza gwiazd."
+   ]
+  },
+  "DD": {
+   "enemies": [
+    {
+     "name": "Kultysta wojownik",
+     "type": "Człowiek",
+     "pos": "1–2",
+     "hp": 18,
+     "dodge": 3,
+     "prot": 1,
+     "speed": 4,
+     "attacks": "Rozpłatanie: W 1–2, Cel. 9, k8+2, krwawienie 1"
+    },
+    {
+     "name": "Ochłap",
+     "type": "Plugawy",
+     "pos": "1–3",
+     "hp": 18,
+     "dodge": 1,
+     "prot": 0,
+     "speed": 2,
+     "attacks": "Pochłonięcie: W 1–2, Cel. 9, k8+2, zaraza 1"
+    },
+    {
+     "name": "Polip",
+     "type": "Plugawy",
+     "pos": "2–4",
+     "hp": 12,
+     "dodge": 3,
+     "prot": 0,
+     "speed": 5,
+     "attacks": "Szept z dołu: W 1–4, Cel. 9, +2 Stres · Mackowanie: W 1–3, Cel. 8, k6+1"
+    },
+    {
+     "name": "Kultysta kapłan",
+     "type": "Człowiek",
+     "pos": "3–4",
+     "hp": 12,
+     "dodge": 4,
+     "prot": 0,
+     "speed": 6,
+     "attacks": "Bluźnierstwo: W 1–4, Cel. 9, +3 Stres · Mroczne zszycie: najbardziej ranny wróg odzyskuje k4+2 Zdrowia"
+    },
+    {
+     "name": "Templariusz",
+     "type": "Człowiek",
+     "pos": "1–2 (zajmuje obie)",
+     "hp": 36,
+     "dodge": 1,
+     "prot": 2,
+     "speed": 2,
+     "attacks": "Miażdżący cios: W 1–2, Cel. 9, k10+4, odrzut 1 · Przygwożdżenie: W 3–4, Cel. 8, k6+1, przyciąga o 2"
+    }
+   ],
+   "floors": [
+    {
+     "n": 1,
+     "name": "Arcykapłan",
+     "line": "Zdrowie 66 · Unik 4 · Szybkość 6 · Człowiek · stoi na pozycji 3 za dwoma Kultystami wojownikami",
+     "moves": [
+      "**Ofiara krwi:** W 1–4, Cel. 9, k8+2, krwawienie 1.",
+      "**Litania:** W 1+2+3+4, Cel. 8, +2 Stres.",
+      "**Mroczne zszycie:** najbardziej ranny wróg (także on sam) odzyskuje k6+3 Zdrowia.",
+      "**Wzór ruchów:** pierwsza tura — Ofiara krwi; druga — k6: 1–2 Litania, 3–4 Ofiara krwi, 5–6 Mroczne zszycie."
+     ]
+    },
+    {
+     "n": 2,
+     "name": "Templariusz-Wódz",
+     "line": "Zdrowie 100 · Unik 2 · Pancerz 3 · Szybkość 2 · Człowiek · zajmuje pozycje 1–2, za nim Kultysta kapłan i Polip",
+     "moves": [
+      "**Miażdżący cios:** W 1–2, Cel. 9, k10+6, odrzut 1.",
+      "**Przygwożdżenie:** W 3–4, Cel. 8, k8+3, przyciąga o 2.",
+      "**Okrzyk wojenny:** W 1+2+3+4, Cel. 8, +3 Stres.",
+      "**Wzór ruchów:** pierwsza tura — Miażdżący cios; druga — k6: 1–3 Przygwożdżenie, 4–5 Miażdżący cios, 6 Okrzyk wojenny."
+     ]
+    },
+    {
+     "n": 3,
+     "name": "Matka Mięsa",
+     "line": "Zdrowie 85 · Unik 0 · Pancerz 1 · Szybkość 3 · Plugawa · zajmuje pozycje 3–4 za dwoma Ochłapami",
+     "moves": [
+      "**Porodzenie:** nowy Ochłap staje na wolnej pozycji z przodu.",
+      "**Wymiot:** W 1+2+3+4, Cel. 8, k4, zaraza 1.",
+      "**Wyrzut ochłapu:** W 1–4, Cel. 9, k8+3, zaraza 1.",
+      "**Wzór ruchów:** pierwsza tura — Wyrzut ochłapu; druga — k6: 1 Porodzenie, 2–3 Wymiot, 4–6 Wyrzut ochłapu."
+     ]
+    },
+    {
+     "n": 4,
+     "name": "Serce Ciemności",
+     "line": "Zdrowie 100 · Unik 0 · Szybkość 4 · Krzepa 9 · Plugawe · zajmuje pozycje 1–2, za nim dwa Polipy",
+     "moves": [
+      "**Puls:** W 1+2+3+4, Cel. 8, k6+1 i +1 Stres.",
+      "**Spojrzenie pustki:** W 1–4, Cel. 9, +3 Stres i groza 1.",
+      "**Przyjdź do mnie:** gdy Serce pierwszy raz spadnie do połowy Zdrowia, drużyna oddaje mu jednego bohatera — tego z najniższym Poziomem, a przy remisie tego z najmniejszym Zdrowiem. Bohater ginie bez Rzutu Śmierci. Tego nie da się uniknąć, można się tylko przygotować.",
+      "**Wzór ruchów:** pierwsza tura — Puls; druga — k6: 1–2 i 5 Puls, 3–4 i 6 Spojrzenie pustki."
+     ]
+    }
+   ]
+  }
+ },
+ "trinkets": {
+  "common": [
+   {
+    "name": "Krwawy amulet",
+    "plus": "obrażenia +1",
+    "minus": "maks. Zdrowie −2"
+   },
+   {
+    "name": "Medalik pokutnika",
+    "plus": "Szansa Cnoty +1",
+    "minus": "Szybkość −1"
+   },
+   {
+    "name": "Kamień strażnika",
+    "plus": "Krzepa +2",
+    "minus": "Szansa Cnoty −1"
+   },
+   {
+    "name": "Sakiewka z ziołami",
+    "plus": "Odporność +2",
+    "minus": "Krzepa −1"
+   },
+   {
+    "name": "Podkute buty",
+    "plus": "Szybkość +2",
+    "minus": "Krzepa −1"
+   },
+   {
+    "name": "Kolczuga pod koszulą",
+    "plus": "maks. Zdrowie +3",
+    "minus": "Szybkość −2"
+   }
+  ],
+  "rare": [
+   {
+    "name": "Pierścień z kości",
+    "plus": "Kryt +1",
+    "minus": "gdy wróg trafi go krytykiem, dodatkowo +1 Stres"
+   },
+   {
+    "name": "Róża z cierni",
+    "plus": "Śmierć +1 (łatwiejszy Rzut Śmierci)",
+    "minus": "maks. Zdrowie −1"
+   },
+   {
+    "name": "Kompas ślepca",
+    "plus": "Zwiad +2 dla całej drużyny",
+    "minus": "Celność −1 przy Pochodni 9–10"
+   },
+   {
+    "name": "Oko wisielca",
+    "plus": "Celność +1",
+    "minus": "Krzepa −2, Odporność −2"
+   },
+   {
+    "name": "Płaszcz z całunu",
+    "plus": "Unik +1",
+    "minus": "otrzymywane leczenie −1"
+   },
+   {
+    "name": "Fiolka święconej krwi",
+    "plus": "otrzymywane leczenie +1",
+    "minus": "Odporność −2"
+   }
+  ]
+ },
+ "curios": [
+  {
+   "name": "Zamknięty sarkofag",
+   "region": "Ruiny",
+   "item": "Klucz",
+   "good": "2 rzuty na łup",
+   "bad": "zasadzka szkieletów"
+  },
+  {
+   "name": "Plugawy ołtarz",
+   "region": "Ruiny",
+   "item": "Woda święcona",
+   "good": "drużyna −3 Stres",
+   "bad": "+2 Stres i groza 1"
+  },
+  {
+   "name": "Stos gnijącego mięsa",
+   "region": "Nory",
+   "item": "Łopata",
+   "good": "2 rzuty na łup",
+   "bad": "choroba (rzut Odporności)"
+  },
+  {
+   "name": "Wysyp grzybów",
+   "region": "Knieja",
+   "item": "Antidotum",
+   "good": "leczenie 4 i Odporność +2 na wyprawę",
+   "bad": "zaraza 2"
+  },
+  {
+   "name": "Opuszczony wóz",
+   "region": "Knieja",
+   "item": "Klucz",
+   "good": "zapasy i Złoto",
+   "bad": "pułapka"
+  },
+  {
+   "name": "Muszla szepcząca",
+   "region": "Zatoka",
+   "item": "Laudanum",
+   "good": "pozytywne dziwactwo",
+   "bad": "negatywne dziwactwo"
+  },
+  {
+   "name": "Zakazana księga",
+   "region": "wszędzie",
+   "item": "brak",
+   "good": "Kryt +1 na wyprawę",
+   "bad": "+3 Stres"
+  }
+ ],
+ "regions": {
+  "Ruiny": {
+   "who": "szkielety, kultyści, nekromanci",
+   "threat": "Pancerz, odporność na krwawienie, stres",
+   "pack": "wodę święconą, klucze"
+  },
+  "Nory": {
+   "who": "ludzie-świnie, ścierwojady",
+   "threat": "duże obrażenia, choroby, krwawienie",
+   "pack": "łopaty, bandaże"
+  },
+  "Knieja": {
+   "who": "bandyci, grzybowe stwory, wiedźmy",
+   "threat": "zaraza, ostrzał tylnych pozycji",
+   "pack": "antidota, zioła"
+  },
+  "Zatoka": {
+   "who": "ludzie-ryby, topielcy, syreny",
+   "threat": "krwawienie, groza, ogłuszenia",
+   "pack": "bandaże, laudanum"
+  },
+  "Najmroczniejszy Loch": {
+   "who": "Plugawi",
+   "threat": "wszystko naraz",
+   "pack": "wszystko"
+  }
+ },
+ "encounters": {
+  "Ruiny": {
+   "front": "Kościany żołdak, Kościany obrońca",
+   "back": "Kościany kusznik, Kościany dworzanin, Kultysta akolita"
+  },
+  "Nory": {
+   "front": "Świński rąbacz, Ścierwojad",
+   "back": "Świński mizerak"
+  },
+  "Knieja": {
+   "front": "Bandzior, Grzybowy drapacz",
+   "back": "Bandyta strzelec"
+  },
+  "Zatoka": {
+   "front": "Pelagiczny łowca, Topielec",
+   "back": "Pelagiczny szaman"
+  }
+ }
+}
