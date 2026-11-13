@@ -275,15 +275,8 @@ VIEWS.wyprawa = {
     const fightHere = /walka|boss/.test(r.c) && !r.cleared;
     [['curio', !r.curioDone], ['ccurio', !r.ccurioDone]].forEach(([f, open]) => {
       if (!r[f] || !open) return;
-      const cu = DATA.curios.find(c => c.name === r[f]) || { item: 'brak', good: '', bad: '' };
-      const pt = party(); const ciek = pt.filter(h => h.qn.some(q => qname(q.t) === 'Ciekawski')); const obl = pt.filter(h => h.state && h.state.kind === 'affliction' && h.state.name === 'Obłęd');
-      const kn = curioKnow(r[f]); const have = Object.keys(CURIO_ITEM).filter(it => ((Store.S.wyprawa.sup || {})[CURIO_ITEM[it]] || 0) > 0);
-      const seen = [kn.item ? 'działa: ' + kn.item.toLowerCase() + ' (pewny dobry wynik)' : '', (kn.no || []).length ? 'nie działa: ' + kn.no.map(x => x.toLowerCase()).join(', ') : '', kn.good ? 'dobrze — ' + cu.good : '', kn.bad ? 'źle — ' + cu.bad : ''].filter(Boolean);
-      bits.push(`<div class="curiobox"><p>Osobliwość${f === 'ccurio' ? ' z korytarza' : ''}: <b>${esc(r[f])}</b>${f === 'curio' && r.goal ? ' (cel zadania)' : ''}. Dotknięcie gołą ręką: k10 1–4 dobrze, 5–7 nic, 8–10 źle. Właściwy przedmiot daje pewny dobry wynik — niewłaściwy przepada bez skutku.</p>
-        ${seen.length ? `<p class="small dim">Wiecie już: ${esc(seen.join('; '))}.</p>` : ''}
-        ${ciek.length || obl.length ? `<p class="small warn">${obl.map(h => esc(heroLabel(h)) + ' (Obłęd) dotknie jej bez pytania, jeśli ją ominiecie.').concat(ciek.map(h => esc(heroLabel(h)) + ' (Ciekawski) przy k10 1–5 dotknie jej sam, jeśli ją ominiecie.')).join(' ')}</p>` : ''}
-        ${fightHere && f === 'curio' ? '<p class="muted small">Najpierw walka — osobliwość poczeka.</p>' : W ? `<div class="row"><label class="lbl" for="cwho-${f}">Kto dotyka</label><select id="cwho-${f}">${pt.map(h => `<option value="${h.id}">${esc(heroLabel(h))}</option>`).join('')}</select>
-          <button class="btn sm" data-act="curio" data-m="roll" data-f="${f}">Dotknij (k10)</button>${have.length ? `<select id="citem-${f}" aria-label="Przedmiot">${have.map(it => `<option value="${esc(it)}" ${kn.item === it ? 'selected' : ''}>${esc(it)}${(kn.no || []).includes(it) ? ' (nie działa)' : ''}</option>`).join('')}</select><button class="btn sm gold" data-act="curio" data-m="item" data-f="${f}">Użyj przedmiotu</button>` : ''}<button class="btn sm ghost" data-act="curio" data-m="skip" data-f="${f}">Omiń</button></div>` : ''}</div>`);
+      bits.push(`<div class="curiobox"><p>Osobliwość${f === 'ccurio' ? ' z korytarza' : ''}: <b>${esc(r[f])}</b>${f === 'curio' && r.goal ? ' (cel zadania)' : ''}.</p>
+        ${fightHere ? '<p class="muted small">Najpierw walka — osobliwość poczeka.</p>' : `<button class="btn sm gold" data-act="sceneShow" data-k="${r.id}:${f}">Podejdź do osobliwości</button>`}</div>`);
     });
     if (r.c === 'skrzynia' && !r.opened) bits.push(`<p>Skrzynia. ${W ? `<button class="btn sm gold" data-act="chest">Otwórz</button>` : ''}</p>`);
     if (/pusta|wejście/.test(r.c) && !r.desc) bits.push('<p class="muted">Pusto. Cisza i kurz.</p>');
@@ -630,7 +623,7 @@ function finishQuest(done) {
 
 /* ---------- osobliwości: skutki działają naprawdę ---------- */
 const curioKnow = name => ((Store.S.osada.curioKnow || {})[name] || {});
-const CURIO_ITEM = { 'Klucz': 'Klucze', 'Woda święcona': 'Woda święcona', 'Łopata': 'Łopaty', 'Antidotum': 'Antidota', 'Laudanum': 'Laudanum' };
+const CURIO_ITEM = { 'Klucz': 'Klucze', 'Woda święcona': 'Woda święcona', 'Łopata': 'Łopaty', 'Antidotum': 'Antidota', 'Laudanum': 'Laudanum', 'Bandaż': 'Bandaże', 'Zioła': 'Zioła', 'Pochodnia': 'Pochodnie', 'Prowiant': 'Prowiant' };
 /* pułapka trafia bohatera: k4 na skutek */
 function trapHit(t, lines, pre) {
   const ef = rollTable('pulapka'); lines.push((pre || 'Pułapka trafia') + ' **' + heroLabel(t) + '**, skutek k4 = **' + ef.r + '**: ' + ef.text + '.');
@@ -669,10 +662,12 @@ function curioEffect(name, good, hid, w, lines, touched) {
   }
   return res;
 }
-function resolveCurio(f, m, itemName) {
+function resolveCurio(f, m, itemName, heroId) {
   const s = Store.S; const w = clone(s.wyprawa); const r = w.rooms.find(x => x.id === w.at); const name = r[f]; if (!name) return;
   const cu = DATA.curios.find(c => c.name === name) || { item: 'brak', good: '?', bad: '?' };
-  const sel = $('#cwho-' + f); let hid = sel ? sel.value : (party()[0] || {}).id; if (!hid) return toast('Drużyna jest pusta.');
+  if (/walka|boss/.test(r.c) && !r.cleared) return toast('Najpierw walka — osobliwość poczeka.');
+  const sel = $('#cwho-' + f); let hid = heroId || (sel ? sel.value : (party()[0] || {}).id); if (!hid) return toast('Drużyna jest pusta.');
+  const stamp = (outcome, extra) => { w.curioLast = Object.assign({ id: uid(), t: Date.now(), name, f, outcome, who: hid }, extra || {}); return w.curioLast; };
   const lines = []; const touched = {}; let outcome = null;
   if (m === 'skip') {
     const pt = party(); const obl = pt.find(h => h.state && h.state.kind === 'affliction' && h.state.name === 'Obłęd');
@@ -690,6 +685,7 @@ function resolveCurio(f, m, itemName) {
     if (it !== cu.item) {
       kn.no = Array.from(new Set((kn.no || []).concat(it)));
       lines.push('**' + name + '** + ' + it.toLowerCase() + ' (' + heroLabel(H(hid)) + ') → nic się nie dzieje. Przedmiot przepada, osobliwość czeka dalej.');
+      stamp('przepada', { item: it, text: lines.join(' ') });
       Store.act([opSet('wyprawa', w), opSet('osada.curioKnow', know)], { quiet: true });
       return commit({ lines, touched }, '');
     }
@@ -707,10 +703,12 @@ function resolveCurio(f, m, itemName) {
   if (f === 'curio' && r.goal && outcome) lines.push('Aktywacja: ' + w.activated + ' z 3.');
   let st = null;
   if (res.fight) { st = clone(s.stol); const region = w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key; st.region = region; st.dl = w.quest.dl; st.enemies = rollEncounter(region, w.quest.dl).list.filter(Boolean); st.roomId = null; st.looted = false; lines.push('**Zasadzka!** ' + st.enemies.map(e => e.name).join(', ') + '. Przejdźcie na Stół.'); }
+  const last = stamp(outcome || 'omin', { item: m === 'item' ? (itemName || kn.item) : null, text: lines.join(' '), fight: !!res.fight, loot: !!res.loot, roll: m === 'roll' });
+  if (!outcome) UI.sceneSeen = last.id;
   Store.act([opSet('wyprawa', w), opSet('osada.curioKnow', know)], { quiet: true });
   commit({ lines, stol: st, touched }, outcome === 'dobrze' ? 'good' : outcome === 'źle' ? 'bad' : '');
   if (res.loot) rollLoot(res.loot + (party().some(h => CLS[h.cls].name === 'Antykwariuszka') ? 1 : 0), 'osobliwość');
-  if (res.fight) goFight();
+  /* zasadzkę uruchamia przycisk „Do walki!” w oknie wyniku */
 }
 
 /* ---------- cel zadania: postęp i sprawdzenie ---------- */
@@ -918,3 +916,76 @@ Object.assign(ACT, {
     rollLog('Drużyna wyrzuca z plecaka: ' + (lines.join(', ') || 'nic') + '. Plecak: ' + packSlots(w.sup, w.loot) + ' z 16.', '', 'sys');
   }
 });
+
+/* ======================= okno osobliwości: scena, wybór, wynik ======================= */
+function sceneCurio() {
+  const s = Store.S; const w = s.wyprawa; if (!w.quest || w.pending || w.camp || s.stol.fight) return null;
+  if ((s.stol.enemies || []).some(e => !e.corpse)) return null;
+  const r = (w.rooms || []).find(x => x.id === w.at); if (!r) return null;
+  if (/walka|boss/.test(r.c) && !r.cleared) return null; /* walka zawsze przed osobliwością */
+  for (const f of ['curio', 'ccurio']) if (r[f] && !r[f + 'Done']) return { r, f, name: r[f], key: r.id + ':' + f };
+  return null;
+}
+function sceneChoice(c) {
+  const s = Store.S; const w = s.wyprawa; const S = CURIO_SCENES[c.name] || { text: '' }; const cu = DATA.curios.find(x => x.name === c.name) || {};
+  const kn = curioKnow(c.name); const W = Store.canWrite(); const pt = party();
+  if (!UI.scene || UI.scene.key !== c.key) UI.scene = { key: c.key, who: (pt.slice().sort((a, b) => a.stress - b.stress)[0] || {}).id, item: null };
+  if (!pt.some(h => h.id === UI.scene.who)) UI.scene.who = (pt[0] || {}).id;
+  const have = SUP_ITEMS.filter(([n, k]) => ((w.sup || {})[k] || 0) > 0);
+  if (UI.scene.item && !have.some(([n]) => n === UI.scene.item)) UI.scene.item = null;
+  const ciek = pt.filter(h => h.qn.some(q => qname(q.t) === 'Ciekawski')); const obl = pt.filter(h => h.state && h.state.kind === 'affliction' && h.state.name === 'Obłęd');
+  const seen = [kn.good ? 'dobrze — ' + cu.good : '', kn.bad ? 'źle — ' + cu.bad : ''].filter(Boolean);
+  const tiles = have.map(([n, k]) => { const mark = kn.item === n ? '<span class="imark ok">działa</span>' : (kn.no || []).includes(n) ? '<span class="imark no">nie działa</span>' : ''; return `<button class="itile ${UI.scene.item === n ? 'on' : ''} ${(kn.no || []).includes(n) ? 'dim' : ''}" data-act="sceneItem" data-v="${esc(n)}" ${W ? '' : 'disabled'} aria-pressed="${UI.scene.item === n}">${itemIcon(n)}<span class="iname">${esc(n)}</span><span class="icount num">×${w.sup[k]}</span>${mark}</button>`; }).join('');
+  return `<div class="scene" role="dialog" aria-modal="true" aria-label="Osobliwość: ${esc(c.name)}">
+    <button class="scene-x" data-act="sceneHide" title="Zamknij — wrócę później" aria-label="Zamknij">×</button>
+    <div class="scene-pic">${curioArt(c.name, null, s.stol.torch)}<div class="scene-cap"><span class="lbl">Osobliwość${c.f === 'ccurio' ? ' w korytarzu' : ''}${c.f === 'curio' && c.r.goal ? ' · cel zadania' : ''}</span><h2>${esc(c.name)}</h2></div></div>
+    <div class="scene-body">
+      <p class="scene-text">${esc(S.text)}</p>
+      ${seen.length ? `<p class="small dim">Ród pamięta: ${esc(seen.join('; '))}.</p>` : ''}
+      ${ciek.length || obl.length ? `<p class="small warn">${obl.map(h => esc(heroLabel(h)) + ' (Obłęd) dotknie jej bez pytania, jeśli ją ominiecie.').concat(ciek.map(h => esc(heroLabel(h)) + ' (Ciekawski) przy k10 1–5 dotknie jej sam, jeśli ją ominiecie.')).join(' ')}</p>` : ''}
+      <div class="ph">Kto podchodzi</div>
+      <div class="scene-who">${pt.map(h => `<button class="swho ${UI.scene.who === h.id ? 'on' : ''}" data-act="sceneWho" data-id="${h.id}" ${W ? '' : 'disabled'} aria-pressed="${UI.scene.who === h.id}">${portraitHtml(h, 'sw-pt')}<b>${esc(heroLabel(h))}</b><span class="small dim">Stres ${h.stress} · Zdr ${h.hp}</span></button>`).join('')}</div>
+      <div class="ph">Plecak <span class="hint">właściwy przedmiot daje pewny dobry wynik, niewłaściwy przepada</span></div>
+      <div class="itiles">${tiles || '<p class="muted small">W plecaku nie ma nic, co dałoby się przyłożyć.</p>'}</div>
+      ${W ? `<div class="scene-act"><button class="btn gold" data-act="sceneUse" ${UI.scene.item ? '' : 'disabled'}>${UI.scene.item ? 'Użyj: ' + esc(UI.scene.item.toLowerCase()) : 'Wybierz przedmiot z plecaka'}</button>
+        <button class="btn primary" data-act="sceneTouch">Dotknij gołą ręką (k10)</button><button class="btn ghost" data-act="sceneSkip">Omiń</button></div>
+        <p class="small muted">Gołą ręką: k10 1–4 dobrze, 5–7 nic, 8–10 źle.</p>` : '<p class="muted">Decyduje drużyna.</p>'}
+    </div></div>`;
+}
+function sceneResult(last) {
+  const s = Store.S; const S = CURIO_SCENES[last.name] || {}; const o = last.outcome;
+  const head = { dobrze: 'Dobrze', 'źle': 'Źle', nic: 'Nic się nie dzieje', przepada: 'Nie pasuje', omin: 'Drużyna odchodzi' }[o] || '';
+  const flav = o === 'dobrze' ? S.good : o === 'źle' ? S.bad : o === 'nic' ? S.nic : o === 'przepada' ? (last.item || 'Przedmiot') + ' nic tu nie zdziała i przepada. Osobliwość czeka dalej.' : 'Osobliwość zostaje w ciemności.';
+  const L = s.stol.lastLoot; const loot = last.loot && L && L.t >= last.t - 200 ? `<p class="scene-loot"><b>Łup:</b> ${esc((L.tot || []).join(', ') || 'nic cennego')}</p>` : '';
+  const who = H(last.who);
+  return `<div class="scene res-${o === 'źle' ? 'bad' : o === 'dobrze' ? 'good' : 'none'}" role="dialog" aria-modal="true" aria-label="Wynik: ${esc(last.name)}">
+    <div class="scene-pic">${curioArt(last.name, o === 'przepada' ? 'nic' : o === 'omin' ? null : o, s.stol.torch)}<div class="scene-cap"><span class="lbl">${esc(last.name)}${who ? ' · ' + esc(heroLabel(who)) : ''}</span><h2>${esc(head)}</h2></div></div>
+    <div class="scene-body"><p class="scene-text">${esc(flav || '')}</p>
+      <div class="scene-log">${diceBadges(md(last.text || ''))}</div>${loot}
+      <div class="scene-act"><button class="btn ${last.fight ? 'primary' : 'gold'}" data-act="sceneNext">${last.fight ? 'Do walki!' : o === 'przepada' ? 'Wróć do osobliwości' : 'Dalej'}</button></div>
+    </div></div>`;
+}
+function renderScene() {
+  if (!Store.S) return;
+  let el = document.getElementById('scene'); const s = Store.S; const last = s.wyprawa.curioLast; let html = '';
+  if (last && last.id !== UI.sceneSeen && Date.now() - last.t < 15 * 60000 && !s.stol.fight) html = sceneResult(last);
+  else { const c = sceneCurio(); if (c && !(UI.sceneHide || {})[c.key]) html = sceneChoice(c); }
+  if (!html) { if (el) el.remove(); document.body.classList.remove('scene-on'); return; }
+  if (!el) { el = document.createElement('div'); el.id = 'scene'; el.className = 'scene-bg'; document.body.appendChild(el); el.addEventListener('click', e => { if (e.target !== el) return; const L = Store.S.wyprawa.curioLast; if (!(L && L.id !== UI.sceneSeen)) ACT.sceneHide(); }); }
+  document.body.classList.add('scene-on');
+  if (el._html !== html) { const sc = el.querySelector('.scene'); const top = sc ? sc.scrollTop : 0; el.innerHTML = html; el._html = html; const n = el.querySelector('.scene'); if (n) n.scrollTop = top; }
+}
+Object.assign(ACT, {
+  sceneWho: el => { UI.scene.who = el.dataset.id; renderScene(); },
+  sceneItem: el => { UI.scene.item = UI.scene.item === el.dataset.v ? null : el.dataset.v; renderScene(); },
+  sceneUse: () => { const c = sceneCurio(); if (!c || !UI.scene.item) return; const it = UI.scene.item; UI.scene.item = null; resolveCurio(c.f, 'item', it, UI.scene.who); },
+  sceneTouch: () => { const c = sceneCurio(); if (c) resolveCurio(c.f, 'roll', null, UI.scene.who); },
+  sceneSkip: () => { const c = sceneCurio(); if (c) resolveCurio(c.f, 'skip', null, UI.scene.who); },
+  sceneHide: () => { const c = sceneCurio(); if (c) { UI.sceneHide = Object.assign({}, UI.sceneHide, { [c.key]: 1 }); } renderScene(); },
+  sceneShow: el => { UI.sceneHide = Object.assign({}, UI.sceneHide); delete UI.sceneHide[el.dataset.k]; renderScene(); },
+  sceneNext: () => {
+    const last = Store.S.wyprawa.curioLast; if (last) UI.sceneSeen = last.id; renderScene();
+    if (last && last.fight && Store.S.stol.enemies.some(e => !e.corpse) && !Store.S.stol.fight) goFight();
+  }
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('scene')) { const last = Store.S && Store.S.wyprawa.curioLast; if (last && last.id !== UI.sceneSeen) ACT.sceneNext(); else ACT.sceneHide(); } });
