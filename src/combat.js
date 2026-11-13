@@ -331,16 +331,26 @@ function applyEnemyFx(stol, e, ef, crit) {
   }
   return ' **' + name + '**' + (crit ? ' (krytyk — bez rzutu)' : ' (k10 = ' + rs.r + ')') + '.';
 }
+/* usunięcie z kolejki w trakcie rundy: wskaźnik tury przesuwa się razem z listą,
+   żeby nikt nie stracił swojej tury ani nie działał dwa razy */
+function dropInit(stol, pred) {
+  const init = stol.init || []; if (!init.length) return;
+  const t0 = stol.turn; const r = stol.round || 0; const wasActed = stol.acted === r + ':' + t0;
+  let before = 0, cur = false; const keep = [];
+  init.forEach((x, i) => { if (pred(x)) { if (i < t0) before++; else if (i === t0) cur = true; } else keep.push(x); });
+  if (keep.length === init.length) return;
+  stol.init = keep; stol.turn = t0 - before - (cur ? 1 : 0);
+  if (cur || wasActed) stol.acted = r + ':' + stol.turn;
+}
 function killEnemy(stol, e, how) {
   const i = stol.enemies.indexOf(e);
   if (i < 0) return;
   if (e.name === 'Giermek') { const p = stol.enemies.find(x => x.name === 'Świński Książę' && !x.corpse); if (p) { p.fx = Object.assign({}, p.fx); p.fx.buffs = (p.fx.buffs || []).concat([['obrażenia +2 (szał)', 999]]); stol.notes = (stol.notes || []).concat('**Giermek ginie — Świński Książę wpada w szał:** obrażenia +2 do końca walki.'); } }
   if (e.name === 'Wiedźma z kotłem' && stol.cauldron) stol.notes = (stol.notes || []).concat('Wiedźma pada, kocioł się przewraca — uwięziony bohater wychodzi na początku swojej tury.');
-  stol.init = (stol.init || []).filter(x => x.id !== e.id);
+  dropInit(stol, x => x.id === e.id);
   if (e.elite) { stol.eliteKills = (stol.eliteKills || 0) + 1; stol.notes = (stol.notes || []).concat('**Mini-boss ' + e.name + ' pada** — po walce +2 rzuty na łup.'); }
   if (how === 'hit' && !e.boss && !e.corpse && e.name !== 'Macka') stol.enemies[i] = { id: e.id, name: 'Zwłoki', corpse: true, hp: 3, maxhp: 3, dodge: 0, prot: 0, speed: 0, attacks: [], fx: {}, size: e.size || 1, type: '', krzepa: 0, odp: 0 };
   else stol.enemies.splice(i, 1);
-  stol.init = (stol.init || []).filter(x => x.id !== e.id);
 }
 
 /* --- atak wroga --- */

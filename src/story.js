@@ -9,8 +9,9 @@ function autoDriver() {
   if (!Store.ready || !Store.isGM() || !autoOn()) return;
   const s = Store.S.stol; if (!s.fight || !(s.init || []).length) return;
   if (!s.enemies.some(e => !e.corpse)) return;
-  const ce = curEntry(); if (!ce) return;
-  const key = turnKey();
+  const ce = curEntry(); const key = turnKey();
+  /* ten, czyja była tura, właśnie wypadł z kolejki na jej początku — przejdź do następnego */
+  if (!ce) { if (s.turn < 0) { const k2 = key + ':gap'; if (_autoKey === k2) return; _autoKey = k2; setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key) ACT.nextTurn(); }, 900); } return; }
   if (s.acted === key) {
     const k2 = key + ':next'; if (_autoKey === k2) return; _autoKey = k2;
     setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key && s2.acted === key) ACT.nextTurn(); }, 1300);
@@ -39,7 +40,7 @@ function nextStep() {
     const living = st.enemies.filter(e => !e.corpse);
     if (!living.length) return { tab: 'stol', sel: '.won [data-act=fightEnd]', txt: 'Wrogowie pokonani — <b>Zakończ walkę</b> (łup rzuci się sam, jeśli zapomnicie).' };
     const ce = curEntry();
-    if (ce && ce.k === 'h') { const h = H(ce.id); const g = heroTurn(h); return { tab: 'stol', sel: '.slot.hero[data-id="' + ce.id + '"]', txt: g.lost ? esc(g.why) + ' Tura przejdzie sama.' : st.acted === turnKey() ? heroLabel(h) + ' już działał' + (autoOn() ? ' — tura przejdzie sama.' : ' — kliknijcie <b>Następna tura</b>.') : 'Tura: <b>' + esc(heroLabel(h)) + '</b> (' + esc(ownerName(h)) + '). Kliknij bohatera, potem umiejętność i cel. Złote kropki: skąd, czerwone: kogo trafia.', prz: P('Ostrożnie dobieraj cele. Martwy wróg nie oddaje ciosu.') }; }
+    if (ce && ce.k === 'h') { const h = H(ce.id); const g = heroTurn(h); return { tab: 'stol', sel: '.fig.hero[data-id="' + ce.id + '"]', txt: g.lost ? esc(g.why) + ' Tura przejdzie sama.' : st.acted === turnKey() ? heroLabel(h) + ' już działał' + (autoOn() ? ' — tura przejdzie sama.' : ' — kliknijcie <b>Następna tura</b>.') : 'Tura: <b>' + esc(heroLabel(h)) + '</b> (' + esc(ownerName(h)) + '). Kliknij bohatera, potem umiejętność i cel. Złote kropki: skąd, czerwone: kogo trafia.', prz: P('Ostrożnie dobieraj cele. Martwy wróg nie oddaje ciosu.') }; }
     if (ce && ce.k === 'e') { const e = st.enemies.find(x => x.id === ce.id); return { tab: 'stol', txt: 'Tura wroga: <b>' + esc(e ? e.name : '?') + '</b>. ' + (autoOn() ? 'Wróg działa sam według zasad.' : 'MG klika wroga i „Tura wroga — według zasad”.') }; }
     return { tab: 'stol', txt: 'Walka trwa — <b>Następna tura</b>.' };
   }

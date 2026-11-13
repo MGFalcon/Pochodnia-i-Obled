@@ -1029,7 +1029,7 @@ body.scene-on { overflow: hidden; }
 <div id="dark" aria-hidden="true"></div>
 <div class="wrap" id="app">
   <header class="top" id="top">
-    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 13.11 · 15:19</span></small><h1>Stół <em>rodu</em></h1></div>
+    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 13.11 · 16:03</span></small><h1>Stół <em>rodu</em></h1></div>
     <button class="btn sm ghost menubtn" id="menubtn" type="button" aria-expanded="false" aria-controls="toolbar" aria-label="Menu: rola, Słownik, tryb gry">⋯</button>
     <nav class="tabs" id="tabs" aria-label="Widoki stołu"></nav>
     <div class="toolbar" id="toolbar"><span class="sync" data-s="local">gra na jednym urządzeniu</span><span id="who" class="who"></span></div>
@@ -2703,16 +2703,26 @@ function applyEnemyFx(stol, e, ef, crit) {
   }
   return ' **' + name + '**' + (crit ? ' (krytyk — bez rzutu)' : ' (k10 = ' + rs.r + ')') + '.';
 }
+/* usunięcie z kolejki w trakcie rundy: wskaźnik tury przesuwa się razem z listą,
+   żeby nikt nie stracił swojej tury ani nie działał dwa razy */
+function dropInit(stol, pred) {
+  const init = stol.init || []; if (!init.length) return;
+  const t0 = stol.turn; const r = stol.round || 0; const wasActed = stol.acted === r + ':' + t0;
+  let before = 0, cur = false; const keep = [];
+  init.forEach((x, i) => { if (pred(x)) { if (i < t0) before++; else if (i === t0) cur = true; } else keep.push(x); });
+  if (keep.length === init.length) return;
+  stol.init = keep; stol.turn = t0 - before - (cur ? 1 : 0);
+  if (cur || wasActed) stol.acted = r + ':' + stol.turn;
+}
 function killEnemy(stol, e, how) {
   const i = stol.enemies.indexOf(e);
   if (i < 0) return;
   if (e.name === 'Giermek') { const p = stol.enemies.find(x => x.name === 'Świński Książę' && !x.corpse); if (p) { p.fx = Object.assign({}, p.fx); p.fx.buffs = (p.fx.buffs || []).concat([['obrażenia +2 (szał)', 999]]); stol.notes = (stol.notes || []).concat('**Giermek ginie — Świński Książę wpada w szał:** obrażenia +2 do końca walki.'); } }
   if (e.name === 'Wiedźma z kotłem' && stol.cauldron) stol.notes = (stol.notes || []).concat('Wiedźma pada, kocioł się przewraca — uwięziony bohater wychodzi na początku swojej tury.');
-  stol.init = (stol.init || []).filter(x => x.id !== e.id);
+  dropInit(stol, x => x.id === e.id);
   if (e.elite) { stol.eliteKills = (stol.eliteKills || 0) + 1; stol.notes = (stol.notes || []).concat('**Mini-boss ' + e.name + ' pada** — po walce +2 rzuty na łup.'); }
   if (how === 'hit' && !e.boss && !e.corpse && e.name !== 'Macka') stol.enemies[i] = { id: e.id, name: 'Zwłoki', corpse: true, hp: 3, maxhp: 3, dodge: 0, prot: 0, speed: 0, attacks: [], fx: {}, size: e.size || 1, type: '', krzepa: 0, odp: 0 };
   else stol.enemies.splice(i, 1);
-  stol.init = (stol.init || []).filter(x => x.id !== e.id);
 }
 
 /* --- atak wroga --- */
@@ -3529,7 +3539,7 @@ function enemyTurn(e) {
   if (s.acted === turnKey()) return { ok: false, why: e.name + ' już działał w tej turze. Kliknij „Następna tura”.' };
   return { ok: true };
 }
-function actedCommit(res, cls) { if (res && inTurns()) { res.stol = res.stol || clone(Store.S.stol); res.stol.acted = turnKey(); } commit(res, cls); }
+function actedCommit(res, cls) { if (res && inTurns()) { res.stol = res.stol || clone(Store.S.stol); res.stol.acted = (res.stol.round || 0) + ':' + res.stol.turn; } commit(res, cls); }
 /* ogłuszony albo martwy na początku tury: po chwili tura sama przechodzi dalej */
 function autoSkip(res) {
   if (!res || !res.skip) return; const key = turnKey();
@@ -3952,7 +3962,7 @@ Object.assign(ACT, {
   },
   bossSet: () => { const s = Store.S.stol; const list = bossSetup(s.region || 'Ruiny', +s.dl || 0, +(s.floor || 0)); setStol(st => { st.enemies = list; }, 'Boss: **' + list.find(e => e.boss).name + '**.', 'crit'); },
   shambler: () => { const list = bossSetup('Shambler', 0); setStol(st => { st.enemies = list; }, 'Z ciemności wychodzi **Shambler**. Wolno uciec, ale nagroda przepada.', 'bad'); },
-  clearE: () => setStol(st => { st.enemies = []; st.init = st.init.filter(x => x.k === 'h'); }),
+  clearE: () => setStol(st => { st.enemies = []; dropInit(st, x => x.k === 'e'); }),
   addE: () => {
     const ref = $('#addE').value; const s = Store.S.stol;
     const e = buildFoe(ref, foeFlat(ref) ? 0 : +s.dl || 0); if (!e) return;
@@ -3968,7 +3978,7 @@ Object.assign(ACT, {
   },
   adjE: el => setStol(st => { const e = st.enemies.find(x => x.id === UI.sel.id); if (!e) return; e.hp = Math.min(e.maxhp, e.hp + +el.dataset.v); if (e.hp <= 0) killEnemy(st, e, 'hit'); }),
   eMove: el => setStol(st => { const i = st.enemies.findIndex(x => x.id === UI.sel.id); moveInList(st.enemies, i, +el.dataset.d); }),
-  eRemove: () => setStol(st => { st.enemies = st.enemies.filter(x => x.id !== UI.sel.id); st.init = st.init.filter(x => x.id !== UI.sel.id); }),
+  eRemove: () => setStol(st => { st.enemies = st.enemies.filter(x => x.id !== UI.sel.id); dropInit(st, x => x.id === UI.sel.id); }),
   eSay: el => { const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id); rollLog('**' + e.name + '**: ' + attackText(e.attacks[+el.dataset.i]).replace(/<\/?b>/g, ''), '', 'roll'); },
   bossMove: () => {
     const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id); const r = d(6);
@@ -6351,8 +6361,9 @@ function autoDriver() {
   if (!Store.ready || !Store.isGM() || !autoOn()) return;
   const s = Store.S.stol; if (!s.fight || !(s.init || []).length) return;
   if (!s.enemies.some(e => !e.corpse)) return;
-  const ce = curEntry(); if (!ce) return;
-  const key = turnKey();
+  const ce = curEntry(); const key = turnKey();
+  /* ten, czyja była tura, właśnie wypadł z kolejki na jej początku — przejdź do następnego */
+  if (!ce) { if (s.turn < 0) { const k2 = key + ':gap'; if (_autoKey === k2) return; _autoKey = k2; setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key) ACT.nextTurn(); }, 900); } return; }
   if (s.acted === key) {
     const k2 = key + ':next'; if (_autoKey === k2) return; _autoKey = k2;
     setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key && s2.acted === key) ACT.nextTurn(); }, 1300);
@@ -6381,7 +6392,7 @@ function nextStep() {
     const living = st.enemies.filter(e => !e.corpse);
     if (!living.length) return { tab: 'stol', sel: '.won [data-act=fightEnd]', txt: 'Wrogowie pokonani — <b>Zakończ walkę</b> (łup rzuci się sam, jeśli zapomnicie).' };
     const ce = curEntry();
-    if (ce && ce.k === 'h') { const h = H(ce.id); const g = heroTurn(h); return { tab: 'stol', sel: '.slot.hero[data-id="' + ce.id + '"]', txt: g.lost ? esc(g.why) + ' Tura przejdzie sama.' : st.acted === turnKey() ? heroLabel(h) + ' już działał' + (autoOn() ? ' — tura przejdzie sama.' : ' — kliknijcie <b>Następna tura</b>.') : 'Tura: <b>' + esc(heroLabel(h)) + '</b> (' + esc(ownerName(h)) + '). Kliknij bohatera, potem umiejętność i cel. Złote kropki: skąd, czerwone: kogo trafia.', prz: P('Ostrożnie dobieraj cele. Martwy wróg nie oddaje ciosu.') }; }
+    if (ce && ce.k === 'h') { const h = H(ce.id); const g = heroTurn(h); return { tab: 'stol', sel: '.fig.hero[data-id="' + ce.id + '"]', txt: g.lost ? esc(g.why) + ' Tura przejdzie sama.' : st.acted === turnKey() ? heroLabel(h) + ' już działał' + (autoOn() ? ' — tura przejdzie sama.' : ' — kliknijcie <b>Następna tura</b>.') : 'Tura: <b>' + esc(heroLabel(h)) + '</b> (' + esc(ownerName(h)) + '). Kliknij bohatera, potem umiejętność i cel. Złote kropki: skąd, czerwone: kogo trafia.', prz: P('Ostrożnie dobieraj cele. Martwy wróg nie oddaje ciosu.') }; }
     if (ce && ce.k === 'e') { const e = st.enemies.find(x => x.id === ce.id); return { tab: 'stol', txt: 'Tura wroga: <b>' + esc(e ? e.name : '?') + '</b>. ' + (autoOn() ? 'Wróg działa sam według zasad.' : 'MG klika wroga i „Tura wroga — według zasad”.') }; }
     return { tab: 'stol', txt: 'Walka trwa — <b>Następna tura</b>.' };
   }

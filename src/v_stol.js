@@ -49,7 +49,7 @@ function enemyTurn(e) {
   if (s.acted === turnKey()) return { ok: false, why: e.name + ' już działał w tej turze. Kliknij „Następna tura”.' };
   return { ok: true };
 }
-function actedCommit(res, cls) { if (res && inTurns()) { res.stol = res.stol || clone(Store.S.stol); res.stol.acted = turnKey(); } commit(res, cls); }
+function actedCommit(res, cls) { if (res && inTurns()) { res.stol = res.stol || clone(Store.S.stol); res.stol.acted = (res.stol.round || 0) + ':' + res.stol.turn; } commit(res, cls); }
 /* ogłuszony albo martwy na początku tury: po chwili tura sama przechodzi dalej */
 function autoSkip(res) {
   if (!res || !res.skip) return; const key = turnKey();
@@ -472,7 +472,7 @@ Object.assign(ACT, {
   },
   bossSet: () => { const s = Store.S.stol; const list = bossSetup(s.region || 'Ruiny', +s.dl || 0, +(s.floor || 0)); setStol(st => { st.enemies = list; }, 'Boss: **' + list.find(e => e.boss).name + '**.', 'crit'); },
   shambler: () => { const list = bossSetup('Shambler', 0); setStol(st => { st.enemies = list; }, 'Z ciemności wychodzi **Shambler**. Wolno uciec, ale nagroda przepada.', 'bad'); },
-  clearE: () => setStol(st => { st.enemies = []; st.init = st.init.filter(x => x.k === 'h'); }),
+  clearE: () => setStol(st => { st.enemies = []; dropInit(st, x => x.k === 'e'); }),
   addE: () => {
     const ref = $('#addE').value; const s = Store.S.stol;
     const e = buildFoe(ref, foeFlat(ref) ? 0 : +s.dl || 0); if (!e) return;
@@ -488,7 +488,7 @@ Object.assign(ACT, {
   },
   adjE: el => setStol(st => { const e = st.enemies.find(x => x.id === UI.sel.id); if (!e) return; e.hp = Math.min(e.maxhp, e.hp + +el.dataset.v); if (e.hp <= 0) killEnemy(st, e, 'hit'); }),
   eMove: el => setStol(st => { const i = st.enemies.findIndex(x => x.id === UI.sel.id); moveInList(st.enemies, i, +el.dataset.d); }),
-  eRemove: () => setStol(st => { st.enemies = st.enemies.filter(x => x.id !== UI.sel.id); st.init = st.init.filter(x => x.id !== UI.sel.id); }),
+  eRemove: () => setStol(st => { st.enemies = st.enemies.filter(x => x.id !== UI.sel.id); dropInit(st, x => x.id === UI.sel.id); }),
   eSay: el => { const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id); rollLog('**' + e.name + '**: ' + attackText(e.attacks[+el.dataset.i]).replace(/<\/?b>/g, ''), '', 'roll'); },
   bossMove: () => {
     const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id); const r = d(6);
