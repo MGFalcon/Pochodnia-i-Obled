@@ -78,6 +78,7 @@ Object.assign(ACT, {
     const n = UI._guide; if (!n) return;
     if (n.tab === 'wyprawa' && Store.S.wyprawa.quest) UI.wsub = 'loch';
     if (n.hero) UI.heroSel = n.hero;
+    if (n.tab === 'osada') UI.hbSel = /newWeek/.test(n.sel || '') ? 'Ratusz' : /hamdec/.test(n.sel || '') ? UI.hbSel : UI.hbSel;
     if (n.tab === 'wyprawa' && !Store.S.wyprawa.quest && /hasq/.test(n.sel || '')) UI.wsub = 'mapa';
     if (n.tab && UI.view !== n.tab) location.hash = '#' + n.tab;
     setTimeout(() => { const t = n.sel && $(n.sel); if (t) { t.scrollIntoView({ behavior: 'smooth', block: 'center' }); t.classList.add('pulse'); setTimeout(() => t.classList.remove('pulse'), 2400); } }, 120);

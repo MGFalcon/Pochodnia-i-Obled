@@ -506,3 +506,34 @@ body.scene-on { overflow: hidden; }
 .imark.no { background: rgba(209,68,50,.2); color: #f0a090; }
 .scene-act { display: flex; flex-wrap: wrap; gap: 8px; margin: 6px 0 4px; }
 @media (max-width: 600px) { .scene-bg { padding: 0; align-items: stretch; } .scene { max-height: 100vh; min-height: 100%; border-radius: 0; border: 0; } .scene-cap { position: static; padding: 10px 16px 0; background: none; } .scene-cap h2 { font-size: 22px; } .scene-body { padding: 8px 16px 16px; } .scene-text { font-size: 15px; } .itiles { grid-template-columns: repeat(3, 1fr); } }
+
+/* Osada: panorama i panele budynków */
+.hamlet { padding: 10px; }
+.hamlet-pic { overflow-x: auto; border-radius: 4px; border: 1px solid var(--rule2); background: #0c0a09; }
+.hamlet-art { display: block; width: 100%; height: auto; min-width: 820px; }
+.hamlet-art .hb, .hamlet-art .hb-l { cursor: pointer; }
+.hamlet-art .hb:hover .hb-art, .hamlet-art .hb:focus .hb-art, .hamlet-art .hb.on .hb-art { filter: brightness(1.45) saturate(1.1); }
+.hamlet-art .hb:focus { outline: none; }
+.hb-lbl rect { fill: rgba(10,8,6,.8); stroke: var(--rule2); stroke-width: 1.5; }
+.hb-lbl text { fill: var(--pale); font: 600 17px var(--f-body, Georgia, serif); }
+.hb-lbl circle { fill: #3a3028; }
+.hb-lbl circle.on { fill: var(--gold); }
+.hb-lbl.on rect { stroke: var(--gold); fill: rgba(40,30,12,.9); }
+.hb-lbl.on text { fill: var(--gold); }
+.hb-lbl .hb-closed { fill: #f08070; font-size: 15px; font-weight: 400; }
+.hb-l:hover .hb-lbl rect { stroke: var(--gold2); }
+.hb-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.hb-desc { font-style: italic; margin-top: -4px; }
+.hb-panel .hb-desc { color: #c4b59c; }
+.hb-heroes { display: flex; flex-direction: column; gap: 6px; margin: 8px 0 12px; }
+.hb-hero { display: grid; grid-template-columns: minmax(200px, 1fr) 2fr; gap: 10px; align-items: center; padding: 6px 8px; border: 1px solid var(--rule2); border-radius: 4px; background: rgba(255,255,255,.02); }
+.hb-hn { display: flex; gap: 8px; align-items: center; }
+.hb-hn .sw-pt, .recruit .sw-pt { width: 40px; height: 40px; border-radius: 3px; object-fit: cover; flex: none; }
+.hb-ha { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.hb-q { flex-basis: 100%; }
+.hb-rank { display: inline-flex; gap: 6px; align-items: center; margin-right: 10px; }
+.hb-rank .steps i.lock { opacity: .3; }
+.hb-up { margin-top: 10px; padding: 8px 10px; border: 1px dashed var(--rule2); border-radius: 4px; display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.hb-up .bh { display: flex; gap: 10px; align-items: center; }
+.recruit { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 4px 0; }
+@media (max-width: 700px) { .hb-hero { grid-template-columns: 1fr; } }
