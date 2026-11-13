@@ -845,3 +845,33 @@ body.scene-on { overflow: hidden; }
 
 .sh-vitals .pip { width: 18px; height: 18px; }
 .sh-vitals .pips { gap: 3px; }
+
+/* ---------- okna budynków Osady (13.11) ---------- */
+body.hbw-on { overflow: hidden; }
+.hbw-bg { z-index: 58; }
+.hbw .scene-pic { position: relative; }
+.hbw .hb-crop { display: block; width: 100%; height: 250px; pointer-events: none; }
+.hbw-nav { position: absolute; top: 10px; right: 10px; display: flex; gap: 4px; }
+.hbw-nav .btn { background: rgba(10,8,7,.75); min-width: 34px; justify-content: center; }
+.hbw-x { font-size: 18px; line-height: 1; }
+.hbw .scene-text { margin-top: 0; }
+.hbw-body > h2:first-child { display: none; }
+.hb-hint { font-size: 13px; color: var(--bone2); margin: 0 0 10px; padding: 6px 10px; border-left: 2px solid var(--gold2); background: rgba(210,171,82,.06); }
+.hbw-res { position: relative; margin: 0 0 12px; padding: 10px 34px 10px 12px; border: 1px solid var(--gold2); border-radius: var(--r); background: linear-gradient(180deg, rgba(210,171,82,.12), rgba(210,171,82,.04)); animation: hbwIn .35s ease-out; }
+.hbw-res .lbl { display: block; color: var(--gold); margin-bottom: 4px; }
+.hbw-line + .hbw-line { margin-top: 6px; padding-top: 6px; border-top: 1px dashed #4a3b2a; }
+.hbw-res .x { position: absolute; top: 6px; right: 6px; }
+@keyframes hbwIn { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+.hbw .hb-heroes { margin-top: 6px; }
+.hb-week { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 18px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--rule); }
+.hb-week .hb-ev { max-width: 40ch; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--bone2); }
+.hb-tip { margin: 8px 0 0; }
+.hamlet .hb:hover, .hamlet .hb:focus-visible { filter: brightness(1.25); }
+.hamlet .hb { cursor: pointer; }
+@media (prefers-reduced-motion: reduce) { .hbw-res { animation: none; } }
+@media (max-width: 600px) {
+  .hbw .hb-crop { height: 170px; }
+  .hb-week { gap: 6px 12px; }
+  .hb-week .btn { width: 100%; justify-content: center; }
+}
+.hb-crop .hb.dim { opacity: .28; filter: saturate(.4); }

@@ -12,10 +12,13 @@ function sellValue(t) { const o = Store.S.osada; const base = t.kind === 'class'
 VIEWS.osada = {
   render() {
     const o = Store.S.osada; const sel = UI.hbSel || 'Ratusz';
+    const live = liveHeroes(); const town = townHeroes().length;
     return `${threatBar()}${hamletDecisionBox()}
       <section class="panel hamlet"><div class="hamlet-pic">${hamletArt(o, sel)}</div>
-        <div class="hb-chips" role="group" aria-label="Budynki Osady">${HB_LIST.map(([k, t]) => `<button class="btn sm ${sel === k ? 'gold' : 'ghost'}" data-act="hbSel" data-b="${k}" aria-pressed="${sel === k}">${esc(t)}</button>`).join('')}</div></section>
-      ${hbPanel(sel)}`;
+        <div class="hb-chips" role="group" aria-label="Budynki Osady — kliknij, by wejść">${HB_LIST.map(([k, t]) => `<button class="btn sm ${UI.hbOpen === k ? 'gold' : 'ghost'}" data-act="hbSel" data-b="${k}" aria-haspopup="dialog">${esc(t)}</button>`).join('')}</div>
+        <div class="hb-week"><span><span class="lbl">Tydzień</span> <b class="num">${o.week}</b></span><span><span class="lbl">Skarbiec</span> <b class="num">${o.gold} Z</b></span><span><span class="lbl">W Osadzie</span> <b class="num">${town}</b> <span class="muted">z ${live.length}</span></span>${o.event ? `<span class="hb-ev" title="${esc(o.event)}"><span class="lbl">Wydarzenie</span> ${esc(o.event.split(/[:.]/)[0])}</span>` : ''}
+          <span class="sp"></span>${Store.isGM() ? `<button class="btn ${!(o.board || []).length || !o.started ? 'primary' : ''}" data-act="newWeek" title="Wydarzenie k10, dyliżans, koniec leczenia, nowa tablica zadań">Nowy tydzień</button>` : ''}</div>
+        <p class="hb-tip muted small">Kliknij budynek, żeby wejść: usługi, ulepszenia i bohaterowie otwierają się w oknie.</p></section>`;
   }
 };
 /* panele budynków: wszystko, co dawniej było listą, teraz pod klikniętym budynkiem */
@@ -44,15 +47,15 @@ function hbHeroRow(h, inner) {
   const busy = heroBusy(h);
   return `<div class="hb-hero"><div class="hb-hn">${portraitHtml(h, 'sw-pt')}<div><b>${esc(heroLabel(h))}</b><div class="small dim">${esc(CLS[h.cls].name)} · Poz. ${h.level} · Stres <b class="${h.stress >= 10 ? 'warn' : ''}">${h.stress}</b>${h.state && h.state.kind !== 'virtue' ? ' · ' + esc(h.state.name) : ''}</div>${busy ? `<div class="small muted">${esc(busy)}</div>` : ''}</div></div><div class="hb-ha">${canHero(h) ? inner : '<span class="small muted">bohater innego gracza</span>'}</div></div>`;
 }
-function hbPanel(n) {
+function hbPanel(n, inWin) {
   const o = Store.S.osada; const gm = Store.isGM(); const W = Store.canWrite(); const b = o.b;
-  const head = (t, hint) => `<h2>${esc(t)}${hint ? ` <span class="hint">${hint}</span>` : ''}</h2><p class="hb-desc">${esc(HB_DESC[n] || '')}</p>`;
+  const head = (t, hint) => inWin ? (hint ? `<p class="hb-hint">${hint}</p>` : '') : `<h2>${esc(t)}${hint ? ` <span class="hint">${hint}</span>` : ''}</h2><p class="hb-desc">${esc(HB_DESC[n] || '')}</p>`;
   let body = '';
   if (n === 'Ratusz') {
     body = `${head('Tablica ogłoszeń', 'tydzień ' + o.week)}
       ${o.event ? `<p><b>Wydarzenie:</b> ${esc(o.event)}</p>` : '<p class="muted">Wydarzenie tygodnia jeszcze nie wylosowane.</p>'}
       ${o.cultists ? '<p class="small warn">Kultyści na trakcie: następna wyprawa ma dodatkową walkę w pierwszym korytarzu.</p>' : ''}${o.rumor ? '<p class="small">Plotka: następna wyprawa ma +1 rzut na łup.</p>' : ''}
-      ${gm ? `<div class="row"><button class="btn primary" data-act="newWeek">Nowy tydzień</button><span class="small muted">wydarzenie k10, dyliżans, koniec leczenia, nowa tablica zadań</span></div>` : ''}
+      ${gm ? `<div class="row"><button class="btn ${!(o.board || []).length || !o.started ? 'primary' : ''}" data-act="newWeek">Nowy tydzień</button><span class="small muted">wydarzenie k10, dyliżans, koniec leczenia, nowa tablica zadań</span></div>` : ''}
       <p class="small">Zadania na tablicy: <b>${(o.board || []).length}</b> — świecą na mapie posiadłości w zakładce Wyprawa.</p>
       <div class="hb-up"><div class="bh"><b>Rejestr rodu</b><span class="num">${liveHeroes().length} / ${o.slots} miejsc</span></div><div class="small dim">+3 miejsca za 4 pamiątki dowolnego typu</div>${W ? `<button class="btn sm" data-act="slots">Powiększ</button>` : ''}</div>`;
   } else if (n === 'Dyliżans') {
@@ -100,10 +103,55 @@ function hbPanel(n) {
       ${gm ? `<div class="ph">Kopia gry <span class="hint">dla MG</span></div><p class="dim small">Zapisz kopię całej kampanii do pliku (bohaterowie, osada, wyprawa, dziennik). Wczytaniem przeniesiesz kampanię między stołem Claude a Twoją stroną.</p>
         <div class="row"><button class="btn" data-act="exportAll">Zapisz kopię do pliku</button><button class="btn ghost" data-act="copyAll">Kopiuj jako tekst</button><button class="btn ghost" data-act="importAll">Wczytaj kopię</button><span class="sp"></span><button class="btn ghost" data-act="resetAll">Nowa kampania</button></div>` : ''}`;
   }
-  return `<section class="panel hb-panel">${body}</section>`;
+  return inWin ? body : `<section class="panel hb-panel">${body}</section>`;
 }
+/* ---------- okno budynku: wchodzi się do środka, jak przy osobliwościach ---------- */
+const HB_CROP = { 'Opactwo': '0 96 690 230', 'Gildia': '121 177 510 170', 'Sanatorium': '361 186 480 160', 'Kuźnia': '750 172 450 150', 'Cmentarz': '0 335 390 130',
+  'Gospoda': '91 278 510 170', 'Ratusz': '362 320 390 130', 'Obozownik': '546 328 360 120', 'Wóz Nomadów': '717 341 330 110', 'Dyliżans': '810 314 390 130', 'Posiadłość': '585 95 540 180' };
+function hbLastLog() { const L = Store.S.log || []; return L.length ? L[L.length - 1].id : null; }
+function hbResult(n) {
+  const m = UI.hbMark; if (!m || m.b !== n || Date.now() - m.t > 10 * 60000) return '';
+  const L = Store.S.log || []; const i = m.id ? L.findIndex(x => x.id === m.id) : -1;
+  const news = (i >= 0 ? L.slice(i + 1) : m.id ? [] : L.slice()).filter(x => x.kind !== 'chat').slice(-2);
+  if (!news.length) return '';
+  return `<div class="hbw-res" role="status" aria-live="polite"><span class="lbl">Wynik</span>${news.map(x => `<div class="hbw-line">${diceBadges(md(x.text || ''))}</div>`).join('')}<button class="x" data-act="hbResX" aria-label="Schowaj wynik">×</button></div>`;
+}
+function hbWinHtml(n) {
+  const o = Store.S.osada; const name = (HB_LIST.find(z => z[0] === n) || [n, n])[1];
+  const def = BUILD.find(b => b[0] === n); const lv = (o.b || {})[n] || 0;
+  const idx = HB_LIST.findIndex(z => z[0] === n);
+  const nb = d => HB_LIST[(idx + d + HB_LIST.length) % HB_LIST.length][1];
+  return `<div class="scene hbw" role="dialog" aria-modal="true" aria-label="${esc(name)}">
+    <div class="scene-pic">${hamletArt(o, n, HB_CROP[n])}
+      <div class="scene-cap"><span class="lbl">Osada${def ? ' · rozbudowa ' + lv + ' z 3' : ''}</span><h2>${esc(name)}</h2></div>
+      <div class="hbw-nav"><button class="btn sm ghost" data-act="hbNav" data-d="-1" title="${esc(nb(-1))}" aria-label="Poprzedni budynek: ${esc(nb(-1))}">◀</button><button class="btn sm ghost" data-act="hbNav" data-d="1" title="${esc(nb(1))}" aria-label="Następny budynek: ${esc(nb(1))}">▶</button><button class="btn sm ghost hbw-x" data-act="hbClose" aria-label="Zamknij">×</button></div></div>
+    <div class="scene-body"><p class="scene-text">${esc(HB_DESC[n] || '')}</p>${hbResult(n)}<div class="hbw-body">${hbPanel(n, true)}</div></div></div>`;
+}
+function renderHbWin() {
+  if (!Store.S) return;
+  let el = document.getElementById('hbwin'); const n = UI.view === 'osada' && UI.hbOpen;
+  if (!n) { if (el) el.remove(); document.body.classList.remove('hbw-on'); return; }
+  if (!el) {
+    el = document.createElement('div'); el.id = 'hbwin'; el.className = 'scene-bg hbw-bg'; document.body.appendChild(el);
+    el.addEventListener('click', e => { if (e.target === el) ACT.hbClose(); });
+    /* zapamiętaj ostatni wpis dziennika przed akcją — wynik pokaże się w oknie */
+    el.addEventListener('click', e => { const a = e.target.closest('[data-act]'); if (!a || /^hb(Close|Nav|ResX)$/.test(a.dataset.act)) return; UI.hbMark = { id: hbLastLog(), b: UI.hbOpen, t: Date.now() }; }, true);
+    /* nie podmieniaj okna w trakcie kliknięcia (np. gdy pole złota zapisuje się przy utracie fokusu) */
+    el.addEventListener('pointerdown', () => { el._press = true; }, true);
+    document.addEventListener('pointerup', () => { if (el._press) { el._press = false; setTimeout(renderHbWin, 0); } }, true);
+  }
+  if (el._press) return;
+  document.body.classList.add('hbw-on');
+  const ae = document.activeElement; if (ae && el.contains(ae) && /INPUT|TEXTAREA|SELECT/.test(ae.tagName) && el._n === n) return;
+  const html = hbWinHtml(n);
+  if (el._html !== html) { const sc = el.querySelector('.scene'); const top = sc && el._n === n ? sc.scrollTop : 0; el.innerHTML = html; el._html = html; el._n = n; const sc2 = el.querySelector('.scene'); if (sc2) sc2.scrollTop = top; const r = el.querySelector('.hbw-res'); if (r && UI._hbResSeen !== r.textContent) { UI._hbResSeen = r.textContent; r.scrollIntoView({ block: 'nearest' }); } }
+}
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && document.getElementById('hbwin') && !document.querySelector('.modal-bg, .modal')) ACT.hbClose(); });
 Object.assign(ACT, {
-  hbSel: el => { UI.hbSel = el.dataset.b; renderView(); const p = document.querySelector('.hb-panel'); if (p && window.innerWidth < 900) p.scrollIntoView({ behavior: 'smooth', block: 'start' }); },
+  hbSel: el => { UI.hbSel = el.dataset.b; UI.hbOpen = el.dataset.b; renderView(); renderHbWin(); const f = document.querySelector('#hbwin .hbw-x'); if (f) f.focus({ preventScroll: true }); },
+  hbClose: () => { const n = UI.hbOpen; UI.hbOpen = null; renderView(); renderHbWin(); const b = n && document.querySelector('.hb-chips [data-b="' + n + '"]'); if (b) b.focus({ preventScroll: true }); },
+  hbNav: el => { const i = HB_LIST.findIndex(z => z[0] === UI.hbOpen); const nx = HB_LIST[(i + +el.dataset.d + HB_LIST.length) % HB_LIST.length][0]; UI.hbSel = UI.hbOpen = nx; renderView(); renderHbWin(); },
+  hbResX: () => { UI.hbMark = null; renderHbWin(); },
   hbAct: el => { UI.heroSel = el.dataset.hid; const fn = ACT[el.dataset.a]; if (fn) fn(el); },
   hbHero: el => { UI.heroSel = el.dataset.hid; location.hash = '#bohaterowie'; }
 });
@@ -257,7 +305,7 @@ Object.assign(ACT, {
 
 /* ======================= panorama Osady (SVG) ======================= */
 const HB_LIST = [['Ratusz', 'Tablica ogłoszeń'], ['Dyliżans', 'Dyliżans'], ['Opactwo', 'Opactwo'], ['Gospoda', 'Gospoda'], ['Sanatorium', 'Sanatorium'], ['Kuźnia', 'Kuźnia'], ['Gildia', 'Gildia'], ['Obozownik', 'Obozownik'], ['Wóz Nomadów', 'Wóz Nomadów'], ['Cmentarz', 'Cmentarz'], ['Posiadłość', 'Posiadłość']];
-function hamletArt(o, sel) {
+function hamletArt(o, sel, crop) {
   const lv = n => (o.b || {})[n] || 0; const thr = o.threat || 0;
   const closed = n => (n === 'Gospoda' && o.eventR === 5) || (n === 'Sanatorium' && o.eventR === 3) || (o.raidClosed && o.raidClosed.week === o.week && o.raidClosed.b === n);
   const win = (x, y, w, h, lit) => `<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="1.5" fill="${lit ? '#f2b45c' : '#15110e'}" ${lit ? 'filter="url(#hm-glow)"' : ''} stroke="#0b0807" stroke-width="1.5"/>`;
@@ -315,7 +363,7 @@ function hamletArt(o, sel) {
   let stakes = ''; for (let x = 0; x < 1200; x += 14) stakes += `<path d="M${x} 330V${296 + (x % 28 ? 4 : 0)}l6-8 6 8V330z"/>`;
   const order = ['Posiadłość', 'Opactwo', 'Gildia', 'Sanatorium', 'Kuźnia', 'Cmentarz', 'Gospoda', 'Ratusz', 'Obozownik', 'Wóz Nomadów', 'Dyliżans'];
   const sky = thr >= 10 ? ['#2a0d0a', '#4a1a12', '#7a2a18'] : thr >= 6 ? ['#1a1018', '#33171a', '#5e2a1e'] : ['#121320', '#251d2c', '#4e2e26'];
-  return `<svg viewBox="0 0 1200 480" class="hamlet-art" role="img" aria-label="Osada — kliknij budynek"><defs>
+  return `<svg viewBox="${crop || '0 0 1200 480'}" class="hamlet-art ${crop ? 'hb-crop' : ''}" ${crop ? 'preserveAspectRatio="xMidYMid slice" aria-hidden="true"' : 'role="img" aria-label="Osada — kliknij budynek"'}><defs>
     <linearGradient id="hm-sky" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky[0]}"/><stop offset=".55" stop-color="${sky[1]}"/><stop offset="1" stop-color="${sky[2]}"/></linearGradient>
     <linearGradient id="hm-fog" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#0c0a09" stop-opacity="0"/><stop offset="1" stop-color="#0c0a09" stop-opacity=".85"/></linearGradient>
     <radialGradient id="hm-sel" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#d2ab52" stop-opacity=".35"/><stop offset="1" stop-color="#d2ab52" stop-opacity="0"/></radialGradient>
@@ -326,12 +374,12 @@ function hamletArt(o, sel) {
     <circle cx="1010" cy="70" r="24" fill="#e8dcc0" opacity="${thr >= 10 ? .5 : .85}" filter="url(#hm-glow)"/>${thr >= 6 ? '<circle cx="1010" cy="70" r="24" fill="#b3261e" opacity=".35"/>' : ''}
     <g fill="#1a1520" opacity=".75"><ellipse cx="300" cy="70" rx="170" ry="14"/><ellipse cx="760" cy="40" rx="210" ry="12"/><ellipse cx="1120" cy="120" rx="120" ry="10"/></g>
     <path d="M0 290C120 250 220 262 330 276S560 250 700 262 980 240 1200 268V480H0Z" fill="#1a1518"/>
-    <g class="hb ${sel === 'Posiadłość' ? 'on' : ''}" data-act="hbSel" data-b="Posiadłość" tabindex="0" role="button" aria-label="Posiadłość">${B['Posiadłość'].art}</g>
+    <g class="hb ${sel === 'Posiadłość' ? 'on' : ''} ${crop && sel !== 'Posiadłość' ? 'dim' : ''}" data-act="hbSel" data-b="Posiadłość" tabindex="0" role="button" aria-label="Posiadłość">${B['Posiadłość'].art}</g>
     <g fill="#241a14" stroke="#120d0a" stroke-width="1">${stakes}</g>
     <path d="M0 326H1200V480H0Z" fill="#1d1712"/><path d="M560 480C590 450 640 440 700 436S900 428 1000 432 1150 430 1200 432V446C1100 446 1000 448 900 450S700 458 660 470 620 480 620 480Z" fill="#2a2119"/>
     <rect width="1200" height="480" fill="url(#hm-dark)"/>
-    ${order.filter(k => k !== 'Posiadłość').map(k => `<g class="hb ${sel === k ? 'on' : ''}" data-act="hbSel" data-b="${k}" tabindex="0" role="button" aria-label="${esc((HB_LIST.find(z => z[0] === k) || [k, k])[1])}">${sel === k ? `<ellipse cx="${B[k].lx}" cy="${B[k].ly + 160 > 440 ? 430 : B[k].ly + 150}" rx="120" ry="40" fill="url(#hm-sel)"/>` : ''}<g class="hb-art">${B[k].art}</g></g>`).join('')}
+    ${order.filter(k => k !== 'Posiadłość').map(k => `<g class="hb ${sel === k ? 'on' : ''} ${crop && sel !== k ? 'dim' : ''}" data-act="hbSel" data-b="${k}" tabindex="0" role="button" aria-label="${esc((HB_LIST.find(z => z[0] === k) || [k, k])[1])}">${sel === k ? `<ellipse cx="${B[k].lx}" cy="${B[k].ly + 160 > 440 ? 430 : B[k].ly + 150}" rx="120" ry="40" fill="url(#hm-sel)"/>` : ''}<g class="hb-art">${B[k].art}</g></g>`).join('')}
     ${o.siege ? [80, 260, 520, 760, 980, 1140].map(x => fire(x, 330, 1.6)).join('') : ''}
     <rect y="400" width="1200" height="80" fill="url(#hm-fog)" pointer-events="none"/>
-    <g class="hb-lbls">${order.map(k => `<g data-act="hbSel" data-b="${k}" class="hb-l">${lbl(k, B[k].lx, B[k].ly)}</g>`).join('')}</g></svg>`;
+    ${crop ? '' : `<g class="hb-lbls">${order.map(k => `<g data-act="hbSel" data-b="${k}" class="hb-l">${lbl(k, B[k].lx, B[k].ly)}</g>`).join('')}</g>`}</svg>`;
 }

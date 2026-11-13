@@ -140,12 +140,12 @@ function renderView() {
   renderInto(el, v.render());
   if (v.after) v.after(el);
 }
-function renderAll() { if (!Store.ready && !UI._viewSet && !location.hash.replace('#', '')) { UI.view = defaultView(); UI._viewSet = true; } Store.ready = true; if (UI.guideOff == null) UI.guideOff = !!LS.get('pio:guideOff'); renderTabs(); renderTorch(); renderGuide(); renderView(); renderSide(); renderScene(); autoDriver(); }
+function renderAll() { if (!Store.ready && !UI._viewSet && !location.hash.replace('#', '')) { UI.view = defaultView(); UI._viewSet = true; } Store.ready = true; if (UI.guideOff == null) UI.guideOff = !!LS.get('pio:guideOff'); renderTabs(); renderTorch(); renderGuide(); renderView(); renderSide(); renderScene(); renderHbWin(); autoDriver(); }
 Store.onChange(what => {
   if (what === 'peers') return renderTabs();
   if (what === 'log') { renderSide(); checkRollCard(); checkCaption(); return; }
   if (what === 'role') return renderAll();
-  renderTorch(); renderGuide(); renderView(); renderSide(); renderTabs(); renderScene(); checkCaption(); checkRollCard(); autoDriver();
+  renderTorch(); renderGuide(); renderView(); renderSide(); renderTabs(); renderScene(); renderHbWin(); checkCaption(); checkRollCard(); autoDriver();
 });
 
 /* ---------- dziennik, czat i kości ---------- */

@@ -284,7 +284,7 @@ Object.assign(ACT, {
     saveHero(h); rollLog('MG poprawia doświadczenie: ' + heroLabel(h) + ' — ' + h.xp + ' / ' + xpNeed(h.level) + '.', '', 'sys');
   },
   sheetTab: el => { UI.sheetTab = el.dataset.v; renderView(); },
-  goBuilding: el => { UI.hbSel = el.dataset.b; location.hash = '#osada'; },
+  goBuilding: el => { UI.hbSel = UI.hbOpen = el.dataset.b; location.hash = '#osada'; },
   campDel: el => { if (!Store.isGM()) return; const h = curHero(); h.camp = h.camp.filter(x => x !== el.dataset.n); saveHero(h); },
   campLearn: el => {
     const h = el.dataset.hid ? clone(H(el.dataset.hid)) : curHero(); if (!h || !canHero(h)) return; const n = el.dataset.n;
