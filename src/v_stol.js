@@ -109,6 +109,8 @@ function figEnemy(x) {
     <svg viewBox="0 0 ${vw} ${vh}" class="fig-svg" aria-hidden="true"><g transform="translate(${vw} 0) scale(-1 1)">${enemyFigure(e)}</g></svg>
     <span class="fig-tag">${esc(e.name)}</span>${e.corpse ? '' : `<span class="fig-bar"><i class="hp" style="width:${Math.round(100 * e.hp / Math.max(1, e.maxhp))}%"></i></span>`}</button>`;
 }
+Object.assign(ACT, { cineToggle: () => { try { localStorage.setItem('pio:cine', cineOn() ? 'off' : 'on'); } catch (e) { } cineClear(); renderView(); } });
+document.addEventListener('click', e => { if (UI.cine && e.target.closest && e.target.closest('.stage') && !e.target.closest('[data-act]')) cineClear(); }, true);
 function stageHtml(s, enemies) {
   const w = Store.S.wyprawa; const region = s.region || (w.quest ? (w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key) : 'Ruiny');
   const empties = Math.max(0, 4 - enemies.reduce((a, x) => a + (x.e.size || 1), 0));
@@ -119,23 +121,75 @@ function lastActHtml(L) {
   const col = h => h.replace(/<b>(PUDŁO|UNIK|BLOK)<\/b>/g, '<b class="k-miss">$1</b>').replace(/<b>(TRAFIENIE)<\/b>/g, '<b class="k-hit">$1</b>').replace(/<b>(KRYTYK)<\/b>/g, '<b class="k-crit">$1</b>');
   return `<div class="lastact" aria-live="polite"><span class="lbl">Ostatnia akcja</span> <b class="la-head">${esc(L.head)}</b>${(L.sum || []).length ? `<ul>${L.sum.map(x => `<li>${col(md(x))}</li>`).join('')}</ul>` : ''}</div>`;
 }
+/* ---------- zbliżenia akcji: ~1 s na atak, unik, obronę (jak w grze) ---------- */
+const CINE_MS = 1150;
+function cineOn() { try { return localStorage.getItem('pio:cine') !== 'off' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } }
+function startCine(L) {
+  if (!cineOn()) return false;
+  const act = (L.ev || []).find(e => e.k === 'act'); if (!act) return false;
+  const kinds = {}; (L.ev || []).forEach(e => { if (e.k === 'act') return; (kinds[e.id] = kinds[e.id] || []).push(e.k === 'dodge' && e.txt === 'BLOK' ? 'block' : e.k); });
+  if (!Object.keys(kinds).length) kinds[act.id] = ['fx'];
+  const all = [].concat(...Object.values(kinds));
+  const fx = all.includes('heal') ? 'heal' : all.every(k => k === 'stress' || k === 'fx') ? 'wave' : null;
+  UI.cine = { id: L.id, t: Date.now(), actor: act.id, kinds, fx };
+  applyCine(); return true;
+}
+function cineClear() {
+  const st = document.querySelector('.stage'); UI.cine = null; clearTimeout(UI.cineT);
+  if (!st) return; st.classList.remove('cine', 'c-shake'); st.querySelectorAll('.c-actor, .c-target').forEach(el => { el.className = el.className.replace(/\bc-[a-z]+\b/g, '').trim(); el.style.animationDelay = ''; });
+  const fx = st.querySelector('.cine-fx'); if (fx) fx.remove();
+}
+function applyCine() {
+  const C = UI.cine; if (!C) return; const el0 = Date.now() - C.t; const stage = document.querySelector('.stage');
+  if (!stage || el0 >= CINE_MS) return cineClear();
+  const a = stage.querySelector('.fig[data-id="' + C.actor + '"]'); if (!a) return cineClear();
+  const sr = stage.getBoundingClientRect(); const ar = a.getBoundingClientRect(); const delay = -el0 + 'ms';
+  const tEls = Object.keys(C.kinds).map(id => [id, stage.querySelector('.fig[data-id="' + id + '"]')]).filter(x => x[1]);
+  const t0 = tEls.find(([id]) => id !== C.actor);
+  let dx = 0; if (t0) { const tr = t0[1].getBoundingClientRect(); dx = ((tr.left + tr.width / 2) - (ar.left + ar.width / 2)) * 0.42; }
+  const melee = !!t0 && !C.fx && Math.abs(dx) < sr.width * 0.24 && t0[1].classList.contains('hero') !== a.classList.contains('hero');
+  if (!melee) dx = Math.sign(dx || (a.classList.contains('hero') ? 1 : -1)) * Math.min(Math.abs(dx) || 16, 16);
+  stage.classList.add('cine'); a.classList.add('c-actor'); a.style.setProperty('--dx', dx + 'px'); a.style.animationDelay = delay;
+  const all = [].concat(...Object.values(C.kinds));
+  tEls.forEach(([id, el]) => {
+    if (id === C.actor && tEls.length > 1) return; if (id === C.actor && !C.fx) return;
+    const k = C.kinds[id]; const cls = k.includes('kill') ? 'c-kill' : k.includes('crit') ? 'c-crit' : k.includes('hit') ? 'c-hit' : k.includes('block') ? 'c-block' : k.includes('dodge') ? 'c-dodge' : k.includes('miss') ? 'c-miss' : k.includes('heal') ? 'c-heal' : 'c-fx';
+    el.classList.add('c-target', cls); el.style.setProperty('--away', (el.classList.contains('hero') ? -1 : 1) * 16 + 'px'); el.style.animationDelay = delay;
+  });
+  if (all.includes('crit') || all.includes('kill')) { stage.classList.add('c-shake'); stage.style.setProperty('--shd', delay); }
+  let layer = stage.querySelector('.cine-fx'); if (!layer) { layer = document.createElement('div'); layer.className = 'cine-fx'; layer.setAttribute('aria-hidden', 'true'); stage.appendChild(layer); }
+  const ax = ar.left - sr.left + ar.width / 2, ay = ar.top - sr.top + ar.height * 0.45;
+  layer.innerHTML = tEls.filter(([id]) => id !== C.actor || C.fx).map(([id, el]) => {
+    const r = el.getBoundingClientRect(); const x = r.left - sr.left + r.width / 2, y = r.top - sr.top + r.height * 0.42; const k = C.kinds[id];
+    const hitk = k.includes('crit') ? 'crit' : (k.includes('hit') || k.includes('kill')) ? 'hit' : k.includes('block') ? 'block' : (k.includes('dodge') || k.includes('miss')) ? 'miss' : 'other';
+    if (C.fx === 'heal') return `<i class="fx-heal" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i><i class="fx-heal b" style="left:${x - 14}px;top:${y + 16}px;animation-delay:${delay}"></i><i class="fx-heal c" style="left:${x + 14}px;top:${y + 8}px;animation-delay:${delay}"></i>`;
+    if (C.fx === 'wave') return `<i class="fx-wave" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i><i class="fx-wave b" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>`;
+    const shot = melee ? '' : (() => { const ang = Math.atan2(y - ay, x - ax) * 180 / Math.PI; return `<i class="fx-bolt" style="left:${ax}px;top:${ay}px;--tx:${x - ax}px;--ty:${y - ay}px;--ang:${ang}deg;animation-delay:${delay}"></i>`; })();
+    const imp = hitk === 'block' ? `<i class="fx-block" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>` : hitk === 'miss' ? `<svg class="fx-slash miss" style="left:${x + (el.classList.contains('hero') ? 26 : -26)}px;top:${y}px;animation-delay:${delay}" viewBox="-50 -50 100 100"><path d="M-34-30Q0-6 32 32"/></svg>`
+      : hitk === 'other' ? `<i class="fx-wave" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>` : `<svg class="fx-slash ${hitk}" style="left:${x}px;top:${y}px;animation-delay:${delay}" viewBox="-50 -50 100 100"><path d="M-36-30Q0-6 34 32"/>${hitk === 'crit' ? '<path d="M34-28Q2-2-32 30"/>' : ''}</svg><i class="fx-burst ${hitk}" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>`;
+    return shot + imp;
+  }).join('');
+  clearTimeout(UI.cineT); UI.cineT = setTimeout(cineClear, CINE_MS - el0 + 20);
+}
 /* napisy nad postaciami po każdej akcji: PUDŁO, UNIK, −5, KRYTYK… (jak w grze) */
 function showPops() {
-  const L = Store.S.stol.last; if (!L || L.id === UI.lastShown) return;
+  const L = Store.S.stol.last; if (UI.cine && (!L || L.id === UI.cine.id)) applyCine();
+  if (!L || L.id === UI.lastShown) return;
   UI.lastShown = L.id; if (Date.now() - L.t > 10000) return;
+  const cine = startCine(L);
   let layer = document.getElementById('pops');
   if (!layer) { layer = document.createElement('div'); layer.id = 'pops'; layer.setAttribute('aria-hidden', 'true'); document.body.appendChild(layer); }
   const count = {};
   (L.ev || []).forEach(ev => {
     let el = document.querySelector('.fig[data-id="' + ev.id + '"]') || document.querySelector('.slot[data-id="' + ev.id + '"]');
-    if (ev.k === 'act' && el && el.classList.contains('fig')) { el.classList.remove('act-h', 'act-e'); void el.offsetWidth; el.classList.add(el.classList.contains('hero') ? 'act-h' : 'act-e'); }
+    if (ev.k === 'act' && el && el.classList.contains('fig') && !cine) { el.classList.remove('act-h', 'act-e'); void el.offsetWidth; el.classList.add(el.classList.contains('hero') ? 'act-h' : 'act-e'); }
     if (!el) el = document.querySelector(ev.k === 'act' ? '.side-h' : '.side-e'); if (!el) return;
     const r = el.getBoundingClientRect(); const n = count[ev.id] = (count[ev.id] || 0) + 1;
     const p = document.createElement('div'); p.className = 'pop pop-' + ev.k; p.textContent = ev.txt;
     p.style.left = (r.left + r.width / 2) + 'px'; p.style.top = (r.top + (ev.k === 'act' ? -6 : 18) + (n - 1) * 26) + 'px';
-    p.style.animationDelay = ((n - 1) * 0.25 + (ev.k === 'act' ? 0 : 0.2)) + 's';
+    p.style.animationDelay = ((n - 1) * 0.25 + (ev.k === 'act' ? 0 : cine ? 0.5 : 0.2)) + 's';
     layer.appendChild(p); setTimeout(() => p.remove(), 3400 + n * 250);
-    if (ev.k !== 'act') { el.classList.add('flash-' + (ev.k === 'miss' || ev.k === 'dodge' ? 'miss' : ev.k === 'heal' ? 'heal' : 'hit')); }
+    if (ev.k !== 'act' && !(cine && el.classList.contains('fig'))) { el.classList.add('flash-' + (ev.k === 'miss' || ev.k === 'dodge' ? 'miss' : ev.k === 'heal' ? 'heal' : 'hit')); }
   });
 }
 VIEWS.stol = {
@@ -157,6 +211,7 @@ VIEWS.stol = {
         <div class="row">
           ${W ? `<button class="btn sm" data-act="formation">Ustaw drużynę</button>` : ''}
           ${W && !s.fight ? `<button class="btn sm primary" data-act="fightStart" ${s.enemies.length && s.heroes.length ? '' : 'disabled'}>Rozpocznij walkę</button>` : ''}
+          <button class="btn sm ${cineOn() ? 'gold' : 'ghost'}" data-act="cineToggle" title="Krótkie zbliżenia ataków, uników i obrony (tylko na tym urządzeniu)">Zbliżenia: ${cineOn() ? 'wł.' : 'wył.'}</button>
           ${gm ? `<button class="btn sm ${s.autoFight !== false ? 'gold' : 'ghost'}" data-act="autoToggle" title="Płynna walka: tura przechodzi sama po akcji, wrogowie działają według zasad">Płynna walka: ${s.autoFight !== false ? 'wł.' : 'wył.'}</button>` : ''}
           ${W && s.fight ? `<button class="btn sm" data-act="newRound">Nowa runda</button><button class="btn sm primary" data-act="nextTurn" ${s.init.length ? '' : 'disabled'}>Następna tura</button><button class="btn sm ghost" data-act="fightEnd">Zakończ walkę</button>` : ''}
         </div>
