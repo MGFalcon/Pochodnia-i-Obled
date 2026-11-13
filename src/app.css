@@ -626,3 +626,31 @@ body.scene-on { overflow: hidden; }
 @keyframes fxHeal { 0%, 30% { transform: translateY(20px) scale(.4); opacity: 0; } 45% { opacity: 1; } 90% { transform: translateY(-46px) scale(1); opacity: 0; } 100% { opacity: 0; } }
 .fx-block { width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; border: 4px solid #ffd27a; box-shadow: 0 0 16px #ffd27a, inset 0 0 12px rgba(255,210,122,.6); opacity: 0; animation: fxBlock 1.15s ease-out both; }
 @keyframes fxBlock { 0%, 40% { transform: scale(.5); opacity: 0; } 46% { transform: scale(1); opacity: 1; } 75% { transform: scale(1.3); opacity: 0; } 100% { opacity: 0; } }
+
+/* obóz */
+.campstage { height: 320px; min-width: 0; }
+.campfig { position: absolute; width: calc(12% * var(--s, 1)); min-width: calc(64px * var(--s, 1)); max-width: calc(120px * var(--s, 1)); height: auto; transform: translateX(-50%); }
+.campfig .fig-svg { max-width: none; }
+.campfig.tgt .fig-svg { filter: drop-shadow(0 0 5px var(--gold)) drop-shadow(0 0 2px var(--gold)); animation: pulse 1.2s infinite; }
+.campfig.cfx-heal .fig-svg { animation: figheal 1.2s ease-out 1; }
+.campfig.cfx-calm .fig-svg { animation: cfxCalm 1.2s ease-out 1; }
+.campfig.cfx-buff .fig-svg { animation: cfxBuff 1.2s ease-out 1; }
+@keyframes cfxCalm { 40% { filter: brightness(1.4) sepia(.6) hue-rotate(170deg) saturate(2.5); transform: translateY(-4px); } }
+@keyframes cfxBuff { 40% { filter: brightness(1.6) sepia(.9) saturate(2.5) drop-shadow(0 0 8px #ffd27a); transform: scale(1.05); } }
+.coals { position: absolute; left: 12px; top: 10px; z-index: 4; display: flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 4px; background: rgba(0,0,0,.55); border: 1px solid var(--rule2); }
+.coals .lbl { margin-right: 4px; }
+.coal { width: 10px; height: 10px; border-radius: 50%; background: #2a221c; border: 1px solid #4a3a2c; }
+.coal.on { background: radial-gradient(#ffd27a, #e8601e 60%, #7a2a10); border-color: #ffb862; box-shadow: 0 0 6px rgba(255,140,40,.7); }
+.coals .num { margin-left: 6px; }
+.campstage .smoke { animation: smoke 4s ease-in-out infinite; }
+@keyframes smoke { 50% { transform: translate(6px, -8px); opacity: .2; } }
+.cskills { display: grid; grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 8px; margin: 6px 0 12px; }
+.cskill { display: flex; flex-direction: column; gap: 3px; text-align: left; padding: 8px 10px; border: 1px solid var(--rule2); border-radius: 4px; background: rgba(255,255,255,.03); color: inherit; cursor: pointer; }
+.cskill:hover:not(:disabled) { border-color: var(--gold2); }
+.cskill.on { border-color: var(--gold); box-shadow: 0 0 0 1px var(--gold) inset; }
+.cskill.used { opacity: .5; }
+.cskill:disabled { cursor: default; }
+.cs-top { display: flex; justify-content: space-between; gap: 8px; }
+.cs-t { color: var(--gold); }
+@media (max-width: 700px) { .campstage { height: 240px; } .coals { left: 6px; top: 6px; padding: 3px 5px; } .coals .lbl { display: none; } .coal { width: 8px; height: 8px; } }
+@media (prefers-reduced-motion: reduce) { .campfig .fig-svg, .campstage .smoke { animation: none !important; } }

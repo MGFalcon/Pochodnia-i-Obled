@@ -194,3 +194,31 @@ function enemyFigure(e) {
   if (FIG_ELITE[e.name]) return FIG_ELITE[e.name]();
   const f = FIG_ENEMY[e.name]; return f ? f() : figGenericEnemy(e);
 }
+
+/* ======================= obóz: ognisko i noc ======================= */
+function campFireSvg(fireOut, night) {
+  const stones = Array.from({ length: 11 }, (_, i) => { const a = Math.PI * 2 * i / 11; return `<ellipse cx="${500 + Math.cos(a) * 46}" cy="${306 + Math.sin(a) * 13}" rx="11" ry="7" fill="#3a332c" stroke="#15110e" stroke-width="2"/>`; }).join('');
+  const flames = fireOut ? '<g fill="#d8401c">' + [[488, 300], [500, 304], [512, 299], [494, 307], [507, 308]].map(([x, y]) => `<circle cx="${x}" cy="${y}" r="2.4"/>`).join('') + '</g><g fill="#ff8a3a" opacity=".7"><circle cx="497" cy="302" r="1.6"/><circle cx="506" cy="303" r="1.4"/></g>'
+    : `<g class="flick"><path d="M500 300c-26-22-20-52 2-82 2 26 26 30 18 60-3 14-10 22-20 22z" fill="#e8601e"/><path d="M482 302c-14-12-10-30 2-44 2 14 14 18 8 34z" fill="#f08a2c"/><path d="M520 302c12-12 10-28-2-40-1 13-12 18-6 32z" fill="#f08a2c"/><path d="M501 298c-10-10-7-24 2-36 1 11 10 14 6 27-1 6-4 9-8 9z" fill="#ffd27a"/></g>
+      <g opacity=".35" class="smoke"><ellipse cx="506" cy="196" rx="14" ry="10" fill="#6b6460"/><ellipse cx="514" cy="160" rx="18" ry="12" fill="#5e5854"/><ellipse cx="526" cy="118" rx="22" ry="14" fill="#524c49"/></g>`;
+  return `<svg viewBox="0 0 1000 360" preserveAspectRatio="xMidYMax slice" class="stage-bg camp-fire" aria-hidden="true"><defs>
+    <radialGradient id="cf-glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffb862" stop-opacity="${fireOut ? 0 : 0.5}"/><stop offset=".5" stop-color="#e0782c" stop-opacity="${fireOut ? 0 : 0.16}"/><stop offset="1" stop-color="#000" stop-opacity="0"/></radialGradient>
+    <radialGradient id="cf-ember" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ff5a1e" stop-opacity=".45"/><stop offset="1" stop-color="#ff5a1e" stop-opacity="0"/></radialGradient></defs>
+    ${fireOut || night ? `<rect width="1000" height="360" fill="#0a1424" opacity="${night ? .55 : .4}"/>` : ''}
+    <ellipse cx="500" cy="290" rx="${fireOut ? 70 : 420}" ry="${fireOut ? 30 : 230}" fill="url(#${fireOut ? 'cf-ember' : 'cf-glow'})"/>
+    ${[[200, 318, 70], [800, 318, 70], [330, 334, 64], [670, 334, 64]].map(([x, y, rx]) => `<ellipse cx="${x}" cy="${y}" rx="${rx}" ry="12" fill="#3a2c22" stroke="#15110e" stroke-width="2"/><ellipse cx="${x - rx * 0.6}" cy="${y - 2}" rx="14" ry="8" fill="#5a4a3a"/>`).join('')}
+    <path d="M462 312L540 292M466 294L538 314" stroke="#3b2a1c" stroke-width="10" stroke-linecap="round"/><path d="M462 312L540 292M466 294L538 314" stroke="#5a4028" stroke-width="4" stroke-linecap="round" opacity=".6"/>
+    ${stones}${flames}
+    <path d="M452 316L478 236M548 316L522 236M478 236L522 236" stroke="#2a2016" stroke-width="4" stroke-linecap="round"/><path d="M500 236v22" stroke="#2a2016" stroke-width="2"/><path d="M484 258h32l-4 18h-24z" fill="#2e2a26" stroke="#120e0b" stroke-width="2"/>
+    <g fill="#8a6440"><rect x="560" y="300" width="18" height="12" rx="2"/><rect x="420" y="302" width="14" height="10" rx="2" fill="#5a3b25"/></g></svg>`;
+}
+function campNightArt(cl) {
+  const ambush = cl.ambush;
+  const eyes = ambush ? [[120, 210], [210, 240], [300, 200], [700, 205], [790, 238], [880, 215], [430, 180], [580, 176]].map(([x, y]) => `<g filter="url(#cn-glow)"><circle cx="${x}" cy="${y}" r="3.4" fill="#ff3a22"/><circle cx="${x + 14}" cy="${y}" r="3.4" fill="#ff3a22"/></g>`).join('')
+    + '<g fill="#050505" opacity=".85">' + [[90, 320, 60], [260, 330, 50], [740, 330, 52], [910, 322, 60]].map(([x, y, h]) => `<path d="M${x - 24} ${y}Q${x - 22} ${y - h} ${x} ${y - h - 14}Q${x + 22} ${y - h} ${x + 24} ${y}Z"/>`).join('') + '</g>' : '';
+  return `<svg viewBox="0 0 1000 500" class="scene-art" role="img" aria-label="${ambush ? 'Nocna zasadzka' : 'Spokojna noc'}"><defs><filter id="cn-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2.4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
+    <linearGradient id="cn-dawn" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#e8a27a" stop-opacity=".35"/><stop offset=".5" stop-color="#e8a27a" stop-opacity="0"/></linearGradient></defs>
+    <svg x="0" y="0" width="1000" height="500" viewBox="0 0 1000 360" preserveAspectRatio="xMidYMax slice">${battleBg(cl.region || 'Ruiny', 0).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '')}</svg>
+    <svg x="0" y="0" width="1000" height="500" viewBox="0 0 1000 360" preserveAspectRatio="xMidYMax slice">${campFireSvg(true, true).replace(/^<svg[^>]*>/, '').replace(/<\/svg>$/, '')}</svg>
+    ${!ambush ? '<rect width="1000" height="500" fill="url(#cn-dawn)"/>' : '<rect width="1000" height="500" fill="#5a0a06" opacity=".18"/>'}${eyes}</svg>`;
+}

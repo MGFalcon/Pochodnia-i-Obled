@@ -733,18 +733,44 @@ function packSlots(sup, loot) {
 /* ---------- obóz: Punkty Odpoczynku i umiejętności obozowe ---------- */
 const campSkillsOf = h => (CLS[h.cls].camp || []).concat(COMMON_CAMP);
 const campTarget = eff => /sojusznik/.test(eff) ? 'ally' : /^(sam|sama)\b/.test(eff) ? 'self' : 'party';
+const CAMP_SPOTS = [{ l: 15, b: 20, s: .82, flip: false }, { l: 31, b: 6, s: 1, flip: false }, { l: 69, b: 6, s: 1, flip: true }, { l: 85, b: 20, s: .82, flip: true }];
+const campKind = eff => /Zdrowi|lecz/.test(eff) ? 'heal' : /−\d+ Stres|Stres −|-\d+ Stres/.test(eff) ? 'calm' : 'buff';
 function campPanel() {
   const w = Store.S.wyprawa; const c = w.camp; if (!c) return '';
-  const W = Store.canWrite(); const pt = party();
-  return `<section class="panel campp"><h2>Obóz <span class="hint">Punkty Odpoczynku: <b class="num">${c.pts}</b> z 12</span></h2>
-    <p class="small muted">Każdy bohater użyje każdej swojej umiejętności najwyżej raz. Gdy skończycie, kliknijcie „Noc”.</p>
-    ${pt.map(h => { const used = c.used[h.id] || []; const can = canHero(h) && W; return `<div class="camph"><div class="ch-h"><b>${esc(heroLabel(h))}</b> <span class="muted small">Zdr ${h.hp}/${heroStats(h).maxhp} · Stres ${h.stress}</span>
-      ${campSkillsOf(h).some(x => campTarget(x.eff) === 'ally') ? `<label class="small">cel: <select id="ctgt-${h.id}">${pt.map(x => `<option value="${x.id}">${esc(heroLabel(x))}</option>`).join('')}</select></label>` : ''}</div>
-      <div class="row">${campSkillsOf(h).map(x => `<button class="btn sm ${used.includes(x.name) ? 'ghost' : ''}" data-act="campSkill" data-h="${h.id}" data-n="${esc(x.name)}" ${!can || used.includes(x.name) || x.pts > c.pts ? 'disabled' : ''} title="${esc(x.eff)}">${esc(x.name)} <span class="num">${x.pts}</span></button>`).join('')}</div>
-      <div class="small dim">${campSkillsOf(h).map(x => '<b>' + esc(x.name) + '</b>: ' + esc(x.eff)).join(' · ')}</div></div>`; }).join('')}
+  const W = Store.canWrite(); const pt = party(); const region = w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key;
+  if (!pt.some(h => h.id === UI.campSel)) UI.campSel = (pt[0] || {}).id;
+  const P = UI.campPend && pt.some(h => h.id === UI.campPend.h) ? UI.campPend : null;
+  const FX = UI.campFx && Date.now() - UI.campFx.t < 1300 ? UI.campFx : null;
+  const figs = pt.map((h, i) => { const sp = CAMP_SPOTS[i] || CAMP_SPOTS[0]; const st = heroStats(h);
+    return `<button class="fig campfig ${UI.campSel === h.id ? 'sel' : ''} ${P ? 'tgt' : ''} ${FX && FX.ids.includes(h.id) ? 'cfx-' + FX.kind : ''}" style="left:${sp.l}%;bottom:${sp.b}%;--s:${sp.s};z-index:${sp.b < 10 ? 3 : 2}" data-act="${P ? 'campTarget' : 'campSel'}" data-id="${h.id}" aria-label="${esc(heroLabel(h))}, Zdrowie ${h.hp} z ${st.maxhp}, Stres ${h.stress}">
+      <svg viewBox="0 0 100 200" class="fig-svg" aria-hidden="true">${sp.flip ? `<g transform="translate(100 0) scale(-1 1)">${heroFigure(h)}</g>` : heroFigure(h)}</svg>
+      <span class="fig-tag">${esc(heroLabel(h))}</span><span class="fig-bar"><i class="hp" style="width:${Math.round(100 * h.hp / Math.max(1, st.maxhp))}%"></i></span><span class="fig-bar st"><i style="width:${Math.min(100, h.stress * 5)}%"></i></span></button>`; }).join('');
+  const coals = Array.from({ length: 12 }, (_, i) => `<i class="coal ${i < c.pts ? 'on' : ''}"></i>`).join('');
+  const h = H(UI.campSel); const used = h ? (c.used[h.id] || []) : []; const can = h && canHero(h) && W;
+  const skills = h ? campSkillsOf(h).map(x => { const tt = campTarget(x.eff); const off = !can || used.includes(x.name) || x.pts > c.pts;
+    return `<button class="cskill ${used.includes(x.name) ? 'used' : ''} ${P && P.n === x.name ? 'on' : ''}" data-act="campPick" data-h="${h.id}" data-n="${esc(x.name)}" ${off ? 'disabled' : ''}><span class="cs-top"><b>${esc(x.name)}</b><span class="num">${x.pts} pkt</span></span><span class="small dim">${esc(x.eff)}</span><span class="small cs-t">${used.includes(x.name) ? 'użyta w tym obozie' : tt === 'ally' ? 'cel: wybrany sojusznik' : tt === 'self' ? 'na siebie' : 'na całą drużynę'}</span></button>`; }).join('') : '';
+  return `<section class="panel campp"><h2>Obóz${c.fireOut ? ' <span class="hint">ognisko zgaszone na noc</span>' : ''}</h2>
+    <div class="stage-wrap"><div class="stage campstage">${battleBg(region, c.fireOut ? 0 : 2)}${campFireSvg(c.fireOut)}<svg class="fig-defs" width="0" height="0" aria-hidden="true"><defs><filter id="fg-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg>
+      <div class="coals" title="Punkty Odpoczynku"><span class="lbl">Punkty Odpoczynku</span>${coals}<b class="num">${c.pts}/12</b></div>${figs}</div></div>
+    ${P ? `<div class="pendbar">Kogo obejmie <b>${esc(P.n)}</b>? Kliknij bohatera przy ognisku. <button class="btn sm" data-act="campCancel">Anuluj</button></div>` : ''}
+    ${h ? `<div class="ph">${esc(heroLabel(h))} — umiejętności obozowe <span class="hint">kliknij innego bohatera przy ognisku, by zobaczyć jego</span></div><div class="cskills">${skills}</div>${!canHero(h) ? '<p class="small muted">To bohater innego gracza — jego umiejętności wybiera właściciel.</p>' : ''}` : ''}
     ${campTalkBox()}
     ${W ? `<div class="row"><button class="btn primary" data-act="campNight">Noc${c.fireOut ? ' (ognisko zgaszone)' : ''}</button><span class="small muted">zasadzka przy k10 ${w.noAmbush ? '— niemożliwa (warta)' : c.fireOut ? '1–4' : pt.some(x => x.camp.includes('Czujność')) ? '1 (Czujność)' : '1–2'}</span></div>` : ''}
   </section>`;
+}
+Object.assign(ACT, {
+  campSel: el => { UI.campSel = el.dataset.id; UI.campPend = null; renderView(); },
+  campPick: el => { const h = H(el.dataset.h); const sk = h && campSkillsOf(h).find(x => x.name === el.dataset.n); if (!sk) return; if (campTarget(sk.eff) === 'ally') { UI.campPend = { h: h.id, n: sk.name }; renderView(); } else ACT.campSkill({ dataset: { h: h.id, n: sk.name } }); },
+  campTarget: el => { const P = UI.campPend; if (!P) return; UI.campPend = null; ACT.campSkill({ dataset: { h: P.h, n: P.n, t: el.dataset.id } }); },
+  campCancel: () => { UI.campPend = null; renderView(); },
+  campNext: () => { const cl = Store.S.wyprawa.campLast; if (cl) UI.campSeen = cl.id; renderScene(); if (cl && cl.ambush && Store.S.stol.enemies.some(e => !e.corpse) && !Store.S.stol.fight) goFight(); }
+});
+function campNightHtml(cl) {
+  return `<div class="scene ${cl.ambush ? 'res-bad' : 'res-good'}" role="dialog" aria-modal="true" aria-label="Noc w obozie">
+    <div class="scene-pic">${campNightArt(cl)}<div class="scene-cap"><span class="lbl">Noc w obozie${cl.fireOut ? ' · ognisko zgaszone' : ''}</span><h2>${cl.ambush ? 'Nocna zasadzka!' : 'Spokojna noc'}</h2></div></div>
+    <div class="scene-body"><p class="scene-text">${cl.ambush ? (cl.fireOut ? 'W ciemności coś się porusza — ale to wy jesteście gotowi pierwsi. Zgaszone ognisko zmyliło napastników.' : 'Ogień przyciągnął spojrzenia z mroku. Zanim warta zdąży krzyknąć, oczy są już przy obozie.') : 'Ognisko dogasa, nikt nie przychodzi. O świcie drużyna zwija obóz i rusza dalej.'}</p>
+      <div class="scene-log">${diceBadges(md(cl.text || ''))}</div>
+      <div class="scene-act"><button class="btn ${cl.ambush ? 'primary' : 'gold'}" data-act="campNext">${cl.ambush ? 'Do walki!' : 'Ruszamy dalej'}</button></div></div></div>`;
 }
 function campApply(h0, sk, tid, w, lines, touched) {
   const s = Store.S; const T = id => touched[id] || (touched[id] = clone(s.heroes[id]));
@@ -802,7 +828,8 @@ Object.assign(ACT, {
     const sk = campSkillsOf(h).find(x => x.name === el.dataset.n); if (!sk) return;
     if ((c.used[h.id] || []).includes(sk.name)) return toast(heroLabel(h) + ' użył już: ' + sk.name + '.');
     if (sk.pts > c.pts) return toast('Za mało Punktów Odpoczynku.');
-    const tt = campTarget(sk.eff); const sel = $('#ctgt-' + h.id); const tid = tt === 'ally' ? (sel ? sel.value : h.id) : null;
+    const tt = campTarget(sk.eff); const sel = $('#ctgt-' + h.id); const tid = tt === 'ally' ? (el.dataset.t || (sel ? sel.value : h.id)) : null;
+    UI.campFx = { t: Date.now(), kind: campKind(sk.eff), ids: tt === 'ally' ? [tid] : tt === 'self' ? [h.id] : party().map(x => x.id) }; setTimeout(() => { if (Store.S.wyprawa.camp) renderView(); }, 1350);
     const lines = ['**Obóz** — ' + heroLabel(h) + ': **' + sk.name + '** (' + sk.pts + ' pkt' + (tid ? ', cel: ' + heroLabel(H(tid)) : '') + ') — ' + sk.eff + '.']; const touched = {};
     campApply(h, sk, tid, w, lines, touched);
     c.pts -= sk.pts; c.used[h.id] = (c.used[h.id] || []).concat(sk.name);
@@ -819,11 +846,12 @@ Object.assign(ACT, {
     else { const r = d(10); const lim = c.fireOut ? 4 : (czuj ? 1 : 2); ambush = r <= lim; lines.push('k10 = **' + r + '** (zasadzka przy ' + (lim === 1 ? '1' : '1–' + lim) + (czuj && !c.fireOut ? ', Czujność' : '') + ') → ' + (ambush ? '**nocna zasadzka!**' + (c.fireOut ? ' Ognisko było zgaszone: wrogowie są zaskoczeni, walka daje +2 rzuty na łup.' : '') : 'spokojna noc.')); }
     if (pt.some(x => x.camp.includes('Tropienie'))) { w.scoutBonus = (w.scoutBonus || 0) + 2; lines.push('Tropienie: następny zwiad +2.'); }
     w.camp = null; w.noAmbush = false;
+    w.campLast = { id: uid(), t: Date.now(), ambush, fireOut: !!c.fireOut, region: w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key, text: lines.join(' ') };
     let st = null;
     if (ambush) { st = clone(s.stol); const region = w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key; st.region = region; st.dl = w.quest.dl; st.enemies = rollEncounter(region, w.quest.dl).list.filter(Boolean); st.forceSurprise = c.fireOut ? 'wrogowie' : null; st.lootBonus = c.fireOut ? 2 : 0; st.roomId = null; st.looted = false; lines.push('Z ciemności wychodzą: ' + st.enemies.map(e => e.name).join(', ') + '. Przejdźcie na Stół.'); }
     Store.act([opSet('wyprawa', w)], { quiet: true });
     commit({ lines, stol: st, touched: {} }, ambush ? 'bad' : 'good');
-    if (ambush) goFight();
+    /* walkę po zasadzce uruchamia „Do walki!” w oknie nocy */
   }
 });
 
@@ -968,10 +996,12 @@ function sceneResult(last) {
 function renderScene() {
   if (!Store.S) return;
   let el = document.getElementById('scene'); const s = Store.S; const last = s.wyprawa.curioLast; let html = '';
-  if (last && last.id !== UI.sceneSeen && Date.now() - last.t < 15 * 60000 && !s.stol.fight) html = sceneResult(last);
+  const cl = s.wyprawa.campLast;
+  if (cl && cl.id !== UI.campSeen && Date.now() - cl.t < 15 * 60000 && !s.stol.fight) html = campNightHtml(cl);
+  else if (last && last.id !== UI.sceneSeen && Date.now() - last.t < 15 * 60000 && !s.stol.fight) html = sceneResult(last);
   else { const c = sceneCurio(); if (c && !(UI.sceneHide || {})[c.key]) html = sceneChoice(c); }
   if (!html) { if (el) el.remove(); document.body.classList.remove('scene-on'); return; }
-  if (!el) { el = document.createElement('div'); el.id = 'scene'; el.className = 'scene-bg'; document.body.appendChild(el); el.addEventListener('click', e => { if (e.target !== el) return; const L = Store.S.wyprawa.curioLast; if (!(L && L.id !== UI.sceneSeen)) ACT.sceneHide(); }); }
+  if (!el) { el = document.createElement('div'); el.id = 'scene'; el.className = 'scene-bg'; document.body.appendChild(el); el.addEventListener('click', e => { if (e.target !== el) return; const L = Store.S.wyprawa.curioLast; const C = Store.S.wyprawa.campLast; if (C && C.id !== UI.campSeen) return; if (!(L && L.id !== UI.sceneSeen)) ACT.sceneHide(); }); }
   document.body.classList.add('scene-on');
   if (el._html !== html) { const sc = el.querySelector('.scene'); const top = sc ? sc.scrollTop : 0; el.innerHTML = html; el._html = html; const n = el.querySelector('.scene'); if (n) n.scrollTop = top; }
 }
