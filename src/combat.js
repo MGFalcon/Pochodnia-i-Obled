@@ -46,8 +46,20 @@ function glossText(key, label) {
   if (label === 'Ekstaza bólu') return 'Ekstaza bólu (Biczownik): co turę musi atakować, nie leczy innych, traci 1 Zdrowia na początku tury; Stres z ataków wrogów go nie dotyczy.';
   const g = GLOSS.find(x => x[0] === key); return g ? g[1] + ': ' + g[2] : '';
 }
+/* pojęcia wyprawy i Osady — zgodne z podręcznikiem (rozdziały Wyprawa, Osada, Rozwój) */
+const GLOSS_CAMP = [
+  ['Doświadczenie i awans', 'Zadanie daje doświadczenie: krótkie 1, średnie 2, długie 3, za bossa +1. Próg awansu to 2 + obecny Poziom (kolejno 2, 3, 4, 5, 6, 7 — razem 27). Awans klika gracz na karcie bohatera, w Osadzie, zawsze o jeden Poziom.'],
+  ['Łup', 'Wygrana walka daje 1 rzut, skrzynia i dobra osobliwość 2, boss 4; Pochodnia dodaje albo odejmuje rzuty. Walka daje zawsze co najmniej 1 — przy jasnym świetle wtedy gorszy z dwóch k10.'],
+  ['Osobliwość', 'Gołą ręką k10: 1–4 dobrze, 5–7 nic, 8–10 źle. Właściwy przedmiot daje pewny dobry wynik, niewłaściwy przepada bez skutku. Który działa, odkrywacie sami — ród to zapamiętuje.'],
+  ['Zaopatrzenie', 'Plecak ma 16 miejsc (4 sztuki zapasów na miejsce) i startuje pusty. Ile czego zabrać, decyduje drużyna. Niewykorzystane zapasy przepadają po powrocie.'],
+  ['Boss się budzi', 'Po 3 wykonanych zadaniach w regionie na tablicy co tydzień czeka zadanie z jego bossem, dopóki go nie pokonacie.'],
+  ['Ciemność', 'Zegar nad Osadą, 0–10. +1 co tydzień, +1 więcej, gdy nikt nie zszedł do lochu, +1 za porzuconą wyprawę. Spada o 1 za średnie zadanie, o 2 za długie i o 3 więcej za bossa.'],
+  ['Napad', 'Przy Ciemności 4–9 co tydzień k10 ≤ Ciemność − 3. Stwory zabierają złoto, palą Gospodę albo Opactwo na tydzień, płoszą rekruta albo kradną błyskotkę z magazynu.'],
+  ['Oblężenie', 'Przy Ciemności 10 walka w Osadzie. Wygrana cofa Ciemność do 5, przegrana kosztuje stopień budynku.']
+];
 function glossaryModal() {
   modal(`<h3>Słownik</h3><div class="gloss">${GLOSS.map(g => `<p><b>${esc(g[1])}</b> — ${esc(g[2])}</p>`).join('')}
+    <div class="ph">Wyprawa, Osada i rozwój</div>${GLOSS_CAMP.map(g => `<p><b>${esc(g[0])}</b> — ${esc(g[1])}</p>`).join('')}
     <div class="ph">Przypadłości i jak działają na stole</div>${DATA.afflictions.map(a => `<p><b>${esc(a.name)}</b> — ${esc(AFFL_APP[a.name] || a.combat)} <span class="dim">Poza walką: ${esc(a.out)}.</span></p>`).join('')}
     <div class="ph">Cnoty</div>${DATA.virtues.map(v => `<p><b>${esc(v.name)}</b> — ${esc(v.perm)}; przy 1–3 na początku tury: ${esc(v.proc)}.</p>`).join('')}</div>`, [{ t: 'Zamknij', cls: 'primary' }]);
 }
