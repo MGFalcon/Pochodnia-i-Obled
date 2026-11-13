@@ -92,6 +92,15 @@ function enemySlot(x) {
 }
 
 /* ---------- scena walki: tło regionu i całe postacie (klikane jak karty) ---------- */
+/* krótka nazwa na wąskim ekranie: „Kościany obrońca” → „obrońca” (przymiotnik na początku odpada) */
+function shortFoe(n) { const w = String(n || '').split(' '); return w.length > 1 && /[yi]$/.test(w[0]) ? w.slice(1).join(' ') : n; }
+function figTag(full, short) { return `<span class="fig-tag" title="${esc(full)}"><span class="tl">${esc(full)}</span>${short && short !== full ? `<span class="ts">${esc(short)}</span>` : ''}</span>`; }
+/* stany pod postacią: na komputerze krótkie napisy, na telefonie kolorowe kropki (pełny opis w pasku akcji) */
+function figFx(list) {
+  if (!list.length) return '';
+  const col = c => ({ red: 'r', green: 'g', violet: 'v', gold: 'y', affl: 'a', virtue: 'y' }[c] || 'n');
+  return `<span class="fig-fx">${list.slice(0, 3).map(([c, t]) => `<span class="ff f-${col(c)}" title="${esc(t)}"><i></i><em>${esc(t)}</em></span>`).join('')}${list.length > 3 ? `<span class="ff f-n" title="${esc(list.slice(3).map(x => x[1]).join(', '))}"><i></i><em>+${list.length - 3}</em></span>` : ''}</span>`;
+}
 function figHero(id, pos) {
   const h = H(id); if (!h) return '<div class="fig empty" aria-hidden="true"></div>';
   const ce = curEntry(); const isCur = ce && ce.k === 'h' && ce.id === id; const st = heroStats(h);
@@ -99,17 +108,22 @@ function figHero(id, pos) {
   const sel = UI.sel.k === 'h' && UI.sel.id === id;
   return `<button class="fig hero ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt || tgtE ? 'tgt' : ''} ${h.dd ? 'dd' : ''}" data-act="${tgt ? 'pickAlly' : tgtE ? 'pickHeroT' : 'selH'}" data-id="${id}" aria-label="${esc(heroLabel(h))}, pozycja ${pos}, Zdrowie ${h.hp} z ${st.maxhp}, Stres ${h.stress}">
     <svg viewBox="0 0 100 200" class="fig-svg" aria-hidden="true">${heroFigure(h)}</svg>
-    <span class="fig-tag">${esc(heroLabel(h))}</span><span class="fig-bar"><i class="hp" style="width:${Math.round(100 * h.hp / Math.max(1, st.maxhp))}%"></i></span><span class="fig-bar st"><i style="width:${Math.min(100, h.stress * 5)}%"></i></span></button>`;
+    ${figTag(heroLabel(h))}<span class="fig-bar"><i class="hp" style="width:${Math.round(100 * h.hp / Math.max(1, st.maxhp))}%"></i></span><span class="fig-bar st"><i style="width:${Math.min(100, h.stress * 5)}%"></i></span>
+    ${figFx([].concat(h.dd ? [['red', 'Próg Śmierci']] : [], h.state ? [[h.state.kind === 'virtue' ? 'virtue' : 'affl', h.state.name]] : [], h.block ? [['gold', 'Blok ' + h.block]] : [], fxChips(h.fx)))}</button>`;
 }
 function figEnemy(x) {
   const e = x.e; const ce = curEntry(); const isCur = ce && ce.k === 'e' && ce.id === e.id; const wide = (e.size || 1) === 2;
   const P = UI.pend; const tgt = P && P.need === 'enemy' && P.valid.includes(e.id); const sel = UI.sel.k === 'e' && UI.sel.id === e.id;
   const vw = wide ? 200 : 100; const vh = wide && !e.corpse && FIG_ELITE[e.name] ? 220 : 200;
-  return `<button class="fig enemy ${wide ? 'wide' : ''} ${e.boss ? 'boss' : ''} ${e.elite ? 'elite' : ''} ${e.corpse ? 'corpse' : ''} ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt ? 'tgt' : ''}" data-act="${tgt ? 'pickEnemy' : 'selE'}" data-id="${e.id}" aria-label="${esc(e.name)}, pozycja ${x.pos}, Zdrowie ${e.hp} z ${e.maxhp}">
+  return `<button class="fig enemy ${wide ? 'wide' : ''} ${e.boss ? 'boss' : ''} ${e.elite ? 'elite' : ''} ${e.corpse ? 'corpse' : ''} ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt ? 'tgt' : ''}" data-act="${tgt ? 'pickEnemy' : 'selE'}" data-id="${e.id}" aria-label="${esc(e.name)}, pozycja ${x.pos}, Zdrowie ${e.hp} z ${e.maxhp}, Unik ${enemyDodge(e)}, Pancerz ${enemyProt(e)}" title="${esc(e.name + ' · Zdrowie ' + e.hp + '/' + e.maxhp + ' · Unik ' + enemyDodge(e) + ' · Pancerz ' + enemyProt(e) + ' · Szybkość ' + e.speed)}">
     <svg viewBox="0 0 ${vw} ${vh}" class="fig-svg" aria-hidden="true"><g transform="translate(${vw} 0) scale(-1 1)">${enemyFigure(e)}</g></svg>
-    <span class="fig-tag">${esc(e.name)}</span>${e.corpse ? '' : `<span class="fig-bar"><i class="hp" style="width:${Math.round(100 * e.hp / Math.max(1, e.maxhp))}%"></i></span>`}</button>`;
+    ${figTag(e.name, shortFoe(e.name))}${e.corpse ? '' : `<span class="fig-bar"><i class="hp" style="width:${Math.round(100 * e.hp / Math.max(1, e.maxhp))}%"></i></span>`}
+    ${e.corpse ? '' : figFx([].concat(e.nextMove && e.nextMove.round === (Store.S.stol.round || 0) && Store.S.stol.fight ? [['gold', '⚠ ' + e.nextMove.name]] : [], fxChips(e.fx)))}</button>`;
 }
-Object.assign(ACT, { cineToggle: () => { try { localStorage.setItem('pio:cine', cineOn() ? 'off' : 'on'); } catch (e) { } cineClear(); renderView(); } });
+Object.assign(ACT, {
+  fightMenu: () => { UI.fightMenu = !UI.fightMenu; renderView(); },
+  gmTools: () => { const s = Store.S.stol; const open = UI.gmTools != null ? UI.gmTools : !s.enemies.length; UI.gmTools = !open; renderView(); },
+  cineToggle: () => { try { localStorage.setItem('pio:cine', cineOn() ? 'off' : 'on'); } catch (e) { } cineClear(); renderView(); } });
 document.addEventListener('click', e => { if (UI.cine && e.target.closest && e.target.closest('.stage') && !e.target.closest('[data-act]')) cineClear(); }, true);
 function stageHtml(s, enemies) {
   const w = Store.S.wyprawa; const region = s.region || (w.quest ? (w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key) : 'Ruiny');
@@ -193,107 +207,101 @@ function showPops() {
   });
 }
 VIEWS.stol = {
-  after() { showPops(); },
+  after(el) { showPops(); const n = el.querySelector('.init .ini.now'); if (n && n.parentNode.scrollWidth > n.parentNode.clientWidth) n.parentNode.scrollLeft = Math.max(0, n.offsetLeft - n.parentNode.offsetLeft - 40); },
   render() {
     const s = Store.S.stol; const gm = Store.isGM(); const W = Store.canWrite();
     const enemies = enemyPositions(s.enemies);
-    const heroesRev = [3, 2, 1, 0].map(i => heroSlot(s.heroes[i], i + 1)).join('');
-    const enemyHtml = enemies.map(enemySlot).join('') + Array.from({ length: Math.max(0, 4 - enemies.reduce((a, x) => a + (x.e.size || 1), 0)) }, () => `<div class="slot empty"></div>`).join('');
     const living = s.enemies.filter(e => !e.corpse).length;
     const ce = curEntry();
-    const curName = ce ? (ce.k === 'h' ? (H(ce.id) ? heroLabel(H(ce.id)) : '?') : ((s.enemies.find(e => e.id === ce.id) || {}).name || '?')) : null;
+    /* nowa tura: od razu zaznacz tego, kto działa (jak w grze) — bez szukania i klikania */
+    if (s.fight && ce && !UI.pend && !UI.epend && UI.autoSelKey !== turnKey()) { UI.autoSelKey = turnKey(); if (ce.k === 'h' || gm) UI.sel = { k: ce.k, id: ce.id }; }
+    const curName = ce ? entryName(ce) : null;
+    const curNote = ce ? (() => { const x = ce.k === 'h' ? H(ce.id) : s.enemies.find(e => e.id === ce.id); return x && x.fx && x.fx.lostTurn === (s.round || 0) ? (x.fx.lostWhy === 'stun' ? ' · ogłuszony, tura przepada' : ' · tura przejęta') : s.acted === turnKey() ? ' · już działał' : ''; })() : '';
     return `
     ${UI.pend ? `<div class="pendbar">Wybierz cel: <b>${esc(UI.pend.label)}</b> <button class="btn sm" data-act="cancelPend">Anuluj</button>${UI.pend.multi ? ` <button class="btn sm primary" data-act="fireMulti">Użyj na wszystkich</button>` : ''}</div>` : ''}
     ${UI.epend ? `<div class="pendbar">Wybierz bohatera, w którego ${esc(UI.epend.label)} <button class="btn sm" data-act="cancelPend">Anuluj</button></div>` : ''}
     <section class="panel fieldp has-stage">
       <div class="fhead">
-        <div><span class="lbl">${s.fight ? 'Walka' : 'Spokój'}</span> <b class="round">${s.fight ? 'Runda ' + s.round : 'Drużyna w szyku'}</b>${curName ? ` <span class="chip gold">tura: ${esc(curName)}${(() => { const x = ce.k === 'h' ? H(ce.id) : s.enemies.find(e => e.id === ce.id); return x && x.fx && x.fx.lostTurn === (s.round || 0) ? (x.fx.lostWhy === 'stun' ? ' · ogłuszony, tura przepada' : ' · tura przejęta') : s.acted === turnKey() ? ' · już działał' : ''; })()}</span>` : ''}</div>
+        <div><span class="lbl">${s.fight ? 'Walka' : 'Spokój'}</span> <b class="round">${s.fight ? 'Runda ' + s.round : 'Drużyna w szyku'}</b>${curName ? ` <span class="chip gold">tura: ${esc(curName)}${curNote}</span>` : ''}</div>
         <div class="row">
-          ${W ? `<button class="btn sm" data-act="formation">Ustaw drużynę</button>` : ''}
-          ${W && !s.fight ? `<button class="btn sm primary" data-act="fightStart" ${s.enemies.length && s.heroes.length ? '' : 'disabled'}>Rozpocznij walkę</button>` : ''}
-          <button class="btn sm ${cineOn() ? 'gold' : 'ghost'}" data-act="cineToggle" title="Krótkie zbliżenia ataków, uników i obrony (tylko na tym urządzeniu)">Zbliżenia: ${cineOn() ? 'wł.' : 'wył.'}</button>
-          ${gm ? `<button class="btn sm ${s.autoFight !== false ? 'gold' : 'ghost'}" data-act="autoToggle" title="Płynna walka: tura przechodzi sama po akcji, wrogowie działają według zasad">Płynna walka: ${s.autoFight !== false ? 'wł.' : 'wył.'}</button>` : ''}
-          ${W && s.fight ? `<button class="btn sm" data-act="newRound">Nowa runda</button><button class="btn sm primary" data-act="nextTurn" ${s.init.length ? '' : 'disabled'}>Następna tura</button><button class="btn sm ghost" data-act="fightEnd">Zakończ walkę</button>` : ''}
+          ${W && !s.fight ? `<button class="btn sm" data-act="formation">Ustaw drużynę</button><button class="btn sm primary" data-act="fightStart" ${s.enemies.length && s.heroes.length ? '' : 'disabled'}>Rozpocznij walkę</button>` : ''}
+          ${W && s.fight ? `<button class="btn sm primary" data-act="nextTurn" ${s.init.length ? '' : 'disabled'}>Następna tura</button><button class="btn sm ghost" data-act="fightEnd">Zakończ walkę</button>` : ''}
+          <button class="btn sm ghost gear ${UI.fightMenu ? 'on' : ''}" data-act="fightMenu" aria-expanded="${!!UI.fightMenu}" title="Ustawienia walki" aria-label="Ustawienia walki">⚙</button>
         </div>
       </div>
-      ${s.fight && s.init.length ? `<div class="init">${s.init.map((x, i) => {
-        const nm = x.k === 'h' ? (H(x.id) ? heroLabel(H(x.id)) : '—') : ((s.enemies.find(e => e.id === x.id) || {}).name || '—');
-        return `<span class="ini ${x.k} ${i === s.turn ? 'now' : ''} ${i < s.turn ? 'done' : ''}">${esc(nm)} <b class="num">${x.tot}</b></span>`;
-      }).join('')}</div>` : ''}
+      ${UI.fightMenu ? `<div class="fmenu"><span class="lbl">Ustawienia</span>
+        ${W && s.fight ? `<button class="btn sm" data-act="formation">Ustaw drużynę</button><button class="btn sm" data-act="newRound" title="Ręcznie: zacznij nową rundę i rzuć na inicjatywę">Nowa runda</button>` : ''}
+        <button class="btn sm ${cineOn() ? 'gold' : 'ghost'}" data-act="cineToggle" title="Krótkie zbliżenia ataków, uników i obrony (tylko na tym urządzeniu)">Zbliżenia: ${cineOn() ? 'wł.' : 'wył.'}</button>
+        ${gm ? `<button class="btn sm ${s.autoFight !== false ? 'gold' : 'ghost'}" data-act="autoToggle" title="Płynna walka: tura przechodzi sama po akcji, wrogowie działają według zasad">Płynna walka: ${s.autoFight !== false ? 'wł.' : 'wył.'}</button>` : ''}</div>` : ''}
+      ${s.fight && s.init.length ? `<div class="init">${s.init.map((x, i) => `<span class="ini ${x.k} ${i === s.turn ? 'now' : ''} ${i < s.turn ? 'done' : ''}">${esc(entryName(x))} <b class="num">${x.tot}</b></span>`).join('')}</div>` : ''}
       ${s.fight && !living ? `<div class="won"><b>Wrogowie pokonani.</b> ${s.looted ? '<span class="muted small">łup wylosowany</span>' : W ? `<button class="btn sm gold" data-act="lootFight">Rzuć na łup</button>` : ''} ${W ? `<button class="btn sm primary" data-act="fightEnd">Zakończ walkę</button>` : ''}</div>` : ''}
       ${eventBanner()}
       ${lootCardHtml()}
-      ${lootStrip()}
-      ${s.last ? lastActHtml(s.last) : ''}
+      ${lootStrip(true)}
       ${s.heroes.length || s.enemies.length ? stageHtml(s, enemies) : ''}
-      <div class="field">
-        <div class="side-h">${heroesRev}</div>
-        <div class="vs" aria-hidden="true"><span>⟷</span></div>
-        <div class="side-e">${enemyHtml}</div>
-      </div>
-      ${!s.heroes.length ? `<p class="muted">Drużyna jest pusta. ${W ? 'Kliknij „Ustaw drużynę” i wybierz do czterech bohaterów z rejestru.' : ''}</p>` : ''}
+      ${s.heroes.length ? this.actionBar() : `<p class="muted">Drużyna jest pusta. ${W ? 'Kliknij „Ustaw drużynę” i wybierz do czterech bohaterów z rejestru.' : ''}</p>`}
+      ${s.last ? lastActHtml(s.last) : ''}
     </section>
-    <div class="grid2">
-      ${this.actionPanel()}
-      ${gm ? this.gmPanel() : this.enemyInfo()}
-    </div>`;
+    ${gm ? this.gmPanel() : ''}`;
   },
-  actionPanel() {
+  actionBar() {
     const sel = UI.sel;
     if (sel.k === 'e') return this.enemyPanel();
     const h = sel.k === 'h' ? H(sel.id) : null;
-    if (!h) return `<section class="panel"><h2>Akcja</h2><p class="muted">Kliknij swojego bohatera w szyku, żeby użyć umiejętności, przesunąć się albo sięgnąć do plecaka.${Store.isGM() ? ' Kliknij wroga, żeby nim zaatakować.' : ''}</p></section>`;
-    const can = canHero(h); const c = CLS[h.cls]; const st = heroStats(h);
-    const pos = Store.S.stol.heroes.indexOf(h.id) + 1;
+    if (!h) return `<div class="actbar"><p class="muted">Kliknij bohatera na scenie, żeby użyć umiejętności, przesunąć się albo sięgnąć do plecaka.${Store.isGM() ? ' Kliknij wroga, żeby nim zagrać.' : ' Kliknij wroga, żeby zobaczyć, co potrafi.'}</p></div>`;
+    const can = canHero(h); const c = CLS[h.cls]; const st = heroStats(h); const s = Store.S.stol;
+    const pos = s.heroes.indexOf(h.id) + 1;
     const ohyda = c.name === 'Ohyda';
     const skills = h.skills.filter(i => !ohyda || (c.skills[i].form === (h.form === 'beast' ? 'bestia' : 'człowiek')));
-    const sup = Store.S.wyprawa.sup || {};
+    const w = Store.S.wyprawa; const sup = w.sup || {};
     const g = heroTurn(h); const lost = !!g.lost; const busy = !g.ok;
     const ekst = h.state && h.state.kind === 'ekstaza';
-    return `<section class="panel act">
-      ${busy && can ? `<p class="${lost ? 'warn' : 'muted'}">${esc(g.why)}</p>` : ''}
-      ${ekst ? `<p class="warn">Ekstaza bólu: musi atakować i nie leczy innych.</p>` : ''}
-      <h2>${esc(heroLabel(h))} <span class="hint">${pos ? 'pozycja ' + pos : 'poza szykiem'} · ${esc(ownerName(h))}</span></h2>
-      ${!can ? `<p class="muted">To bohater innego gracza — możesz go obejrzeć, ale działa nim jego gracz albo MG.</p>` : ''}
-      <p class="legend-pos"><span class="pdots from"><i class="on"></i></span> złote — z której pozycji bohatera (ułożone jak na polu: 4 3 2 1, pozycja 1 z przodu) · <span class="pdots to"><i class="on"></i></span> czerwone — które pozycje wroga trafia (1 2 3 4, od przodu)</p>
+    const bossNoRun = s.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler');
+    const items = [['Bandaże', 'bandaż', 'bleed'], ['Antidota', 'antidotum', 'blight'], ['Laudanum', 'laudanum', 'horror'], ['Zioła', 'zioła', 'debuff'], ['Woda święcona', 'woda święcona', 'holy'], ['Prowiant', 'prowiant', 'food']].filter(([k]) => !w.quest || sup[k] > 0);
+    const legend = 'Złote kropki: z której pozycji bohatera można użyć (ułożone jak na scenie: 4 3 2 1, pozycja 1 najbliżej wrogów). Czerwone: które pozycje wroga trafia (1 2 3 4 od przodu). Połączone kreską: trafia wszystkie naraz.';
+    return `<div class="actbar act">
+      <div class="ab-head">
+        <b class="ab-name">${esc(heroLabel(h))}</b> <span class="hint">${pos ? 'pozycja ' + pos : 'poza szykiem'} · ${esc(ownerName(h))}</span>
+        ${bar('hp ab-bar', h.hp, st.maxhp, 'Zdrowie ' + h.hp + ' / ' + st.maxhp)}${bar('st ab-bar', h.stress, 20, 'Stres ' + h.stress + ' / 20')}
+        <span class="ab-chips">${h.dd ? gchip('red', 'Próg Śmierci') : ''}${stateChip(h)}${h.exhausted ? gchip('', 'Wyczerpanie') : ''}${h.block ? gchip('gold', 'Blok ' + h.block) : ''}${h.fatigue ? gchip('', 'Zmęczenie ' + h.fatigue) : ''}${chipsHtml(fxChips(h.fx))}</span>
+        ${h.dd && can ? `<button class="btn sm primary" data-act="deathRoll">Rzut Śmierci</button>` : ''}
+        <span class="sp"></span><span class="hint help" tabindex="0" data-gloss="${esc(legend)}" title="${esc(legend)}">jak czytać kropki?</span>
+      </div>
+      ${busy && can ? `<p class="ab-msg ${lost ? 'warn' : 'muted'}">${esc(g.why)}</p>` : ''}
+      ${ekst ? `<p class="ab-msg warn">Ekstaza bólu: musi atakować i nie leczy innych.</p>` : ''}
+      ${!can ? `<p class="ab-msg muted">To bohater innego gracza — możesz go obejrzeć, ale działa nim jego gracz albo MG.</p>` : ''}
       <div class="skills">${skills.map(i => {
         const v = skillView(h, i, st); const okPos = pos && v.inf.from.includes(pos);
         const lim = /2 razy na walkę/.test(v.s.eff) ? 2 : /raz na walkę/.test(v.s.eff) ? 1 : 0; const used = ((h.fx || {}).used || {})[i] || 0; const spent = (lim && used >= lim) || busy || (ekst && !v.inf.attack);
-        return `<button class="skill" data-act="useSkill" data-i="${i}" ${can && okPos && !spent && Store.S.stol.heroes.includes(h.id) ? '' : 'disabled'} title="${esc(busy ? g.why : spent ? 'Wykorzystane w tej walce' : !okPos ? 'Nie z tej pozycji' : v.s.eff || '')}">
+        return `<button class="skill" data-act="useSkill" data-i="${i}" ${can && okPos && !spent && s.heroes.includes(h.id) ? '' : 'disabled'} title="${esc((busy ? g.why : spent ? 'Wykorzystane w tej walce' : !okPos ? 'Nie z tej pozycji' : v.s.eff || '') + ' · ' + skillPosTxt(v))}">
           <span class="sn">${esc(v.s.name)}${!okPos && pos ? ' <span class="nopos">nie z poz. ' + pos + '</span>' : ''}</span>
-          <span class="sp2">${posDots(v.inf.from, 'from')}<span class="sep">▸</span>${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(v.s.w)}</span>`}<span class="ptxt">${esc(skillPosTxt(v))}</span></span>
+          <span class="sp2">${posDots(v.inf.from, 'from')}<span class="sep">▸</span>${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(v.s.w)}</span>`}</span>
           <span class="sv num">${v.cel != null ? 'Cel. ' + v.cel : ''}${v.dmg ? ' · ' + v.dmg : ''}${v.heal ? ' · leczy ' + v.heal : ''}${v.stress ? ' · −' + v.stress + ' Stres' : ''}${lim ? ' · ' + (lim - used) + '/' + lim + ' w walce' : ''}</span>
         </button>`;
       }).join('')}</div>
-      ${can ? `<div class="row acts">
-        <button class="btn sm" data-act="heroMove" data-d="1" ${pos && pos < Store.S.stol.heroes.length && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z tyłu (dalej od wrogów)">◀ do tyłu</button>
-        <button class="btn sm" data-act="heroMove" data-d="-1" ${pos > 1 && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z przodu (bliżej wrogów)">do przodu ▶</button>
+      ${can ? `<div class="ab-row">
+        <button class="btn sm" data-act="heroMove" data-d="1" ${pos && pos < s.heroes.length && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z tyłu (dalej od wrogów)">◀ do tyłu</button><button class="btn sm" data-act="heroMove" data-d="-1" ${pos > 1 && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z przodu (bliżej wrogów)">do przodu ▶</button>
         <button class="btn sm" data-act="heroPass" ${busy ? 'disabled' : ''}>Pas</button>
         ${ohyda ? `<button class="btn sm gold" data-act="transform" ${busy ? 'disabled' : ''}>${h.form === 'beast' ? 'Wróć do ludzkiej postaci' : 'Przemiana w bestię'}</button>` : ''}
-        <button class="btn sm" data-act="retreat" ${busy || !Store.S.stol.fight || Store.S.stol.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler') ? 'disabled' : ''} ${Store.S.stol.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler') ? 'title="Z walki z bossem nie ma odwrotu"' : ''}>Odwrót</button>
+        <button class="btn sm" data-act="retreat" ${busy || !s.fight || bossNoRun ? 'disabled' : ''} ${bossNoRun ? 'title="Z walki z bossem nie ma odwrotu"' : ''}>Odwrót</button>
+        <span class="ab-sep" aria-hidden="true"></span>
+        <span class="lbl">Plecak</span>${items.map(([k, n, wk]) => `<button class="btn sm ghost" data-act="useItem" data-k="${k}" data-w="${wk}" ${busy && (!g.mine || lost) ? 'disabled' : ''}>${n}${w.quest ? ` <span class="muted num">${sup[k]}</span>` : ''}</button>`).join('') || '<span class="muted small">pusto</span>'}
       </div>
-      <div class="row acts items">
-        <span class="lbl">Plecak</span>
-        ${[['Bandaże', 'bandaż', 'bleed'], ['Antidota', 'antidotum', 'blight'], ['Laudanum', 'laudanum', 'horror'], ['Zioła', 'zioła', 'debuff'], ['Woda święcona', 'woda święcona', 'holy'], ['Prowiant', 'prowiant', 'food']].map(([k, n, w]) => `<button class="btn sm ghost" data-act="useItem" data-k="${k}" data-w="${w}" ${busy && (!g.mine || lost) ? 'disabled' : ''}>${n} <span class="muted num">${sup[k] != null ? sup[k] : '–'}</span></button>`).join('')}
-      </div>
-      <div class="row acts">
-        <span class="lbl">Popraw</span>
+      ${Store.isGM() ? `<div class="ab-row ab-gm"><span class="lbl">Poprawki MG</span>
         <button class="btn sm ghost" data-act="adjH" data-f="hp" data-v="-1">Zdr −1</button><button class="btn sm ghost" data-act="adjH" data-f="hp" data-v="1">Zdr +1</button>
-        <button class="btn sm ghost" data-act="adjH" data-f="stress" data-v="1">Stres +1</button><button class="btn sm ghost" data-act="adjH" data-f="stress" data-v="-1">Stres −1</button>
-        ${h.dd ? `<button class="btn sm primary" data-act="deathRoll">Rzut Śmierci</button>` : ''}
-      </div>` : ''}
-    </section>`;
+        <button class="btn sm ghost" data-act="adjH" data-f="stress" data-v="1">Stres +1</button><button class="btn sm ghost" data-act="adjH" data-f="stress" data-v="-1">Stres −1</button></div>` : ''}` : ''}
+    </div>`;
   },
   enemyPanel() {
     const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id);
-    if (!e) return `<section class="panel"><h2>Wróg</h2><p class="muted">Ten wróg już nie stoi w szyku.</p></section>`;
+    if (!e) return `<div class="actbar"><p class="muted">Ten wróg już nie stoi w szyku.</p></div>`;
     const gm = Store.isGM(); const eg = enemyTurn(e); const eoff = !eg.ok;
-    return `<section class="panel act">
+    return `<div class="actbar act">
       ${eoff && gm ? `<p class="${eg.lost ? 'warn' : 'muted'}">${esc(eg.why)}</p>` : ''}
-      <h2>${esc(e.name)} <span class="hint">${e.boss ? 'boss · 2 tury na rundę' : esc(e.pos ? 'pozycje ' + e.pos : '')}</span></h2>
-      <p class="dim num">Zdrowie ${e.hp}/${e.maxhp} · Unik ${enemyDodge(e)} · Pancerz ${enemyProt(e)} · Szybkość ${e.speed} · Krzepa ${e.krzepa} · Odporność ${e.odp}${e.noBleed ? ' · niewrażliwy na krwawienie' : ''}</p>
+      <div class="ab-head"><b class="ab-name">${esc(e.name)}</b> <span class="hint">${e.boss ? 'boss · 2 tury na rundę' : e.elite ? 'mini-boss' : esc(e.type || '')}</span>${bar('hp ab-bar', e.hp, e.maxhp, 'Zdrowie ' + e.hp + ' / ' + e.maxhp)}<span class="ab-chips">${chipsHtml(fxChips(e.fx))}</span></div>
+      <p class="dim num small">Unik ${enemyDodge(e)} · Pancerz ${enemyProt(e)} · Szybkość ${e.speed} · Krzepa ${e.krzepa} · Odporność ${e.odp}${e.noBleed ? ' · niewrażliwy na krwawienie' : ''}</p>
       <div class="atks">${(e.attacks || []).map((a, i) => `<div class="atk"><div>${a.w ? `<span class="sp2">${posDots(posList(a.w), a.aoe ? 'to multi' : 'to', 'hero')}<span class="ptxt">w bohaterów ${esc(a.w)}</span></span> ` : ''}${attackText(a)}</div>${gm && a.w ? `<div class="row">
-        ${a.aoe ? `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="all" ${eoff ? 'disabled' : ''}>Atakuj pozycje ${esc(a.w)}</button>` : `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="rand" ${eoff ? 'disabled' : ''}>Losowy cel</button><button class="btn sm" data-act="eAtk" data-i="${i}" data-m="pick" ${eoff ? 'disabled' : ''}>Wybierz cel</button>`}
+        ${a.aoe ? `<button class="btn sm" data-act="eAtk" data-i="${i}" data-m="all" ${eoff ? 'disabled' : ''}>Atakuj pozycje ${esc(a.w)}</button>` : `<button class="btn sm" data-act="eAtk" data-i="${i}" data-m="rand" ${eoff ? 'disabled' : ''}>Losowy cel</button><button class="btn sm" data-act="eAtk" data-i="${i}" data-m="pick" ${eoff ? 'disabled' : ''}>Wybierz cel</button>`}
       </div>` : gm ? `<div class="row"><button class="btn sm" data-act="eSay" data-i="${i}">Ogłoś</button></div>` : ''}</div>`).join('') || '<p class="muted">Zwłoki nic nie robią.</p>'}</div>
       ${gm && !e.corpse ? `<div class="row eauto"><button class="btn primary" data-act="eAuto" ${eoff ? 'disabled' : ''} title="Wróg działa według zasad: wybór ataku kością${e.boss ? ', wzór ruchów bossa' : ''}, cel losowany (Znak ma pierwszeństwo)">Tura wroga — według zasad</button>${enemySpecials(e).map(n => `<button class="btn sm gold" data-act="eSpec" data-n="${esc(n)}" ${eoff ? 'disabled' : ''}>${esc(n)}</button>`).join('')}</div>
         ${e.boss && BOSS_AI[e.name] ? `<p class="small dim">Wzór ruchów: pierwsza tura w rundzie — ${esc(BOSS_AI[e.name].first)}; druga — k6: ${BOSS_AI[e.name].table.map(([a, b, n]) => (a === b ? a : a + '–' + b) + ' ' + esc(n)).join(', ')}.${(curEntry() || {}).id === e.id ? ' Teraz: <b>' + ((Store.S.stol.init || []).slice(0, Math.max(0, Store.S.stol.turn)).some(x => x.id === e.id) ? 'druga tura (k6)' : 'pierwsza tura (sygnatura)') + '</b>.' : ''}</p>` : ''}` : ''}
@@ -303,29 +311,26 @@ VIEWS.stol = {
         <button class="btn sm ghost" data-act="eMove" data-d="-1">◀</button><button class="btn sm ghost" data-act="eMove" data-d="1">▶</button>
         <button class="btn sm ghost" data-act="eRemove">Usuń</button>
       </div>` : ''}
-    </section>`;
-  },
-  enemyInfo() {
-    const s = Store.S.stol;
-    return `<section class="panel"><h2>Wrogowie</h2>${s.enemies.length ? s.enemies.map(e => `<p><b>${esc(e.name)}</b> <span class="muted">${esc(e.type || '')}</span><br><span class="dim">${(e.attacks || []).map(a => attackText(a)).join('<br>')}</span></p>`).join('') : '<p class="muted">Na razie nikogo. MG ustawia wrogów, gdy zaczyna się walka.</p>'}</section>`;
+    </div>`;
   },
   gmPanel() {
     const s = Store.S.stol; const reg = s.region || 'Ruiny';
     const refs = foeRefs().filter(r => r.group === 'Twoi wrogowie' || r.group === (reg === 'DD' ? 'Najmroczniejszy Loch' : reg) || (r.group === 'Ciemność'));
-    return `<section class="panel"><h2>Wrogowie <span class="hint">dla MG</span></h2>
+    const open = UI.gmTools != null ? UI.gmTools : !s.enemies.length;
+    return `<section class="panel gmtools"><button class="gm-h" data-act="gmTools" aria-expanded="${open}"><span class="lbl">Narzędzia MG</span> <b>Wrogowie na stole</b> <span class="hint">${s.enemies.length ? s.enemies.length + ' w szyku' : 'pusto'} · ${open ? 'zwiń ▴' : 'rozwiń ▾'}</span></button>${open ? `
       <div class="row">
         <label class="lbl" for="sreg">Region</label><select id="sreg" data-bind="stol.region">${REG_OPTS.map(([k, n]) => `<option value="${k}" ${reg === k ? 'selected' : ''}>${n}</option>`).join('')}</select>
         ${reg !== 'DD' ? `<label class="lbl" for="sdl">Loch</label><select id="sdl" data-bind="stol.dl" data-num>${DL.map((n, i) => `<option value="${i}" ${+s.dl === i ? 'selected' : ''}>${n}</option>`).join('')}</select>`
         : `<label class="lbl" for="sfl">Piętro</label><select id="sfl" data-bind="stol.floor" data-num>${DD_FLOORS.map((f, i) => `<option value="${i}" ${+(s.floor || 0) === i ? 'selected' : ''}>${i + 1}. ${f.boss}</option>`).join('')}</select>`}
       </div>
       <div class="row">
-        <button class="btn sm primary" data-act="encounter">Losuj spotkanie</button>
+        <button class="btn sm" data-act="encounter">Losuj spotkanie</button>
         <button class="btn sm gold" data-act="bossSet">Boss${reg === 'DD' ? ' piętra' : ' regionu'}</button>
         <button class="btn sm" data-act="shambler">Shambler</button>
         <button class="btn sm ghost" data-act="clearE">Wyczyść</button>
       </div>
       <div class="row"><select id="addE">${[...new Set(refs.map(r => r.group))].map(g => `<optgroup label="${esc(g)}">${refs.filter(r => r.group === g).map(r => `<option value="${esc(r.ref)}">${esc(r.name)}${r.boss ? ' (boss)' : ''}</option>`).join('')}</optgroup>`).join('')}</select><button class="btn sm" data-act="addE">Dodaj wroga</button></div>
-      <p class="muted small">Wrogowie dostają premie poziomu lochu automatycznie (Weterański: Zdrowie +5, Celność, Unik i obrażenia +1; Mistrzowski: +10 i +2, Szybkość +1, Stres +1). Najmroczniejszy Loch ma wartości ostateczne.</p>
+      <p class="muted small">Wrogowie dostają premie poziomu lochu automatycznie (Weterański: Zdrowie +5, Celność, Unik i obrażenia +1; Mistrzowski: +10 i +2, Szybkość +1, Stres +1). Najmroczniejszy Loch ma wartości ostateczne.</p>` : ''}
     </section>`;
   }
 };
@@ -692,9 +697,10 @@ function lootCardHtml() {
     ${(c.items || []).length ? `<ul class="lc-items">${c.items.map(x => `<li>${diceBadges(md(x))}</li>`).join('')}</ul>` : ''}
     <p class="small muted">Trafia do: ${esc(c.dest)}.</p></div>`;
 }
-function lootStrip() {
+function lootStrip(hideEmpty) {
   const w = Store.S.wyprawa; if (!w.quest) return '';
   const L = w.loot || {}; const mult = DL_INFO[w.quest.dl].mult;
   const parts = lootTotals({ gold: L.zloto, gems: L.klejnoty, mem: L.mem, trinkets: L.trinkets }, 1).map(p => p.replace(/ \(×.*?\)/, ''));
+  if (hideEmpty && !parts.length) return '';
   return `<div class="lootstrip"><span class="lbl">Łupy wyprawy</span> ${parts.length ? parts.map(p => `<span class="chip">${esc(p)}</span>`).join('') : '<span class="muted small">jeszcze nic</span>'}${L.klejnoty ? `<span class="muted small">klejnoty liczone ×${String(mult).replace('.', ',')} przy powrocie</span>` : ''}</div>`;
 }

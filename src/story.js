@@ -68,11 +68,12 @@ function renderGuide() {
   const el = $('#guide'); if (!el) return;
   if (!Store.ready || UI.guideOff) { el.innerHTML = UI.guideOff ? `<button class="btn sm ghost" data-act="guideToggle">Pokaż „Co teraz?”</button>` : ''; return; }
   const n = nextStep();
-  el.innerHTML = `<div class="guidebar"><span class="lbl">Co teraz?</span> <span class="gtxt">${n.txt}${n.prz || ''}</span>
+  el.innerHTML = `<div class="guidebar ${UI.guideMore ? 'more' : ''}"><span class="lbl">Co teraz?</span> <span class="gtxt" data-act="guideMore" title="Dotknij, by rozwinąć albo zwinąć">${n.txt}${n.prz || ''}</span>
     <span class="sp"></span>${n.tab ? `<button class="btn sm gold" data-act="guideGo">Pokaż</button>` : ''}<button class="btn sm ghost" data-act="guideToggle" title="Ukryj podpowiedzi">×</button></div>`;
   UI._guide = n;
 }
 Object.assign(ACT, {
+  guideMore: () => { UI.guideMore = !UI.guideMore; renderGuide(); },
   guideToggle: () => { UI.guideOff = !UI.guideOff; LS.set('pio:guideOff', UI.guideOff); renderGuide(); },
   guideGo: () => {
     const n = UI._guide; if (!n) return;
@@ -232,7 +233,7 @@ function threatTick(o, lines, ops) {
     if (r <= lim) raid(o, lines, 'k10 = ' + r + ' ≤ ' + lim);
     else lines.push('Ciemność krąży wokół palisady (k10 = ' + r + ', napad przy ≤ ' + lim + ').');
   }
-  if (o.threat >= 10) { o.siege = true; lines.push('**Oblężenie!** Ciemność wylewa się z lochów prosto na Osadę. MG wystawia walkę na Stole — przegrana kosztuje stopień budynku.'); }
+  if (o.threat >= 10) { o.siege = true; lines.push('**Oblężenie!** Ciemność wylewa się z lochów prosto na Osadę. MG wystawia walkę w zakładce Walka — przegrana kosztuje stopień budynku.'); }
 }
 /* napad: k4 na to, co stwory zabiorą */
 function raid(o, lines, why) {
@@ -247,8 +248,8 @@ function raid(o, lines, why) {
 function threatBar() {
   const o = Store.S.osada; const t = o.threat || 0;
   return `<div class="threat"><span class="lbl">Ciemność</span><span class="tbar">${Array.from({ length: 10 }, (_, i) => `<i class="${i < t ? 'on' : ''} ${i >= 5 ? 'hi' : ''}"></i>`).join('')}</span><b class="num">${t}/10</b>
-    <span class="small muted">${t >= 10 ? 'oblężenie!' : t >= 4 ? 'napady na Osadę (k10 ≤ ' + (t - 3) + ' co tydzień)' : 'rośnie o 1 co tydzień (o 2 bez wyprawy); spada za wykonane średnie i długie zadania oraz pokonanych bossów; od 4 — napady'}</span>
-    ${o.siege && Store.isGM() ? `<button class="btn sm primary" data-act="siege">Wystaw oblężenie na Stole</button>` : ''}</div>`;
+    ${(() => { const why = 'Rośnie o 1 co tydzień (o 2 bez wyprawy); spada za wykonane średnie i długie zadania oraz pokonanych bossów; od 4 — napady na Osadę, przy 10 — oblężenie.'; return t >= 10 ? '<span class="small warn">oblężenie!</span>' : t >= 4 ? `<span class="small muted">napady na Osadę (k10 ≤ ${t - 3} co tydzień)</span>` : `<span class="small muted tdesc">${esc(why)}</span><span class="hint help tq" tabindex="0" data-gloss="${esc(why)}" title="${esc(why)}">co to?</span>`; })()}
+    ${o.siege && Store.isGM() ? `<button class="btn sm primary" data-act="siege">Wystaw oblężenie do walki</button>` : ''}</div>`;
 }
 Object.assign(ACT, {
   siege: () => {

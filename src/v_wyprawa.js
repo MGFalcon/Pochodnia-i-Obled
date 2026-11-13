@@ -106,6 +106,13 @@ function estateSvg() {
     ${marks}
   </svg>`;
 }
+/* zadania z tablicy jako przyciski pod mapą — na telefonie napisy na mapie są drobne */
+function mapQuestList() {
+  const b = Store.S.osada.board || []; const sel = UI.mapSel || {};
+  if (!b.length) return `<p class="maplist muted small">Tablica zadań jest pusta — MG losuje ją z nowym tygodniem.</p>`;
+  return `<div class="maplist"><span class="lbl">Zadania</span>${b.map(q => { const dd = q.dd != null; const r = dd ? 'dd' : q.region; const l = dd ? '' : q.goal === 'boss' ? 'lair' : q.dl; const nm = dd ? 'Najmroczniejszy Loch' : q.goal === 'boss' ? REGIONS[q.region].lair.name : REGIONS[q.region].locs[q.dl].name; const on = sel.r === r && (dd || String(sel.l) === String(l));
+    return `<button class="btn sm ${on ? 'gold' : ''}" data-act="mapSel" data-r="${r}" ${dd ? '' : `data-l="${l}"`}>${dd ? '' : `<span class="ldot lv${q.dl}">${DL_ROMAN[q.dl]}</span> `}${esc(nm)} <span class="muted small">${esc(QUEST_LEN[q.len] ? QUEST_LEN[q.len].name.toLowerCase() : '')}</span></button>`; }).join('')}</div>`;
+}
 function mapPanel() {
   const sel = UI.mapSel; const o = Store.S.osada;
   if (!sel) return `<section class="panel"><h2>Posiadłość</h2><p>Kliknij lokację na mapie. Rzymska cyfra to poziom lochu: <span class="ldot lv0">I</span> Uczniowski, <span class="ldot lv1">II</span> Weterański, <span class="ldot lv2">III</span> Mistrzowski. Romb to leże bossa regionu.</p>
@@ -207,9 +214,9 @@ function dungeonSvg() {
 VIEWS.wyprawa = {
   render() {
     let sub = UI.wsub || (Store.S.wyprawa.quest ? 'loch' : 'mapa'); if (sub === 'prep' && (Store.S.wyprawa.quest || !UI.prep || !(Store.S.osada.board || []).some(q => q.id === UI.prep.qid))) sub = Store.S.wyprawa.quest ? 'loch' : 'tablica';
-    return `<div class="seg subtabs">${[['mapa', 'Mapa posiadłości'], ['tablica', 'Tablica zadań'], ['loch', 'Mapa wyprawy']].map(([k, t]) => `<button class="btn ${sub === k ? 'gold' : 'ghost'}" data-act="wsub" data-v="${k}">${t}</button>`).join('')}</div>
+    return `<div class="seg subtabs">${[['mapa', 'Mapa posiadłości', 'Posiadłość'], ['tablica', 'Tablica zadań', 'Tablica'], ['loch', 'Mapa wyprawy', 'Loch']].map(([k, t, sh]) => `<button class="btn ${sub === k ? 'gold' : 'ghost'}" data-act="wsub" data-v="${k}" aria-label="${t}"><span class="lg">${t}</span><span class="shn" aria-hidden="true">${sh}</span></button>`).join('')}</div>
       ${sub !== 'loch' ? lootCardHtml() : ''}
-      ${sub === 'mapa' ? `<div class="mapgrid"><section class="panel mapbox">${estateSvg()}</section>${mapPanel()}</div>` : sub === 'tablica' ? this.board() : sub === 'prep' && !Store.S.wyprawa.quest ? prepView() : this.dungeon()}`;
+      ${sub === 'mapa' ? `<div class="mapgrid"><section class="panel mapbox"><div class="mapscroll">${estateSvg()}</div>${mapQuestList()}</section>${mapPanel()}</div>` : sub === 'tablica' ? this.board() : sub === 'prep' && !Store.S.wyprawa.quest ? prepView() : this.dungeon()}`;
   },
   board() {
     const o = Store.S.osada; const top = topLevel(); const W = Store.canWrite();
@@ -238,31 +245,16 @@ VIEWS.wyprawa = {
       ${campPanel()}</div>
       <div class="stack">
         <section class="panel"><h2>Komnata <span class="hint">${at ? esc(at.c) : ''}</span></h2>${this.roomPanel(at)}</section>
-        <section class="panel"><h2>Plecak <span class="hint ${packSlots(sup, L) > 16 ? 'bad' : ''}">${packSlots(sup, L)} z 16 miejsc</span></h2>
+        <section class="panel packp"><h2>Plecak <span class="hint ${packSlots(sup, L) > 16 ? 'bad' : ''}">${packSlots(sup, L)} z 16 miejsc</span></h2>
           ${packSlots(sup, L) > 16 ? `<p class="warn small">Plecak jest przepełniony. Wyrzućcie coś, zanim pójdziecie dalej — łup się nie mieści.${W ? ' <button class="btn sm gold" data-act="freeSlot">Zwolnij miejsce</button>' : ''}</p>` : ''}
-          <div class="supgrid">${SUPPLY.map(([k]) => `<div class="sup"><span>${k}</span><span class="row">${W ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="-1" title="Wyrzuć jedną sztukę">−</button>` : ''}<b class="num">${sup[k] || 0}</b>${Store.isGM() ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="1" title="Poprawka MG">+</button>` : ''}</span></div>`).join('')}
-            <div class="sup"><span>Drewno</span><b class="num">${w.campsLeft || 0}</b></div></div>
+          <div class="packgrid">${SUPPLY.map(([k]) => `<div class="pk ${sup[k] ? '' : 'zero'}"><span class="pk-n">${k}</span><b class="num">${sup[k] || 0}</b>${W || Store.isGM() ? `<span class="pk-b">${W ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="-1" title="Wyrzuć jedną sztukę" aria-label="Wyrzuć: ${k}" ${sup[k] ? '' : 'disabled'}>−</button>` : ''}${Store.isGM() ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="1" title="Poprawka MG" aria-label="Dodaj: ${k}">+</button>` : ''}</span>` : ''}</div>`).join('')}
+            <div class="pk ${w.campsLeft ? '' : 'zero'}"><span class="pk-n">Drewno</span><b class="num">${w.campsLeft || 0}</b></div></div>
           ${lootStrip()}
-          <div class="row"><input type="number" id="scoutB" value="${UI.scoutB || 0}" min="-3" max="6" style="width:4.5em" aria-label="Premia do zwiadu"><span class="small muted">premia do najbliższego zwiadu (Tropienie +2, Rozpoznanie +3…)</span></div>
         </section>
-        ${this.scoutPanel()}
-        ${W ? `<section class="panel"><h2>Koniec wyprawy</h2><div class="row"><button class="btn primary" data-act="endQuest" data-v="done" ${goalProgress(w).ok || Store.isGM() ? '' : 'disabled title="Cel jeszcze niespełniony"'}>Zadanie wykonane</button><button class="btn" data-act="endQuest" data-v="leave">Wyjście bez zadania (+3 Stres)</button></div><p class="small muted">${goalProgress(w).ok ? 'Cel wykonany.' : 'Cel: ' + esc(goalProgress(w).txt) + '.'} Wyjść bez zadania można z pustej albo oczyszczonej komnaty.</p></section>` : ''}
+        ${W ? (() => { const g = goalProgress(w); return `<section class="panel"><h2>Koniec wyprawy</h2>
+          <p class="small ${g.ok ? '' : 'muted'}">${g.ok ? '<b>Cel wykonany</b> — możecie wracać po nagrodę.' : 'Cel: ' + esc(g.txt) + '.'} Wyjść można z pustej albo oczyszczonej komnaty.</p>
+          <div class="row"><button class="btn ${g.ok ? 'primary' : ''}" data-act="endQuest" data-v="done" ${g.ok || Store.isGM() ? '' : 'disabled title="Cel jeszcze niespełniony"'}>Zadanie wykonane${g.ok ? '' : Store.isGM() ? ' (MG)' : ''}</button><button class="btn ghost" data-act="endQuest" data-v="leave">Wyjście bez zadania (+3 Stres)</button></div></section>`; })() : ''}
       </div></div>`;
-  },
-  scoutPanel() {
-    const w = Store.S.wyprawa; const W = Store.canWrite(); if (!w.at) return '';
-    const byId = Object.fromEntries(w.rooms.map(r => [r.id, r]));
-    const adj = w.edges.map((e, i) => [e, i]).filter(([e]) => e.a === w.at || e.b === w.at);
-    const pt = party(); const sc = scoutChance(Store.S.stol, pt);
-    const rows = adj.map(([e, i]) => {
-      const to = byId[e.a === w.at ? e.b : e.a];
-      const lbl = to.visited || to.seen ? to.c : 'nieznana komnata';
-      const st = e.crossed ? 'przebyty' : e.scout ? (e.scout.ok ? 'zwiad udany (k10 = ' + e.scout.r + ' ≤ ' + e.scout.chance + '): ' + e.scout.ev.text : 'zwiad nieudany (k10 = ' + e.scout.r + ' przy Szansie ' + e.scout.chance + ')') : '';
-      return `<div class="scout-row"><span>→ <b>${esc(lbl)}</b>${st ? ` <span class="muted small">(${esc(st)})</span>` : ''}</span>${W && !e.crossed && !e.scout ? `<button class="btn sm gold" data-act="scout" data-i="${i}" ${sc.chance ? '' : 'disabled'}>Zwiad</button>` : ''}</div>`;
-    }).join('');
-    return `<section class="panel"><h2>Korytarze <span class="hint">Szansa zwiadu ${sc.chance}${sc.bonus ? ' (w tym premia ' + sc.bonus + ')' : ''} · ${sc.name}</span></h2>
-      <p class="small muted">Każdy korytarz można zwiadować raz: przed wejściem albo samo przejście zrobi to za was. Udany zwiad zdradza komnatę za korytarzem i to, co czeka w nim samym (pułapkę da się wtedy rozbroić). Przy Pochodni 0 zwiad jest niemożliwy.</p>
-      ${rows || '<p class="muted">Stąd nie prowadzi żaden korytarz.</p>'}</section>`;
   },
   roomPanel(r) {
     if (!r) return '';
@@ -356,7 +348,7 @@ function resolveHunger() {
 function setW(fn, text, cls) { const w = clone(Store.S.wyprawa); fn(w); const ops = [opSet('wyprawa', w)]; if (text) ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', cls: cls || '', text } }); Store.act(ops); }
 function party() { return Store.S.stol.heroes.map(H).filter(h => h && !h.dead); }
 Object.assign(ACT, {
-  wsub: el => { UI.wsub = el.dataset.v; renderView(); },
+  wsub: el => { UI.wsub = el.dataset.v; renderView(); renderTorch(); },
   mapSel: el => {
     UI.mapSel = { r: el.dataset.r, l: el.dataset.l === 'lair' ? 'lair' : el.dataset.l != null ? +el.dataset.l : null };
     const sel = UI.mapSel; const here = (Store.S.osada.board || []).filter(q => q.region === sel.r && (sel.l === 'lair' ? q.goal === 'boss' : q.dl === sel.l && q.goal !== 'boss'));
@@ -371,7 +363,7 @@ Object.assign(ACT, {
     const w = Store.S.wyprawa; if (w.pending) return toast('Najpierw rozstrzygnijcie wydarzenie: ' + pendingTitle(w.pending) + '.');
     if (w.camp) return toast('Najpierw zakończcie obóz (noc).');
     if (Store.S.stol.fight && !Store.S.stol.enemies.some(e => !e.corpse)) ACT.fightEnd();
-    if (Store.S.stol.enemies.some(e => !e.corpse)) { toast('Na Stole czekają wrogowie — najpierw walka.'); return goFight(); }
+    if (Store.S.stol.enemies.some(e => !e.corpse)) { toast('Czekają wrogowie — najpierw walka.'); return goFight(); }
     const at = w.rooms.find(r => r.id === w.at); if (at && /walka|boss/.test(at.c) && !at.cleared && at.id !== 'r0' && w.prev !== el.dataset.id) return toast('W tej komnacie czekają wrogowie — walczcie albo wycofajcie się tam, skąd przyszliście.');
     if (packSlots(w.sup, w.loot) > 16) return toast('Plecak jest przepełniony (' + packSlots(w.sup, w.loot) + ' z 16) — wyrzućcie coś.');
     crossTo(el.dataset.id);
@@ -478,10 +470,18 @@ function scoutable() {
   return w.edges.map((e, i) => ({ e, i, to: byId[e.a === w.at ? e.b : e.a] })).filter(x => (x.e.a === w.at || x.e.b === w.at) && !x.e.crossed && !x.e.scout);
 }
 function scoutBar() {
-  const list = scoutable(); const W = Store.canWrite(); if (!W || !list.length) return '';
+  const w = Store.S.wyprawa; const W = Store.canWrite(); if (!W || !w.at) return '';
+  const byId = Object.fromEntries(w.rooms.map(r => [r.id, r]));
+  const adj = w.edges.map((e, i) => ({ e, i, to: byId[e.a === w.at ? e.b : e.a] })).filter(x => x.e.a === w.at || x.e.b === w.at);
+  if (!adj.length) return '';
   const sc = scoutChance(Store.S.stol, party());
-  return `<div class="scoutbar"><div><span class="lbl">Zwiad</span> <b class="sc-ch">Szansa ${sc.chance}</b> <span class="muted small">${esc(sc.name)}${sc.bonus ? ', premia ' + sc.bonus : ''} · każdy korytarz raz</span></div>
-    <div class="row">${list.map(x => `<button class="btn scoutbtn" data-act="scout" data-i="${x.i}" ${sc.chance ? '' : 'disabled title="W Ciemności zwiad jest niemożliwy"'}>Zwiad → ${esc(x.to.visited || x.to.seen ? x.to.c : 'nieznana komnata')}</button>`).join('')}</div></div>`;
+  const help = 'Każdy korytarz można zwiadować raz: przed wejściem albo samo przejście zrobi to za was. Udany zwiad zdradza komnatę za korytarzem i to, co czeka w nim samym (pułapkę da się wtedy rozbroić). Przy Pochodni 0 zwiad jest niemożliwy. Premia: Tropienie +2, Rozpoznanie +3 itp.';
+  const nm = x => x.to.visited || x.to.seen ? x.to.c : 'nieznana komnata';
+  const open = adj.filter(x => !x.e.crossed && !x.e.scout); const done = adj.filter(x => x.e.crossed || x.e.scout);
+  return `<div class="scoutbar"><div><span class="lbl">Zwiad</span> <b class="sc-ch">Szansa ${sc.chance}</b> <span class="muted small">${esc(sc.name)}${sc.bonus ? ', premia ' + sc.bonus : ''}</span> <span class="hint help" tabindex="0" data-gloss="${esc(help)}" title="${esc(help)}">jak działa?</span>
+      <label class="sc-b small muted">premia <input type="number" id="scoutB" value="${UI.scoutB || 0}" min="-3" max="6" aria-label="Premia do najbliższego zwiadu"></label></div>
+    ${open.length ? `<div class="row">${open.map(x => `<button class="btn scoutbtn" data-act="scout" data-i="${x.i}" ${sc.chance ? '' : 'disabled title="W Ciemności zwiad jest niemożliwy"'}>Zwiad → ${esc(nm(x))}</button>`).join('')}</div>` : ''}
+    ${done.length ? `<ul class="sc-done">${done.map(x => `<li>→ <b>${esc(nm(x))}</b> <span class="muted">${x.e.crossed ? 'przebyty' : x.e.scout.ok ? 'zwiad udany (k10 = ' + x.e.scout.r + ' ≤ ' + x.e.scout.chance + '): ' + esc(x.e.scout.ev.text) : 'zwiad nieudany (k10 = ' + x.e.scout.r + ' przy Szansie ' + x.e.scout.chance + ')'}</span></li>`).join('')}</ul>` : ''}</div>`;
 }
 /* zwiad korytarza: rzut na Szansę Zwiadu z Pochodni, zdarzenie losowane od razu, ukryta komnata po sukcesie */
 function scoutChance(st, pt) {
@@ -885,7 +885,7 @@ function prepView() {
   const benchHtml = bench.map(h => { const why = heroAway(h) || refuses(h, q) || (h.status === 'wyprawa' ? 'na wyprawie' : ''); return `<button class="bench ${why ? 'off' : ''}" data-act="prepAdd" data-id="${h.id}" ${why || pt.length >= 4 || !W ? 'disabled' : ''} title="${esc(why || 'Dodaj do drużyny')}"><b>${esc(heroLabel(h))}</b> <span class="small dim">${esc(CLS[h.cls].name)} · Poz. ${h.level} · Stres ${h.stress} · najlepiej ${esc(CLS[h.cls].pos || '?')}</span>${why ? `<span class="small warn">${esc(why)}</span>` : ''}</button>`; }).join('') || '<p class="muted small">Wszyscy dostępni bohaterowie są już w drużynie.</p>';
   return `<div class="prep">
     <section class="panel"><h2>Przygotowanie wyprawy</h2>${questCard(Object.assign({}, q), true).replace(/<button[^>]*takeQuest[^>]*>[^<]*<\/button>/, '')}</section>
-    <section class="panel"><h2>Drużyna <span class="hint">${pt.length} z 4 · ustawienie jak na Stole (1 = przód)</span></h2>
+    <section class="panel"><h2>Drużyna <span class="hint">${pt.length} z 4 · ustawienie jak w walce (1 = przód)</span></h2>
       <div class="pslots">${slotHtml}</div>
       <div class="ph">Dostępni w Osadzie</div><div class="benchlist">${benchHtml}</div></section>
     <section class="panel"><h2>Plecak <span class="hint">${slots} z 16 miejsc · koszt ${cost} Z · w skarbcu ${o.gold} Z</span></h2>

@@ -82,7 +82,7 @@ function hbPanel(n) {
   } else if (n === 'Obozownik') {
     body = `${head('Obozownik', 'nauka: ' + Math.max(1, 4 - (b.Obozownik || 0)) + ' Z za umiejętność')}
       <p class="small dim">${LEARN_CAMP.map(x => '<b>' + esc(x.name) + '</b> — ' + esc(x.eff)).join(' · ')}</p>
-      <div class="hb-heroes">${townHeroes().map(h => hbHeroRow(h, `<span class="small">${h.camp && h.camp.length ? 'zna: ' + esc(h.camp.join(', ')) : 'nie zna jeszcze żadnej'}</span> <button class="btn sm ghost" data-act="hbHero" data-hid="${h.id}">Naucz na karcie bohatera</button>`)).join('') || '<p class="muted small">W Osadzie nie ma bohaterów.</p>'}</div>
+      <div class="hb-heroes">${townHeroes().map(h => { const cost = Math.max(1, 4 - (b.Obozownik || 0)); const busy = heroBusy(h); return hbHeroRow(h, LEARN_CAMP.map(x => h.camp.includes(x.name) ? `<span class="chip sm gold" title="${esc(x.eff)}">✓ ${esc(x.name)}</span>` : `<button class="btn sm" data-act="campLearn" data-hid="${h.id}" data-n="${esc(x.name)}" ${W && !busy ? '' : 'disabled'} title="${esc(busy || x.eff)}">${esc(x.name)} <span class="num">${cost} Z</span></button>`).join('')); }).join('') || '<p class="muted small">W Osadzie nie ma bohaterów.</p>'}</div>
       ${hbUpgrade('Obozownik')}`;
   } else if (n === 'Wóz Nomadów') {
     body = `${head('Wóz Nomadów', 'magazyn błyskotek rodu')}

@@ -1,7 +1,19 @@
 /* Szkielet stołu: start, widoki, Pochodnia, dziennik z kośćmi i czatem. */
 const VIEWS = {};
-const TABS = [['stol', 'Stół'], ['bohaterowie', 'Bohaterowie'], ['wyprawa', 'Wyprawa'], ['osada', 'Osada'], ['mg', 'Ekran MG']];
+/* kolejność jak w grze: Osada → Bohaterowie → Wyprawa → Walka (adres #stol zostaje dla zgodności) */
+const TABS = [['osada', 'Osada'], ['bohaterowie', 'Bohaterowie'], ['wyprawa', 'Wyprawa'], ['stol', 'Walka'], ['mg', 'Ekran MG']];
+const TAB_ICON = {
+  osada: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5h4v5"/>',
+  bohaterowie: '<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5c.6-4 3.7-6.5 7.5-6.5s6.9 2.5 7.5 6.5"/>',
+  wyprawa: '<circle cx="12" cy="12" r="8.5"/><path d="m15.6 8.4-2.2 5-5 2.2 2.2-5z"/>',
+  stol: '<path d="M5 4l12 12M19 4 7 16"/><path d="m3.5 17.5 3-3 2 2-3 3zM20.5 17.5l-3-3-2 2 3 3z"/>',
+  mg: '<path d="M6 3.5h9l3.5 3.5v13.5H6z"/><path d="M9 10h6.5M9 13.5h6.5M9 17h4"/>',
+  log: '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="9" cy="15" r="1.2"/><circle cx="15" cy="15" r="1.2"/>'
+};
+const tabIcon = k => `<svg class="ti" viewBox="0 0 24 24" aria-hidden="true">${TAB_ICON[k] || ''}</svg>`;
 const UI = { view: 'stol', heroSel: null, sideOpen: false, sel: {} };
+/* bez adresu w pasku: otwórz tam, gdzie toczy się gra */
+function defaultView() { const S = Store.S || {}; return (S.stol || {}).fight ? 'stol' : (S.wyprawa || {}).quest ? 'wyprawa' : 'osada'; }
 const inClaude = () => !!(window.claude && typeof window.claude.use === 'function');
 
 /* ---------- pomocnicze: bohaterowie i uprawnienia ---------- */
@@ -93,7 +105,9 @@ function roomInfo() {
 
 /* ---------- render ---------- */
 function renderTabs() {
-  $('#tabs').innerHTML = TABS.filter(([k]) => k !== 'mg' || Store.isGM()).map(([k, t]) => `<a href="#${k}" class="tab ${UI.view === k ? 'on' : ''}" ${UI.view === k ? 'aria-current="page"' : ''}>${t}</a>`).join('');
+  const fight = !!(Store.S && Store.S.stol && Store.S.stol.fight);
+  $('#tabs').innerHTML = TABS.filter(([k]) => k !== 'mg' || Store.isGM()).map(([k, t]) => `<a href="#${k}" class="tab t-${k} ${UI.view === k ? 'on' : ''} ${k === 'stol' && fight ? 'alert' : ''}" ${UI.view === k ? 'aria-current="page"' : ''} ${k === 'stol' && fight ? 'title="Trwa walka"' : ''}>${tabIcon(k)}<span class="tt">${t}</span></a>`).join('') +
+    `<button class="tab tlog" type="button" data-act="logToggle" aria-label="Dziennik">${tabIcon('log')}<span class="tt">Dziennik</span></button>`;
   const role = { mg: 'Mistrz Gry', gracz: 'gracz', widz: 'widz (tylko ogląda)' }[Store.role] || Store.role;
   const nm = (Store.me.name || '').trim(); const named = nm && !/^(gracz|mg|mistrz gry)$/i.test(nm);
   $('#who').innerHTML = `<span class="chip ${Store.role === 'mg' ? 'gold' : ''}" title="Twoja rola przy stole">${named ? esc(nm) + ' — ' + role : 'Grasz jako: ' + role}</span>` +
@@ -112,12 +126,12 @@ function renderTorch() {
     <span class="lbl">Pochodnia</span>
     <div class="flames">${Array.from({ length: 10 }, (_, i) => `<button class="fl ${i < t ? 'on' : ''}" data-act="torch" data-v="${i + 1}" aria-label="Pochodnia ${i + 1}" title="Ustaw Pochodnię na ${i + 1}"></button>`).join('')}</div>
     <b class="tv num">${t}</b><span class="tname">${ti.name}</span>
-    <span class="tinfo muted">wrogowie: ${ti.enemy} · łupy: ${ti.loot} · zwiad ${ti.scout || 'brak'}</span>
+    <span class="tinfo muted" title="${esc('Wrogowie: ' + ti.enemy + ' · łupy: ' + ti.loot + ' · Szansa zwiadu: ' + (ti.scout || 'brak') + (ti.stress !== '—' ? ' · Stres: ' + ti.stress : ''))}">wrogowie ${ti.enemy === '—' ? 'bez zmian' : ti.enemy} · łupy ${ti.loot.replace(/ \(.*\)$/, '')} · zwiad ${ti.scout || 'brak'}</span>
     <span class="sp"></span>
-    <button class="btn sm ghost" data-act="torchDim" title="Przygaś o 1 — decyzja graczy" ${t > 0 ? '' : 'disabled'}>Przygaś −1</button><button class="btn sm ghost" data-act="torch0" title="Zgaś do zera — decyzja graczy" ${t > 0 ? '' : 'disabled'}>Zgaś</button>
-    ${Store.S.wyprawa.quest ? `<span class="tpack" title="Pochodnie w plecaku"><span class="lbl">w plecaku</span> <b class="num">${(Store.S.wyprawa.sup || {}).Pochodnie || 0}</b> poch. · <span class="lbl">korytarze</span> <b class="num">${Store.S.wyprawa.crossed || 0}</b> · <span class="lbl">głód za</span> <b class="num">${4 - ((Store.S.wyprawa.crossed || 0) % 4)}</b></span>` : ''}
-    ${Store.S.wyprawa.quest && Store.canWrite() && scoutable().length ? `<button class="btn scoutbtn sm2" data-act="scoutAny">Zwiad (${scoutChance(Store.S.stol, party()).chance})</button>` : ''}
+    ${Store.S.wyprawa.quest ? `<span class="tpack" title="Pochodnie w plecaku · przebyte korytarze · ile korytarzy do posiłku"><b class="num">${(Store.S.wyprawa.sup || {}).Pochodnie || 0}</b> poch. · korytarze <b class="num">${Store.S.wyprawa.crossed || 0}</b> · głód za <b class="num">${4 - ((Store.S.wyprawa.crossed || 0) % 4)}</b></span>` : ''}
+    <span class="tbtns"><button class="btn sm ghost" data-act="torchDim" title="Przygaś o 1 — decyzja graczy" ${t > 0 ? '' : 'disabled'}>Przygaś −1</button><button class="btn sm ghost" data-act="torch0" title="Zgaś do zera — decyzja graczy" ${t > 0 ? '' : 'disabled'}>Zgaś</button>
     <button class="btn sm" data-act="torchUse" title="Pochodnia z plecaka: +3" ${Store.S.wyprawa.quest && !((Store.S.wyprawa.sup || {}).Pochodnie > 0) ? 'disabled' : ''}>Pochodnia +3</button>
+    ${Store.S.wyprawa.quest && Store.canWrite() && scoutable().length && !(UI.view === 'wyprawa' && (UI.wsub || 'loch') === 'loch') ? `<button class="btn scoutbtn sm2" data-act="scoutAny">Zwiad (${scoutChance(Store.S.stol, party()).chance})</button>` : ''}</span>
   </div>`;
 }
 function renderView() {
@@ -126,7 +140,7 @@ function renderView() {
   renderInto(el, v.render());
   if (v.after) v.after(el);
 }
-function renderAll() { Store.ready = true; if (UI.guideOff == null) UI.guideOff = !!LS.get('pio:guideOff'); renderTabs(); renderTorch(); renderGuide(); renderView(); renderSide(); renderScene(); autoDriver(); }
+function renderAll() { if (!Store.ready && !UI._viewSet && !location.hash.replace('#', '')) { UI.view = defaultView(); UI._viewSet = true; } Store.ready = true; if (UI.guideOff == null) UI.guideOff = !!LS.get('pio:guideOff'); renderTabs(); renderTorch(); renderGuide(); renderView(); renderSide(); renderScene(); autoDriver(); }
 Store.onChange(what => {
   if (what === 'peers') return renderTabs();
   if (what === 'log') { renderSide(); checkRollCard(); checkCaption(); return; }
@@ -191,7 +205,7 @@ function checkCaption() {
 }
 
 /* ---------- zdarzenia globalne ---------- */
-const ACT = { logFull: () => { UI.logFull = !UI.logFull; renderSide(); } };
+const ACT = { logFull: () => { UI.logFull = !UI.logFull; renderSide(); }, logToggle: () => { document.body.classList.toggle('side-open'); } };
 function wireGlobal() {
   document.addEventListener('click', ev => {
     const el = ev.target.closest('[data-act]'); if (!el) return;
@@ -215,13 +229,16 @@ function wireGlobal() {
   document.addEventListener('change', ev => onBind(ev, true));
   window.addEventListener('hashchange', route);
   $('#logfab').addEventListener('click', () => { document.body.classList.toggle('side-open'); });
+  $('#menubtn').addEventListener('click', () => { const on = document.body.classList.toggle('menu-open'); $('#menubtn').setAttribute('aria-expanded', on); });
   route();
 }
 function route() {
   const h = location.hash.replace('#', '');
   if (/^pokoj-/.test(h)) return;
   if (TABS.some(([k]) => k === h)) { if (UI.view !== h) $$('#pops .pop').forEach(p => p.remove()); UI.view = h; if (h === 'mg' && !Store.isGM()) UI.view = 'stol'; }
-  document.body.classList.remove('side-open');
+  else if (!h && !UI._viewSet && Store.ready) UI.view = defaultView();
+  if (Store.ready) UI._viewSet = true;
+  document.body.classList.remove('side-open', 'menu-open');
   if (Store.ready) renderAll();
 }
 /* pola formularzy: data-bind="heroes.<id>.name" itp. Tekst wysyłany po przerwie, reszta od razu. */

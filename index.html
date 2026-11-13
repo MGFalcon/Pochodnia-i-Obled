@@ -832,15 +832,207 @@ body.scene-on { overflow: hidden; }
 @media (max-width: 700px) { .campstage { height: 240px; } .coals { left: 6px; top: 6px; padding: 3px 5px; } .coals .lbl { display: none; } .coal { width: 8px; height: 8px; } }
 @media (prefers-reduced-motion: reduce) { .campfig .fig-svg, .campstage .smoke { animation: none !important; } }
 
+/* ---------- walka: scena + pasek akcji (układ 13.11) ---------- */
+.fieldp .fhead { margin-bottom: 8px; }
+.btn.gear { min-width: 34px; justify-content: center; font-size: 16px; line-height: 1; }
+.btn.gear.on { border-color: var(--gold2); color: var(--gold); }
+.fmenu { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: -2px 0 10px; padding: 6px 10px; border: 1px dashed var(--rule2); border-radius: var(--r); background: rgba(0,0,0,.2); }
+.fieldp .init { margin-bottom: 8px; }
+.fieldp .stage-wrap { margin: 6px 0 0; }
+.actbar { border: 1px solid var(--rule2); border-top: 0; border-radius: 0 0 4px 4px; background: linear-gradient(180deg, rgba(43,35,31,.92), rgba(23,19,17,.96)); padding: 10px 12px 12px; display: flex; flex-direction: column; gap: 8px; }
+.actbar > p { margin: 0; }
+.ab-head { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.ab-name { font-family: var(--f-display); font-size: 24px; color: var(--pale); line-height: 1; }
+.ab-bar { width: 150px; flex: none; }
+.ab-chips { display: inline-flex; flex-wrap: wrap; gap: 3px; }
+.ab-chips:empty { display: none; }
+.ab-msg { margin: 0; font-size: 14px; }
+.help { cursor: help; text-decoration: underline dotted; text-underline-offset: 3px; }
+.actbar .skills { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 150px), 1fr)); gap: 6px; margin: 0; }
+.actbar .skill { min-height: 74px; }
+.ab-row { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; }
+.ab-sep { width: 1px; align-self: stretch; background: var(--rule); margin: 0 4px; }
+.ab-gm { padding-top: 6px; border-top: 1px dashed #3a2f27; }
+.actbar .atks .atk:first-child { border-top: 0; padding-top: 0; }
+.fieldp .lastact { margin: 10px 0 0; }
+.gmtools { padding-top: 10px; padding-bottom: 10px; }
+.gm-h { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; width: 100%; background: none; border: 0; color: var(--bone); padding: 4px 0; cursor: pointer; text-align: left; font: inherit; }
+.gm-h b { font-family: var(--f-sc); font-size: 16px; letter-spacing: .04em; }
+.gm-h .hint { margin-left: auto; }
+.gmtools .row { margin-top: 8px; }
+.fig-tag .ts { display: none; }
+.fig-fx { display: flex; flex-wrap: wrap; justify-content: center; gap: 2px; max-width: 100%; min-height: 0; }
+.ff { display: inline-flex; align-items: center; gap: 3px; font-size: 10px; line-height: 1.2; padding: 0 4px; border-radius: 999px; background: rgba(10,8,7,.82); border: 1px solid #4a3b32; color: var(--bone); max-width: 100%; overflow: hidden; white-space: nowrap; }
+.ff em { font-style: normal; overflow: hidden; text-overflow: ellipsis; }
+.ff i { display: none; width: 7px; height: 7px; border-radius: 50%; background: currentColor; flex: none; }
+.ff.f-r { color: #f39a86; border-color: #7d2a20; } .ff.f-g { color: #a7c98a; border-color: #4f6b33; } .ff.f-v { color: #c6a3d6; border-color: #5b3b6b; }
+.ff.f-y { color: var(--gold); border-color: var(--gold2); } .ff.f-a { color: #ee8b9c; border-color: #7a2133; }
+@media (max-width: 700px) {
+  .fig.enemy .fig-tag .tl:not(:last-child) { display: none; }
+  .fig.enemy .fig-tag .ts { display: inline; }
+  .ff { padding: 0; border: 0; background: none; }
+  .ff em { display: none; }
+  .ff i { display: block; }
+  .ab-bar { width: calc(50% - 6px); }
+  .ab-name { font-size: 21px; }
+  .actbar { padding: 8px; }
+  .actbar .skill { min-height: 0; padding: 6px 7px; }
+  .actbar .skill .sn { font-size: 14px; }
+  .ab-head .help { display: none; }
+}
+.fieldp .stage { border-radius: 4px 4px 0 0; }
+.bar.st span { color: var(--pale); text-shadow: 0 1px 2px #000, 0 0 4px #000, 0 0 1px #000; }
+.ab-head .help { font-size: 13px; }
+@media (max-width: 700px) {
+  .fieldp { padding: 10px 8px; }
+  .fieldp .init { flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; padding-bottom: 2px; }
+  .fieldp .init .ini { flex: none; }
+  .actbar .skills { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .stage-field { grid-template-columns: minmax(0, 1fr) 14px minmax(0, 1fr); }
+  .stage { height: 220px; }
+}
+
+/* ---------- nagłówek, zakładki, Pochodnia, „Co teraz?” (układ 13.11) ---------- */
+.menubtn { display: none; }
+.tab .ti { display: none; width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
+.tab.tlog { display: none; }
+.tab.alert .tt::after { content: ""; display: inline-block; width: 7px; height: 7px; margin-left: 6px; border-radius: 50%; background: var(--blood2); box-shadow: 0 0 6px var(--blood2); vertical-align: 2px; }
+.torch { gap: 6px 12px; }
+.tinfo { font-size: 12.5px; }
+.tbtns { display: inline-flex; flex-wrap: wrap; gap: 6px; align-items: center; }
+.tpack { font-size: 12.5px; }
+@media (min-width: 1101px) {
+  .rollcard { left: auto; right: max(16px, env(safe-area-inset-right, 0px)); max-width: 340px; }
+}
+@media (max-width: 760px) {
+  body { padding-bottom: calc(80px + env(safe-area-inset-bottom, 0px)); }
+  .top { flex-wrap: wrap; align-items: center; padding-block: 10px 8px; margin-bottom: 10px; gap: 6px 10px; }
+  .brand { flex: 1 1 auto; }
+  .brand h1 { font-size: 28px; }
+  .brand small { font-size: 10.5px; }
+  .menubtn { display: inline-flex; justify-content: center; min-width: 40px; min-height: 36px; font-size: 20px; line-height: 1; }
+  body.menu-open .menubtn { border-color: var(--gold2); color: var(--gold); }
+  .toolbar { display: none; width: 100%; padding-top: 4px; }
+  body.menu-open .toolbar { display: flex; }
+  .tabs { position: fixed; left: 0; right: 0; bottom: 0; z-index: 40; display: grid; grid-auto-flow: column; grid-auto-columns: minmax(0, 1fr); gap: 2px; background: rgba(14,12,11,.97); border-top: 1px solid var(--rule2); padding: 4px max(4px, env(safe-area-inset-left, 0px)) calc(4px + env(safe-area-inset-bottom, 0px)) max(4px, env(safe-area-inset-right, 0px)); box-shadow: 0 -8px 24px rgba(0,0,0,.6); }
+  .tab { display: flex; flex-direction: column; align-items: center; gap: 2px; padding: 5px 1px 4px; font-size: 10.5px; letter-spacing: .01em; border: 0; border-radius: 6px; min-width: 0; color: var(--bone2); }
+  .tab .ti { display: block; }
+  .tab .tt { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .tab.on { background: var(--stone3); color: var(--gold); border: 0; }
+  .tab.alert .tt::after { position: absolute; margin: 0; transform: translate(2px, -14px); }
+  .tab.alert { position: relative; color: #f39a86; }
+  .tab.tlog { display: flex; background: none; font-family: var(--f-sc); cursor: pointer; }
+  body.side-open .tab.tlog { background: var(--stone3); color: var(--gold); }
+  .logfab { display: none !important; }
+  .side { bottom: calc(60px + env(safe-area-inset-bottom, 0px)); max-height: calc(100vh - 140px); }
+  .rollcard { bottom: calc(74px + env(safe-area-inset-bottom, 0px)); }
+  .torchbar { margin-bottom: 10px; }
+  .torch { padding: 6px 8px; gap: 6px 8px; }
+  .torch > .lbl { display: none; }
+  .fl { width: 13px; height: 20px; }
+  .flames { gap: 2px; }
+  .tv, .tname { font-size: 19px; }
+  .torch .sp { display: none; }
+  .tpack { flex-basis: 100%; order: 5; }
+  .tbtns { order: 6; }
+  .guide { margin-bottom: 10px; }
+  .guidebar { padding: 6px 10px; gap: 4px 8px; font-size: 14px; flex-wrap: nowrap; align-items: flex-start; }
+  .guidebar > .lbl, .guidebar > .sp { display: none; }
+  .guidebar .gtxt { flex: 1 1 auto; cursor: pointer; min-width: 0; }
+  .guidebar:not(.more) .gtxt { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .guidebar:not(.more) .prz { display: none; }
+}
+@media (min-width: 761px) {
+  .top { column-gap: 18px; }
+  .tab { padding: 6px 10px; }
+  .sync { font-size: 11px; letter-spacing: .04em; }
+}
+
+/* ---------- rejestr i karta bohatera (układ 13.11) ---------- */
+.roster .rlist { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+.rcard { display: grid; grid-template-columns: 58px minmax(0, 1fr); gap: 10px; align-items: center; padding: 7px 9px; }
+.rcard .rp2 { width: 58px; height: 72px; margin: 0; border: 1px solid var(--rule); border-radius: 2px; }
+.rcard .rp-img { width: 58px; height: 72px; }
+.rinfo { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.rcard .rn { font-size: 18px; }
+.rcard .bar { height: 14px; }
+.rcard .bar span { font-size: 10px; line-height: 12px; }
+.rcard.on { box-shadow: 0 0 0 1px var(--gold) inset; }
+.sheet .sh-head { grid-template-columns: 120px minmax(0, 1fr) minmax(280px, 400px); gap: 14px 20px; }
+.sh-own { margin: 0; font-size: 14px; }
+.sh-btns { gap: 6px; }
+.sh-btns:empty { display: none; }
+.sh-vitals { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.vit .ph { margin-bottom: 6px; }
+.vit .row { margin-top: 6px; }
+.vit p { margin: 6px 0 0; }
+.sh-tabs { display: flex; gap: 2px; margin: 16px 0 0; border-bottom: 1px solid var(--rule2); overflow-x: auto; scrollbar-width: none; }
+.sh-tab { background: none; border: 1px solid transparent; border-bottom: 0; color: var(--bone2); font-family: var(--f-sc); font-size: 15px; letter-spacing: .05em; padding: 8px 16px; cursor: pointer; border-radius: var(--r) var(--r) 0 0; white-space: nowrap; margin-bottom: -1px; }
+.sh-tab:hover { color: var(--pale); }
+.sh-tab.on { color: var(--gold); border-color: var(--rule2); background: var(--stone2); border-bottom: 1px solid var(--stone2); }
+.sh-body .sh-grid { margin-top: 12px; grid-template-columns: minmax(0, 1fr) minmax(0, 1.25fr); }
+.sh-desc { font-style: italic; color: var(--bone2); margin: 0 0 8px; }
+.sk-t { display: grid; place-items: center; font-weight: 700; font-size: 14px; color: var(--bone3); width: 26px; height: 26px; }
+.sk.on .sk-t { color: var(--ink); }
+.sk-list.off .sk { opacity: .78; }
+.sk-off-h { margin-top: 14px; }
+.camp.learn { list-style: none; padding-left: 0; }
+.camp.learn li.off { color: var(--bone3); }
+.camp.learn li.on b { color: var(--gold); }
+@media (max-width: 1100px) {
+  .sheet .sh-head { grid-template-columns: 120px minmax(0, 1fr); }
+  .sh-vitals { grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); }
+}
+@media (max-width: 760px) {
+  .roster .rlist { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .rcard { grid-template-columns: 40px minmax(0, 1fr); gap: 7px; padding: 6px; }
+  .rcard .rp2, .rcard .rp-img { width: 40px; height: 50px; }
+  .rcard .rn { font-size: 16px; }
+  .rcard .ro { display: none; }
+  .sheet { padding: 12px; }
+  .sheet .sh-head { grid-template-columns: 84px minmax(0, 1fr); gap: 10px 12px; }
+  .sh-tab { padding: 8px 11px; font-size: 14px; }
+  .sh-body .sh-grid { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* ---------- wyprawa (układ 13.11) ---------- */
+.maplist { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 8px 0 0; }
+.maplist .ldot { width: 16px; height: 16px; line-height: 16px; font-size: 10px; }
+.mapscroll { overflow-x: auto; border-radius: 4px; }
+.scoutbar > div:first-child { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; }
+.sc-b { display: inline-flex; align-items: center; gap: 5px; margin-left: auto; }
+.sc-b input { width: 4em; padding: 2px 6px; }
+.sc-done { list-style: none; margin: 0; padding: 0; width: 100%; font-size: 13px; display: flex; flex-direction: column; gap: 2px; }
+.packgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 4px; }
+.pk { display: grid; grid-template-columns: minmax(0, 1fr) auto auto; align-items: center; gap: 4px; padding: 3px 4px 3px 8px; border: 1px solid #33291f; border-radius: var(--r); font-size: 14px; min-height: 32px; }
+.pk.zero { opacity: .5; }
+.pk-n { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pk b { font-size: 16px; color: var(--pale); min-width: 1.2em; text-align: right; }
+.pk-b { display: inline-flex; gap: 2px; }
+.pk-b .btn { min-width: 26px; padding: 1px 6px; justify-content: center; }
+.threat .tq { display: none; }
+@media (max-width: 760px) {
+  .estate { min-width: 600px; }
+  .threat .tdesc { display: none; }
+  .threat .tq { display: inline; }
+  .sc-b { margin-left: 0; }
+}
+.subtabs .shn { display: none; }
+@media (max-width: 760px) { .subtabs .lg { display: none; } .subtabs .shn { display: inline; } .subtabs { flex-wrap: nowrap; } .subtabs .btn { flex: 1; justify-content: center; } }
+
+.sh-vitals .pip { width: 18px; height: 18px; }
+.sh-vitals .pips { gap: 3px; }
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><radialGradient id="pbg" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#3a2c24"/><stop offset="1" stop-color="#0e0c0b"/></radialGradient><radialGradient id="pvig" cx="50%" cy="45%" r="65%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".65"/></radialGradient></defs></svg>
 <div id="dark" aria-hidden="true"></div>
 <div class="wrap" id="app">
   <header class="top" id="top">
-    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 13.11 · 05:30</span></small><h1>Stół <em>rodu</em></h1></div>
+    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 13.11 · 15:18</span></small><h1>Stół <em>rodu</em></h1></div>
+    <button class="btn sm ghost menubtn" id="menubtn" type="button" aria-expanded="false" aria-controls="toolbar" aria-label="Menu: rola, Słownik, tryb gry">⋯</button>
     <nav class="tabs" id="tabs" aria-label="Widoki stołu"></nav>
-    <div class="toolbar"><span class="sync" data-s="local">gra na jednym urządzeniu</span><span id="who" class="who"></span></div>
+    <div class="toolbar" id="toolbar"><span class="sync" data-s="local">gra na jednym urządzeniu</span><span id="who" class="who"></span></div>
   </header>
   <div class="torchbar" id="torchbar"></div>
   <div id="guide" class="guide"></div>
@@ -3002,8 +3194,20 @@ function charmAct(h, stol, touched, lines, ev) {
 
 /* Szkielet stołu: start, widoki, Pochodnia, dziennik z kośćmi i czatem. */
 const VIEWS = {};
-const TABS = [['stol', 'Stół'], ['bohaterowie', 'Bohaterowie'], ['wyprawa', 'Wyprawa'], ['osada', 'Osada'], ['mg', 'Ekran MG']];
+/* kolejność jak w grze: Osada → Bohaterowie → Wyprawa → Walka (adres #stol zostaje dla zgodności) */
+const TABS = [['osada', 'Osada'], ['bohaterowie', 'Bohaterowie'], ['wyprawa', 'Wyprawa'], ['stol', 'Walka'], ['mg', 'Ekran MG']];
+const TAB_ICON = {
+  osada: '<path d="M3 11.5 12 4l9 7.5"/><path d="M5.5 10v10h13V10"/><path d="M10 20v-5h4v5"/>',
+  bohaterowie: '<circle cx="12" cy="8" r="3.6"/><path d="M4.5 20.5c.6-4 3.7-6.5 7.5-6.5s6.9 2.5 7.5 6.5"/>',
+  wyprawa: '<circle cx="12" cy="12" r="8.5"/><path d="m15.6 8.4-2.2 5-5 2.2 2.2-5z"/>',
+  stol: '<path d="M5 4l12 12M19 4 7 16"/><path d="m3.5 17.5 3-3 2 2-3 3zM20.5 17.5l-3-3-2 2 3 3z"/>',
+  mg: '<path d="M6 3.5h9l3.5 3.5v13.5H6z"/><path d="M9 10h6.5M9 13.5h6.5M9 17h4"/>',
+  log: '<rect x="4" y="4" width="16" height="16" rx="3"/><circle cx="9" cy="9" r="1.2"/><circle cx="15" cy="9" r="1.2"/><circle cx="9" cy="15" r="1.2"/><circle cx="15" cy="15" r="1.2"/>'
+};
+const tabIcon = k => `<svg class="ti" viewBox="0 0 24 24" aria-hidden="true">${TAB_ICON[k] || ''}</svg>`;
 const UI = { view: 'stol', heroSel: null, sideOpen: false, sel: {} };
+/* bez adresu w pasku: otwórz tam, gdzie toczy się gra */
+function defaultView() { const S = Store.S || {}; return (S.stol || {}).fight ? 'stol' : (S.wyprawa || {}).quest ? 'wyprawa' : 'osada'; }
 const inClaude = () => !!(window.claude && typeof window.claude.use === 'function');
 
 /* ---------- pomocnicze: bohaterowie i uprawnienia ---------- */
@@ -3095,7 +3299,9 @@ function roomInfo() {
 
 /* ---------- render ---------- */
 function renderTabs() {
-  $('#tabs').innerHTML = TABS.filter(([k]) => k !== 'mg' || Store.isGM()).map(([k, t]) => `<a href="#${k}" class="tab ${UI.view === k ? 'on' : ''}" ${UI.view === k ? 'aria-current="page"' : ''}>${t}</a>`).join('');
+  const fight = !!(Store.S && Store.S.stol && Store.S.stol.fight);
+  $('#tabs').innerHTML = TABS.filter(([k]) => k !== 'mg' || Store.isGM()).map(([k, t]) => `<a href="#${k}" class="tab t-${k} ${UI.view === k ? 'on' : ''} ${k === 'stol' && fight ? 'alert' : ''}" ${UI.view === k ? 'aria-current="page"' : ''} ${k === 'stol' && fight ? 'title="Trwa walka"' : ''}>${tabIcon(k)}<span class="tt">${t}</span></a>`).join('') +
+    `<button class="tab tlog" type="button" data-act="logToggle" aria-label="Dziennik">${tabIcon('log')}<span class="tt">Dziennik</span></button>`;
   const role = { mg: 'Mistrz Gry', gracz: 'gracz', widz: 'widz (tylko ogląda)' }[Store.role] || Store.role;
   const nm = (Store.me.name || '').trim(); const named = nm && !/^(gracz|mg|mistrz gry)$/i.test(nm);
   $('#who').innerHTML = `<span class="chip ${Store.role === 'mg' ? 'gold' : ''}" title="Twoja rola przy stole">${named ? esc(nm) + ' — ' + role : 'Grasz jako: ' + role}</span>` +
@@ -3114,12 +3320,12 @@ function renderTorch() {
     <span class="lbl">Pochodnia</span>
     <div class="flames">${Array.from({ length: 10 }, (_, i) => `<button class="fl ${i < t ? 'on' : ''}" data-act="torch" data-v="${i + 1}" aria-label="Pochodnia ${i + 1}" title="Ustaw Pochodnię na ${i + 1}"></button>`).join('')}</div>
     <b class="tv num">${t}</b><span class="tname">${ti.name}</span>
-    <span class="tinfo muted">wrogowie: ${ti.enemy} · łupy: ${ti.loot} · zwiad ${ti.scout || 'brak'}</span>
+    <span class="tinfo muted" title="${esc('Wrogowie: ' + ti.enemy + ' · łupy: ' + ti.loot + ' · Szansa zwiadu: ' + (ti.scout || 'brak') + (ti.stress !== '—' ? ' · Stres: ' + ti.stress : ''))}">wrogowie ${ti.enemy === '—' ? 'bez zmian' : ti.enemy} · łupy ${ti.loot.replace(/ \(.*\)$/, '')} · zwiad ${ti.scout || 'brak'}</span>
     <span class="sp"></span>
-    <button class="btn sm ghost" data-act="torchDim" title="Przygaś o 1 — decyzja graczy" ${t > 0 ? '' : 'disabled'}>Przygaś −1</button><button class="btn sm ghost" data-act="torch0" title="Zgaś do zera — decyzja graczy" ${t > 0 ? '' : 'disabled'}>Zgaś</button>
-    ${Store.S.wyprawa.quest ? `<span class="tpack" title="Pochodnie w plecaku"><span class="lbl">w plecaku</span> <b class="num">${(Store.S.wyprawa.sup || {}).Pochodnie || 0}</b> poch. · <span class="lbl">korytarze</span> <b class="num">${Store.S.wyprawa.crossed || 0}</b> · <span class="lbl">głód za</span> <b class="num">${4 - ((Store.S.wyprawa.crossed || 0) % 4)}</b></span>` : ''}
-    ${Store.S.wyprawa.quest && Store.canWrite() && scoutable().length ? `<button class="btn scoutbtn sm2" data-act="scoutAny">Zwiad (${scoutChance(Store.S.stol, party()).chance})</button>` : ''}
+    ${Store.S.wyprawa.quest ? `<span class="tpack" title="Pochodnie w plecaku · przebyte korytarze · ile korytarzy do posiłku"><b class="num">${(Store.S.wyprawa.sup || {}).Pochodnie || 0}</b> poch. · korytarze <b class="num">${Store.S.wyprawa.crossed || 0}</b> · głód za <b class="num">${4 - ((Store.S.wyprawa.crossed || 0) % 4)}</b></span>` : ''}
+    <span class="tbtns"><button class="btn sm ghost" data-act="torchDim" title="Przygaś o 1 — decyzja graczy" ${t > 0 ? '' : 'disabled'}>Przygaś −1</button><button class="btn sm ghost" data-act="torch0" title="Zgaś do zera — decyzja graczy" ${t > 0 ? '' : 'disabled'}>Zgaś</button>
     <button class="btn sm" data-act="torchUse" title="Pochodnia z plecaka: +3" ${Store.S.wyprawa.quest && !((Store.S.wyprawa.sup || {}).Pochodnie > 0) ? 'disabled' : ''}>Pochodnia +3</button>
+    ${Store.S.wyprawa.quest && Store.canWrite() && scoutable().length && !(UI.view === 'wyprawa' && (UI.wsub || 'loch') === 'loch') ? `<button class="btn scoutbtn sm2" data-act="scoutAny">Zwiad (${scoutChance(Store.S.stol, party()).chance})</button>` : ''}</span>
   </div>`;
 }
 function renderView() {
@@ -3128,7 +3334,7 @@ function renderView() {
   renderInto(el, v.render());
   if (v.after) v.after(el);
 }
-function renderAll() { Store.ready = true; if (UI.guideOff == null) UI.guideOff = !!LS.get('pio:guideOff'); renderTabs(); renderTorch(); renderGuide(); renderView(); renderSide(); renderScene(); autoDriver(); }
+function renderAll() { if (!Store.ready && !UI._viewSet && !location.hash.replace('#', '')) { UI.view = defaultView(); UI._viewSet = true; } Store.ready = true; if (UI.guideOff == null) UI.guideOff = !!LS.get('pio:guideOff'); renderTabs(); renderTorch(); renderGuide(); renderView(); renderSide(); renderScene(); autoDriver(); }
 Store.onChange(what => {
   if (what === 'peers') return renderTabs();
   if (what === 'log') { renderSide(); checkRollCard(); checkCaption(); return; }
@@ -3193,7 +3399,7 @@ function checkCaption() {
 }
 
 /* ---------- zdarzenia globalne ---------- */
-const ACT = { logFull: () => { UI.logFull = !UI.logFull; renderSide(); } };
+const ACT = { logFull: () => { UI.logFull = !UI.logFull; renderSide(); }, logToggle: () => { document.body.classList.toggle('side-open'); } };
 function wireGlobal() {
   document.addEventListener('click', ev => {
     const el = ev.target.closest('[data-act]'); if (!el) return;
@@ -3217,13 +3423,16 @@ function wireGlobal() {
   document.addEventListener('change', ev => onBind(ev, true));
   window.addEventListener('hashchange', route);
   $('#logfab').addEventListener('click', () => { document.body.classList.toggle('side-open'); });
+  $('#menubtn').addEventListener('click', () => { const on = document.body.classList.toggle('menu-open'); $('#menubtn').setAttribute('aria-expanded', on); });
   route();
 }
 function route() {
   const h = location.hash.replace('#', '');
   if (/^pokoj-/.test(h)) return;
   if (TABS.some(([k]) => k === h)) { if (UI.view !== h) $$('#pops .pop').forEach(p => p.remove()); UI.view = h; if (h === 'mg' && !Store.isGM()) UI.view = 'stol'; }
-  document.body.classList.remove('side-open');
+  else if (!h && !UI._viewSet && Store.ready) UI.view = defaultView();
+  if (Store.ready) UI._viewSet = true;
+  document.body.classList.remove('side-open', 'menu-open');
   if (Store.ready) renderAll();
 }
 /* pola formularzy: data-bind="heroes.<id>.name" itp. Tekst wysyłany po przerwie, reszta od razu. */
@@ -3363,6 +3572,15 @@ function enemySlot(x) {
 }
 
 /* ---------- scena walki: tło regionu i całe postacie (klikane jak karty) ---------- */
+/* krótka nazwa na wąskim ekranie: „Kościany obrońca” → „obrońca” (przymiotnik na początku odpada) */
+function shortFoe(n) { const w = String(n || '').split(' '); return w.length > 1 && /[yi]$/.test(w[0]) ? w.slice(1).join(' ') : n; }
+function figTag(full, short) { return `<span class="fig-tag" title="${esc(full)}"><span class="tl">${esc(full)}</span>${short && short !== full ? `<span class="ts">${esc(short)}</span>` : ''}</span>`; }
+/* stany pod postacią: na komputerze krótkie napisy, na telefonie kolorowe kropki (pełny opis w pasku akcji) */
+function figFx(list) {
+  if (!list.length) return '';
+  const col = c => ({ red: 'r', green: 'g', violet: 'v', gold: 'y', affl: 'a', virtue: 'y' }[c] || 'n');
+  return `<span class="fig-fx">${list.slice(0, 3).map(([c, t]) => `<span class="ff f-${col(c)}" title="${esc(t)}"><i></i><em>${esc(t)}</em></span>`).join('')}${list.length > 3 ? `<span class="ff f-n" title="${esc(list.slice(3).map(x => x[1]).join(', '))}"><i></i><em>+${list.length - 3}</em></span>` : ''}</span>`;
+}
 function figHero(id, pos) {
   const h = H(id); if (!h) return '<div class="fig empty" aria-hidden="true"></div>';
   const ce = curEntry(); const isCur = ce && ce.k === 'h' && ce.id === id; const st = heroStats(h);
@@ -3370,17 +3588,22 @@ function figHero(id, pos) {
   const sel = UI.sel.k === 'h' && UI.sel.id === id;
   return `<button class="fig hero ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt || tgtE ? 'tgt' : ''} ${h.dd ? 'dd' : ''}" data-act="${tgt ? 'pickAlly' : tgtE ? 'pickHeroT' : 'selH'}" data-id="${id}" aria-label="${esc(heroLabel(h))}, pozycja ${pos}, Zdrowie ${h.hp} z ${st.maxhp}, Stres ${h.stress}">
     <svg viewBox="0 0 100 200" class="fig-svg" aria-hidden="true">${heroFigure(h)}</svg>
-    <span class="fig-tag">${esc(heroLabel(h))}</span><span class="fig-bar"><i class="hp" style="width:${Math.round(100 * h.hp / Math.max(1, st.maxhp))}%"></i></span><span class="fig-bar st"><i style="width:${Math.min(100, h.stress * 5)}%"></i></span></button>`;
+    ${figTag(heroLabel(h))}<span class="fig-bar"><i class="hp" style="width:${Math.round(100 * h.hp / Math.max(1, st.maxhp))}%"></i></span><span class="fig-bar st"><i style="width:${Math.min(100, h.stress * 5)}%"></i></span>
+    ${figFx([].concat(h.dd ? [['red', 'Próg Śmierci']] : [], h.state ? [[h.state.kind === 'virtue' ? 'virtue' : 'affl', h.state.name]] : [], h.block ? [['gold', 'Blok ' + h.block]] : [], fxChips(h.fx)))}</button>`;
 }
 function figEnemy(x) {
   const e = x.e; const ce = curEntry(); const isCur = ce && ce.k === 'e' && ce.id === e.id; const wide = (e.size || 1) === 2;
   const P = UI.pend; const tgt = P && P.need === 'enemy' && P.valid.includes(e.id); const sel = UI.sel.k === 'e' && UI.sel.id === e.id;
   const vw = wide ? 200 : 100; const vh = wide && !e.corpse && FIG_ELITE[e.name] ? 220 : 200;
-  return `<button class="fig enemy ${wide ? 'wide' : ''} ${e.boss ? 'boss' : ''} ${e.elite ? 'elite' : ''} ${e.corpse ? 'corpse' : ''} ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt ? 'tgt' : ''}" data-act="${tgt ? 'pickEnemy' : 'selE'}" data-id="${e.id}" aria-label="${esc(e.name)}, pozycja ${x.pos}, Zdrowie ${e.hp} z ${e.maxhp}">
+  return `<button class="fig enemy ${wide ? 'wide' : ''} ${e.boss ? 'boss' : ''} ${e.elite ? 'elite' : ''} ${e.corpse ? 'corpse' : ''} ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt ? 'tgt' : ''}" data-act="${tgt ? 'pickEnemy' : 'selE'}" data-id="${e.id}" aria-label="${esc(e.name)}, pozycja ${x.pos}, Zdrowie ${e.hp} z ${e.maxhp}, Unik ${enemyDodge(e)}, Pancerz ${enemyProt(e)}" title="${esc(e.name + ' · Zdrowie ' + e.hp + '/' + e.maxhp + ' · Unik ' + enemyDodge(e) + ' · Pancerz ' + enemyProt(e) + ' · Szybkość ' + e.speed)}">
     <svg viewBox="0 0 ${vw} ${vh}" class="fig-svg" aria-hidden="true"><g transform="translate(${vw} 0) scale(-1 1)">${enemyFigure(e)}</g></svg>
-    <span class="fig-tag">${esc(e.name)}</span>${e.corpse ? '' : `<span class="fig-bar"><i class="hp" style="width:${Math.round(100 * e.hp / Math.max(1, e.maxhp))}%"></i></span>`}</button>`;
+    ${figTag(e.name, shortFoe(e.name))}${e.corpse ? '' : `<span class="fig-bar"><i class="hp" style="width:${Math.round(100 * e.hp / Math.max(1, e.maxhp))}%"></i></span>`}
+    ${e.corpse ? '' : figFx([].concat(e.nextMove && e.nextMove.round === (Store.S.stol.round || 0) && Store.S.stol.fight ? [['gold', '⚠ ' + e.nextMove.name]] : [], fxChips(e.fx)))}</button>`;
 }
-Object.assign(ACT, { cineToggle: () => { try { localStorage.setItem('pio:cine', cineOn() ? 'off' : 'on'); } catch (e) { } cineClear(); renderView(); } });
+Object.assign(ACT, {
+  fightMenu: () => { UI.fightMenu = !UI.fightMenu; renderView(); },
+  gmTools: () => { const s = Store.S.stol; const open = UI.gmTools != null ? UI.gmTools : !s.enemies.length; UI.gmTools = !open; renderView(); },
+  cineToggle: () => { try { localStorage.setItem('pio:cine', cineOn() ? 'off' : 'on'); } catch (e) { } cineClear(); renderView(); } });
 document.addEventListener('click', e => { if (UI.cine && e.target.closest && e.target.closest('.stage') && !e.target.closest('[data-act]')) cineClear(); }, true);
 function stageHtml(s, enemies) {
   const w = Store.S.wyprawa; const region = s.region || (w.quest ? (w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key) : 'Ruiny');
@@ -3464,107 +3687,101 @@ function showPops() {
   });
 }
 VIEWS.stol = {
-  after() { showPops(); },
+  after(el) { showPops(); const n = el.querySelector('.init .ini.now'); if (n && n.parentNode.scrollWidth > n.parentNode.clientWidth) n.parentNode.scrollLeft = Math.max(0, n.offsetLeft - n.parentNode.offsetLeft - 40); },
   render() {
     const s = Store.S.stol; const gm = Store.isGM(); const W = Store.canWrite();
     const enemies = enemyPositions(s.enemies);
-    const heroesRev = [3, 2, 1, 0].map(i => heroSlot(s.heroes[i], i + 1)).join('');
-    const enemyHtml = enemies.map(enemySlot).join('') + Array.from({ length: Math.max(0, 4 - enemies.reduce((a, x) => a + (x.e.size || 1), 0)) }, () => `<div class="slot empty"></div>`).join('');
     const living = s.enemies.filter(e => !e.corpse).length;
     const ce = curEntry();
-    const curName = ce ? (ce.k === 'h' ? (H(ce.id) ? heroLabel(H(ce.id)) : '?') : ((s.enemies.find(e => e.id === ce.id) || {}).name || '?')) : null;
+    /* nowa tura: od razu zaznacz tego, kto działa (jak w grze) — bez szukania i klikania */
+    if (s.fight && ce && !UI.pend && !UI.epend && UI.autoSelKey !== turnKey()) { UI.autoSelKey = turnKey(); if (ce.k === 'h' || gm) UI.sel = { k: ce.k, id: ce.id }; }
+    const curName = ce ? entryName(ce) : null;
+    const curNote = ce ? (() => { const x = ce.k === 'h' ? H(ce.id) : s.enemies.find(e => e.id === ce.id); return x && x.fx && x.fx.lostTurn === (s.round || 0) ? (x.fx.lostWhy === 'stun' ? ' · ogłuszony, tura przepada' : ' · tura przejęta') : s.acted === turnKey() ? ' · już działał' : ''; })() : '';
     return `
     ${UI.pend ? `<div class="pendbar">Wybierz cel: <b>${esc(UI.pend.label)}</b> <button class="btn sm" data-act="cancelPend">Anuluj</button>${UI.pend.multi ? ` <button class="btn sm primary" data-act="fireMulti">Użyj na wszystkich</button>` : ''}</div>` : ''}
     ${UI.epend ? `<div class="pendbar">Wybierz bohatera, w którego ${esc(UI.epend.label)} <button class="btn sm" data-act="cancelPend">Anuluj</button></div>` : ''}
     <section class="panel fieldp has-stage">
       <div class="fhead">
-        <div><span class="lbl">${s.fight ? 'Walka' : 'Spokój'}</span> <b class="round">${s.fight ? 'Runda ' + s.round : 'Drużyna w szyku'}</b>${curName ? ` <span class="chip gold">tura: ${esc(curName)}${(() => { const x = ce.k === 'h' ? H(ce.id) : s.enemies.find(e => e.id === ce.id); return x && x.fx && x.fx.lostTurn === (s.round || 0) ? (x.fx.lostWhy === 'stun' ? ' · ogłuszony, tura przepada' : ' · tura przejęta') : s.acted === turnKey() ? ' · już działał' : ''; })()}</span>` : ''}</div>
+        <div><span class="lbl">${s.fight ? 'Walka' : 'Spokój'}</span> <b class="round">${s.fight ? 'Runda ' + s.round : 'Drużyna w szyku'}</b>${curName ? ` <span class="chip gold">tura: ${esc(curName)}${curNote}</span>` : ''}</div>
         <div class="row">
-          ${W ? `<button class="btn sm" data-act="formation">Ustaw drużynę</button>` : ''}
-          ${W && !s.fight ? `<button class="btn sm primary" data-act="fightStart" ${s.enemies.length && s.heroes.length ? '' : 'disabled'}>Rozpocznij walkę</button>` : ''}
-          <button class="btn sm ${cineOn() ? 'gold' : 'ghost'}" data-act="cineToggle" title="Krótkie zbliżenia ataków, uników i obrony (tylko na tym urządzeniu)">Zbliżenia: ${cineOn() ? 'wł.' : 'wył.'}</button>
-          ${gm ? `<button class="btn sm ${s.autoFight !== false ? 'gold' : 'ghost'}" data-act="autoToggle" title="Płynna walka: tura przechodzi sama po akcji, wrogowie działają według zasad">Płynna walka: ${s.autoFight !== false ? 'wł.' : 'wył.'}</button>` : ''}
-          ${W && s.fight ? `<button class="btn sm" data-act="newRound">Nowa runda</button><button class="btn sm primary" data-act="nextTurn" ${s.init.length ? '' : 'disabled'}>Następna tura</button><button class="btn sm ghost" data-act="fightEnd">Zakończ walkę</button>` : ''}
+          ${W && !s.fight ? `<button class="btn sm" data-act="formation">Ustaw drużynę</button><button class="btn sm primary" data-act="fightStart" ${s.enemies.length && s.heroes.length ? '' : 'disabled'}>Rozpocznij walkę</button>` : ''}
+          ${W && s.fight ? `<button class="btn sm primary" data-act="nextTurn" ${s.init.length ? '' : 'disabled'}>Następna tura</button><button class="btn sm ghost" data-act="fightEnd">Zakończ walkę</button>` : ''}
+          <button class="btn sm ghost gear ${UI.fightMenu ? 'on' : ''}" data-act="fightMenu" aria-expanded="${!!UI.fightMenu}" title="Ustawienia walki" aria-label="Ustawienia walki">⚙</button>
         </div>
       </div>
-      ${s.fight && s.init.length ? `<div class="init">${s.init.map((x, i) => {
-        const nm = x.k === 'h' ? (H(x.id) ? heroLabel(H(x.id)) : '—') : ((s.enemies.find(e => e.id === x.id) || {}).name || '—');
-        return `<span class="ini ${x.k} ${i === s.turn ? 'now' : ''} ${i < s.turn ? 'done' : ''}">${esc(nm)} <b class="num">${x.tot}</b></span>`;
-      }).join('')}</div>` : ''}
+      ${UI.fightMenu ? `<div class="fmenu"><span class="lbl">Ustawienia</span>
+        ${W && s.fight ? `<button class="btn sm" data-act="formation">Ustaw drużynę</button><button class="btn sm" data-act="newRound" title="Ręcznie: zacznij nową rundę i rzuć na inicjatywę">Nowa runda</button>` : ''}
+        <button class="btn sm ${cineOn() ? 'gold' : 'ghost'}" data-act="cineToggle" title="Krótkie zbliżenia ataków, uników i obrony (tylko na tym urządzeniu)">Zbliżenia: ${cineOn() ? 'wł.' : 'wył.'}</button>
+        ${gm ? `<button class="btn sm ${s.autoFight !== false ? 'gold' : 'ghost'}" data-act="autoToggle" title="Płynna walka: tura przechodzi sama po akcji, wrogowie działają według zasad">Płynna walka: ${s.autoFight !== false ? 'wł.' : 'wył.'}</button>` : ''}</div>` : ''}
+      ${s.fight && s.init.length ? `<div class="init">${s.init.map((x, i) => `<span class="ini ${x.k} ${i === s.turn ? 'now' : ''} ${i < s.turn ? 'done' : ''}">${esc(entryName(x))} <b class="num">${x.tot}</b></span>`).join('')}</div>` : ''}
       ${s.fight && !living ? `<div class="won"><b>Wrogowie pokonani.</b> ${s.looted ? '<span class="muted small">łup wylosowany</span>' : W ? `<button class="btn sm gold" data-act="lootFight">Rzuć na łup</button>` : ''} ${W ? `<button class="btn sm primary" data-act="fightEnd">Zakończ walkę</button>` : ''}</div>` : ''}
       ${eventBanner()}
       ${lootCardHtml()}
-      ${lootStrip()}
-      ${s.last ? lastActHtml(s.last) : ''}
+      ${lootStrip(true)}
       ${s.heroes.length || s.enemies.length ? stageHtml(s, enemies) : ''}
-      <div class="field">
-        <div class="side-h">${heroesRev}</div>
-        <div class="vs" aria-hidden="true"><span>⟷</span></div>
-        <div class="side-e">${enemyHtml}</div>
-      </div>
-      ${!s.heroes.length ? `<p class="muted">Drużyna jest pusta. ${W ? 'Kliknij „Ustaw drużynę” i wybierz do czterech bohaterów z rejestru.' : ''}</p>` : ''}
+      ${s.heroes.length ? this.actionBar() : `<p class="muted">Drużyna jest pusta. ${W ? 'Kliknij „Ustaw drużynę” i wybierz do czterech bohaterów z rejestru.' : ''}</p>`}
+      ${s.last ? lastActHtml(s.last) : ''}
     </section>
-    <div class="grid2">
-      ${this.actionPanel()}
-      ${gm ? this.gmPanel() : this.enemyInfo()}
-    </div>`;
+    ${gm ? this.gmPanel() : ''}`;
   },
-  actionPanel() {
+  actionBar() {
     const sel = UI.sel;
     if (sel.k === 'e') return this.enemyPanel();
     const h = sel.k === 'h' ? H(sel.id) : null;
-    if (!h) return `<section class="panel"><h2>Akcja</h2><p class="muted">Kliknij swojego bohatera w szyku, żeby użyć umiejętności, przesunąć się albo sięgnąć do plecaka.${Store.isGM() ? ' Kliknij wroga, żeby nim zaatakować.' : ''}</p></section>`;
-    const can = canHero(h); const c = CLS[h.cls]; const st = heroStats(h);
-    const pos = Store.S.stol.heroes.indexOf(h.id) + 1;
+    if (!h) return `<div class="actbar"><p class="muted">Kliknij bohatera na scenie, żeby użyć umiejętności, przesunąć się albo sięgnąć do plecaka.${Store.isGM() ? ' Kliknij wroga, żeby nim zagrać.' : ' Kliknij wroga, żeby zobaczyć, co potrafi.'}</p></div>`;
+    const can = canHero(h); const c = CLS[h.cls]; const st = heroStats(h); const s = Store.S.stol;
+    const pos = s.heroes.indexOf(h.id) + 1;
     const ohyda = c.name === 'Ohyda';
     const skills = h.skills.filter(i => !ohyda || (c.skills[i].form === (h.form === 'beast' ? 'bestia' : 'człowiek')));
-    const sup = Store.S.wyprawa.sup || {};
+    const w = Store.S.wyprawa; const sup = w.sup || {};
     const g = heroTurn(h); const lost = !!g.lost; const busy = !g.ok;
     const ekst = h.state && h.state.kind === 'ekstaza';
-    return `<section class="panel act">
-      ${busy && can ? `<p class="${lost ? 'warn' : 'muted'}">${esc(g.why)}</p>` : ''}
-      ${ekst ? `<p class="warn">Ekstaza bólu: musi atakować i nie leczy innych.</p>` : ''}
-      <h2>${esc(heroLabel(h))} <span class="hint">${pos ? 'pozycja ' + pos : 'poza szykiem'} · ${esc(ownerName(h))}</span></h2>
-      ${!can ? `<p class="muted">To bohater innego gracza — możesz go obejrzeć, ale działa nim jego gracz albo MG.</p>` : ''}
-      <p class="legend-pos"><span class="pdots from"><i class="on"></i></span> złote — z której pozycji bohatera (ułożone jak na polu: 4 3 2 1, pozycja 1 z przodu) · <span class="pdots to"><i class="on"></i></span> czerwone — które pozycje wroga trafia (1 2 3 4, od przodu)</p>
+    const bossNoRun = s.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler');
+    const items = [['Bandaże', 'bandaż', 'bleed'], ['Antidota', 'antidotum', 'blight'], ['Laudanum', 'laudanum', 'horror'], ['Zioła', 'zioła', 'debuff'], ['Woda święcona', 'woda święcona', 'holy'], ['Prowiant', 'prowiant', 'food']].filter(([k]) => !w.quest || sup[k] > 0);
+    const legend = 'Złote kropki: z której pozycji bohatera można użyć (ułożone jak na scenie: 4 3 2 1, pozycja 1 najbliżej wrogów). Czerwone: które pozycje wroga trafia (1 2 3 4 od przodu). Połączone kreską: trafia wszystkie naraz.';
+    return `<div class="actbar act">
+      <div class="ab-head">
+        <b class="ab-name">${esc(heroLabel(h))}</b> <span class="hint">${pos ? 'pozycja ' + pos : 'poza szykiem'} · ${esc(ownerName(h))}</span>
+        ${bar('hp ab-bar', h.hp, st.maxhp, 'Zdrowie ' + h.hp + ' / ' + st.maxhp)}${bar('st ab-bar', h.stress, 20, 'Stres ' + h.stress + ' / 20')}
+        <span class="ab-chips">${h.dd ? gchip('red', 'Próg Śmierci') : ''}${stateChip(h)}${h.exhausted ? gchip('', 'Wyczerpanie') : ''}${h.block ? gchip('gold', 'Blok ' + h.block) : ''}${h.fatigue ? gchip('', 'Zmęczenie ' + h.fatigue) : ''}${chipsHtml(fxChips(h.fx))}</span>
+        ${h.dd && can ? `<button class="btn sm primary" data-act="deathRoll">Rzut Śmierci</button>` : ''}
+        <span class="sp"></span><span class="hint help" tabindex="0" data-gloss="${esc(legend)}" title="${esc(legend)}">jak czytać kropki?</span>
+      </div>
+      ${busy && can ? `<p class="ab-msg ${lost ? 'warn' : 'muted'}">${esc(g.why)}</p>` : ''}
+      ${ekst ? `<p class="ab-msg warn">Ekstaza bólu: musi atakować i nie leczy innych.</p>` : ''}
+      ${!can ? `<p class="ab-msg muted">To bohater innego gracza — możesz go obejrzeć, ale działa nim jego gracz albo MG.</p>` : ''}
       <div class="skills">${skills.map(i => {
         const v = skillView(h, i, st); const okPos = pos && v.inf.from.includes(pos);
         const lim = /2 razy na walkę/.test(v.s.eff) ? 2 : /raz na walkę/.test(v.s.eff) ? 1 : 0; const used = ((h.fx || {}).used || {})[i] || 0; const spent = (lim && used >= lim) || busy || (ekst && !v.inf.attack);
-        return `<button class="skill" data-act="useSkill" data-i="${i}" ${can && okPos && !spent && Store.S.stol.heroes.includes(h.id) ? '' : 'disabled'} title="${esc(busy ? g.why : spent ? 'Wykorzystane w tej walce' : !okPos ? 'Nie z tej pozycji' : v.s.eff || '')}">
+        return `<button class="skill" data-act="useSkill" data-i="${i}" ${can && okPos && !spent && s.heroes.includes(h.id) ? '' : 'disabled'} title="${esc((busy ? g.why : spent ? 'Wykorzystane w tej walce' : !okPos ? 'Nie z tej pozycji' : v.s.eff || '') + ' · ' + skillPosTxt(v))}">
           <span class="sn">${esc(v.s.name)}${!okPos && pos ? ' <span class="nopos">nie z poz. ' + pos + '</span>' : ''}</span>
-          <span class="sp2">${posDots(v.inf.from, 'from')}<span class="sep">▸</span>${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(v.s.w)}</span>`}<span class="ptxt">${esc(skillPosTxt(v))}</span></span>
+          <span class="sp2">${posDots(v.inf.from, 'from')}<span class="sep">▸</span>${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(v.s.w)}</span>`}</span>
           <span class="sv num">${v.cel != null ? 'Cel. ' + v.cel : ''}${v.dmg ? ' · ' + v.dmg : ''}${v.heal ? ' · leczy ' + v.heal : ''}${v.stress ? ' · −' + v.stress + ' Stres' : ''}${lim ? ' · ' + (lim - used) + '/' + lim + ' w walce' : ''}</span>
         </button>`;
       }).join('')}</div>
-      ${can ? `<div class="row acts">
-        <button class="btn sm" data-act="heroMove" data-d="1" ${pos && pos < Store.S.stol.heroes.length && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z tyłu (dalej od wrogów)">◀ do tyłu</button>
-        <button class="btn sm" data-act="heroMove" data-d="-1" ${pos > 1 && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z przodu (bliżej wrogów)">do przodu ▶</button>
+      ${can ? `<div class="ab-row">
+        <button class="btn sm" data-act="heroMove" data-d="1" ${pos && pos < s.heroes.length && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z tyłu (dalej od wrogów)">◀ do tyłu</button><button class="btn sm" data-act="heroMove" data-d="-1" ${pos > 1 && !busy ? '' : 'disabled'} title="Zamiana z sąsiadem z przodu (bliżej wrogów)">do przodu ▶</button>
         <button class="btn sm" data-act="heroPass" ${busy ? 'disabled' : ''}>Pas</button>
         ${ohyda ? `<button class="btn sm gold" data-act="transform" ${busy ? 'disabled' : ''}>${h.form === 'beast' ? 'Wróć do ludzkiej postaci' : 'Przemiana w bestię'}</button>` : ''}
-        <button class="btn sm" data-act="retreat" ${busy || !Store.S.stol.fight || Store.S.stol.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler') ? 'disabled' : ''} ${Store.S.stol.enemies.some(e => e.boss && !e.corpse && e.name !== 'Shambler') ? 'title="Z walki z bossem nie ma odwrotu"' : ''}>Odwrót</button>
+        <button class="btn sm" data-act="retreat" ${busy || !s.fight || bossNoRun ? 'disabled' : ''} ${bossNoRun ? 'title="Z walki z bossem nie ma odwrotu"' : ''}>Odwrót</button>
+        <span class="ab-sep" aria-hidden="true"></span>
+        <span class="lbl">Plecak</span>${items.map(([k, n, wk]) => `<button class="btn sm ghost" data-act="useItem" data-k="${k}" data-w="${wk}" ${busy && (!g.mine || lost) ? 'disabled' : ''}>${n}${w.quest ? ` <span class="muted num">${sup[k]}</span>` : ''}</button>`).join('') || '<span class="muted small">pusto</span>'}
       </div>
-      <div class="row acts items">
-        <span class="lbl">Plecak</span>
-        ${[['Bandaże', 'bandaż', 'bleed'], ['Antidota', 'antidotum', 'blight'], ['Laudanum', 'laudanum', 'horror'], ['Zioła', 'zioła', 'debuff'], ['Woda święcona', 'woda święcona', 'holy'], ['Prowiant', 'prowiant', 'food']].map(([k, n, w]) => `<button class="btn sm ghost" data-act="useItem" data-k="${k}" data-w="${w}" ${busy && (!g.mine || lost) ? 'disabled' : ''}>${n} <span class="muted num">${sup[k] != null ? sup[k] : '–'}</span></button>`).join('')}
-      </div>
-      <div class="row acts">
-        <span class="lbl">Popraw</span>
+      ${Store.isGM() ? `<div class="ab-row ab-gm"><span class="lbl">Poprawki MG</span>
         <button class="btn sm ghost" data-act="adjH" data-f="hp" data-v="-1">Zdr −1</button><button class="btn sm ghost" data-act="adjH" data-f="hp" data-v="1">Zdr +1</button>
-        <button class="btn sm ghost" data-act="adjH" data-f="stress" data-v="1">Stres +1</button><button class="btn sm ghost" data-act="adjH" data-f="stress" data-v="-1">Stres −1</button>
-        ${h.dd ? `<button class="btn sm primary" data-act="deathRoll">Rzut Śmierci</button>` : ''}
-      </div>` : ''}
-    </section>`;
+        <button class="btn sm ghost" data-act="adjH" data-f="stress" data-v="1">Stres +1</button><button class="btn sm ghost" data-act="adjH" data-f="stress" data-v="-1">Stres −1</button></div>` : ''}` : ''}
+    </div>`;
   },
   enemyPanel() {
     const e = Store.S.stol.enemies.find(x => x.id === UI.sel.id);
-    if (!e) return `<section class="panel"><h2>Wróg</h2><p class="muted">Ten wróg już nie stoi w szyku.</p></section>`;
+    if (!e) return `<div class="actbar"><p class="muted">Ten wróg już nie stoi w szyku.</p></div>`;
     const gm = Store.isGM(); const eg = enemyTurn(e); const eoff = !eg.ok;
-    return `<section class="panel act">
+    return `<div class="actbar act">
       ${eoff && gm ? `<p class="${eg.lost ? 'warn' : 'muted'}">${esc(eg.why)}</p>` : ''}
-      <h2>${esc(e.name)} <span class="hint">${e.boss ? 'boss · 2 tury na rundę' : esc(e.pos ? 'pozycje ' + e.pos : '')}</span></h2>
-      <p class="dim num">Zdrowie ${e.hp}/${e.maxhp} · Unik ${enemyDodge(e)} · Pancerz ${enemyProt(e)} · Szybkość ${e.speed} · Krzepa ${e.krzepa} · Odporność ${e.odp}${e.noBleed ? ' · niewrażliwy na krwawienie' : ''}</p>
+      <div class="ab-head"><b class="ab-name">${esc(e.name)}</b> <span class="hint">${e.boss ? 'boss · 2 tury na rundę' : e.elite ? 'mini-boss' : esc(e.type || '')}</span>${bar('hp ab-bar', e.hp, e.maxhp, 'Zdrowie ' + e.hp + ' / ' + e.maxhp)}<span class="ab-chips">${chipsHtml(fxChips(e.fx))}</span></div>
+      <p class="dim num small">Unik ${enemyDodge(e)} · Pancerz ${enemyProt(e)} · Szybkość ${e.speed} · Krzepa ${e.krzepa} · Odporność ${e.odp}${e.noBleed ? ' · niewrażliwy na krwawienie' : ''}</p>
       <div class="atks">${(e.attacks || []).map((a, i) => `<div class="atk"><div>${a.w ? `<span class="sp2">${posDots(posList(a.w), a.aoe ? 'to multi' : 'to', 'hero')}<span class="ptxt">w bohaterów ${esc(a.w)}</span></span> ` : ''}${attackText(a)}</div>${gm && a.w ? `<div class="row">
-        ${a.aoe ? `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="all" ${eoff ? 'disabled' : ''}>Atakuj pozycje ${esc(a.w)}</button>` : `<button class="btn sm primary" data-act="eAtk" data-i="${i}" data-m="rand" ${eoff ? 'disabled' : ''}>Losowy cel</button><button class="btn sm" data-act="eAtk" data-i="${i}" data-m="pick" ${eoff ? 'disabled' : ''}>Wybierz cel</button>`}
+        ${a.aoe ? `<button class="btn sm" data-act="eAtk" data-i="${i}" data-m="all" ${eoff ? 'disabled' : ''}>Atakuj pozycje ${esc(a.w)}</button>` : `<button class="btn sm" data-act="eAtk" data-i="${i}" data-m="rand" ${eoff ? 'disabled' : ''}>Losowy cel</button><button class="btn sm" data-act="eAtk" data-i="${i}" data-m="pick" ${eoff ? 'disabled' : ''}>Wybierz cel</button>`}
       </div>` : gm ? `<div class="row"><button class="btn sm" data-act="eSay" data-i="${i}">Ogłoś</button></div>` : ''}</div>`).join('') || '<p class="muted">Zwłoki nic nie robią.</p>'}</div>
       ${gm && !e.corpse ? `<div class="row eauto"><button class="btn primary" data-act="eAuto" ${eoff ? 'disabled' : ''} title="Wróg działa według zasad: wybór ataku kością${e.boss ? ', wzór ruchów bossa' : ''}, cel losowany (Znak ma pierwszeństwo)">Tura wroga — według zasad</button>${enemySpecials(e).map(n => `<button class="btn sm gold" data-act="eSpec" data-n="${esc(n)}" ${eoff ? 'disabled' : ''}>${esc(n)}</button>`).join('')}</div>
         ${e.boss && BOSS_AI[e.name] ? `<p class="small dim">Wzór ruchów: pierwsza tura w rundzie — ${esc(BOSS_AI[e.name].first)}; druga — k6: ${BOSS_AI[e.name].table.map(([a, b, n]) => (a === b ? a : a + '–' + b) + ' ' + esc(n)).join(', ')}.${(curEntry() || {}).id === e.id ? ' Teraz: <b>' + ((Store.S.stol.init || []).slice(0, Math.max(0, Store.S.stol.turn)).some(x => x.id === e.id) ? 'druga tura (k6)' : 'pierwsza tura (sygnatura)') + '</b>.' : ''}</p>` : ''}` : ''}
@@ -3574,29 +3791,26 @@ VIEWS.stol = {
         <button class="btn sm ghost" data-act="eMove" data-d="-1">◀</button><button class="btn sm ghost" data-act="eMove" data-d="1">▶</button>
         <button class="btn sm ghost" data-act="eRemove">Usuń</button>
       </div>` : ''}
-    </section>`;
-  },
-  enemyInfo() {
-    const s = Store.S.stol;
-    return `<section class="panel"><h2>Wrogowie</h2>${s.enemies.length ? s.enemies.map(e => `<p><b>${esc(e.name)}</b> <span class="muted">${esc(e.type || '')}</span><br><span class="dim">${(e.attacks || []).map(a => attackText(a)).join('<br>')}</span></p>`).join('') : '<p class="muted">Na razie nikogo. MG ustawia wrogów, gdy zaczyna się walka.</p>'}</section>`;
+    </div>`;
   },
   gmPanel() {
     const s = Store.S.stol; const reg = s.region || 'Ruiny';
     const refs = foeRefs().filter(r => r.group === 'Twoi wrogowie' || r.group === (reg === 'DD' ? 'Najmroczniejszy Loch' : reg) || (r.group === 'Ciemność'));
-    return `<section class="panel"><h2>Wrogowie <span class="hint">dla MG</span></h2>
+    const open = UI.gmTools != null ? UI.gmTools : !s.enemies.length;
+    return `<section class="panel gmtools"><button class="gm-h" data-act="gmTools" aria-expanded="${open}"><span class="lbl">Narzędzia MG</span> <b>Wrogowie na stole</b> <span class="hint">${s.enemies.length ? s.enemies.length + ' w szyku' : 'pusto'} · ${open ? 'zwiń ▴' : 'rozwiń ▾'}</span></button>${open ? `
       <div class="row">
         <label class="lbl" for="sreg">Region</label><select id="sreg" data-bind="stol.region">${REG_OPTS.map(([k, n]) => `<option value="${k}" ${reg === k ? 'selected' : ''}>${n}</option>`).join('')}</select>
         ${reg !== 'DD' ? `<label class="lbl" for="sdl">Loch</label><select id="sdl" data-bind="stol.dl" data-num>${DL.map((n, i) => `<option value="${i}" ${+s.dl === i ? 'selected' : ''}>${n}</option>`).join('')}</select>`
         : `<label class="lbl" for="sfl">Piętro</label><select id="sfl" data-bind="stol.floor" data-num>${DD_FLOORS.map((f, i) => `<option value="${i}" ${+(s.floor || 0) === i ? 'selected' : ''}>${i + 1}. ${f.boss}</option>`).join('')}</select>`}
       </div>
       <div class="row">
-        <button class="btn sm primary" data-act="encounter">Losuj spotkanie</button>
+        <button class="btn sm" data-act="encounter">Losuj spotkanie</button>
         <button class="btn sm gold" data-act="bossSet">Boss${reg === 'DD' ? ' piętra' : ' regionu'}</button>
         <button class="btn sm" data-act="shambler">Shambler</button>
         <button class="btn sm ghost" data-act="clearE">Wyczyść</button>
       </div>
       <div class="row"><select id="addE">${[...new Set(refs.map(r => r.group))].map(g => `<optgroup label="${esc(g)}">${refs.filter(r => r.group === g).map(r => `<option value="${esc(r.ref)}">${esc(r.name)}${r.boss ? ' (boss)' : ''}</option>`).join('')}</optgroup>`).join('')}</select><button class="btn sm" data-act="addE">Dodaj wroga</button></div>
-      <p class="muted small">Wrogowie dostają premie poziomu lochu automatycznie (Weterański: Zdrowie +5, Celność, Unik i obrażenia +1; Mistrzowski: +10 i +2, Szybkość +1, Stres +1). Najmroczniejszy Loch ma wartości ostateczne.</p>
+      <p class="muted small">Wrogowie dostają premie poziomu lochu automatycznie (Weterański: Zdrowie +5, Celność, Unik i obrażenia +1; Mistrzowski: +10 i +2, Szybkość +1, Stres +1). Najmroczniejszy Loch ma wartości ostateczne.</p>` : ''}
     </section>`;
   }
 };
@@ -3963,10 +4177,11 @@ function lootCardHtml() {
     ${(c.items || []).length ? `<ul class="lc-items">${c.items.map(x => `<li>${diceBadges(md(x))}</li>`).join('')}</ul>` : ''}
     <p class="small muted">Trafia do: ${esc(c.dest)}.</p></div>`;
 }
-function lootStrip() {
+function lootStrip(hideEmpty) {
   const w = Store.S.wyprawa; if (!w.quest) return '';
   const L = w.loot || {}; const mult = DL_INFO[w.quest.dl].mult;
   const parts = lootTotals({ gold: L.zloto, gems: L.klejnoty, mem: L.mem, trinkets: L.trinkets }, 1).map(p => p.replace(/ \(×.*?\)/, ''));
+  if (hideEmpty && !parts.length) return '';
   return `<div class="lootstrip"><span class="lbl">Łupy wyprawy</span> ${parts.length ? parts.map(p => `<span class="chip">${esc(p)}</span>`).join('') : '<span class="muted small">jeszcze nic</span>'}${L.klejnoty ? `<span class="muted small">klejnoty liczone ×${String(mult).replace('.', ',')} przy powrocie</span>` : ''}</div>`;
 }
 
@@ -3993,12 +4208,13 @@ function pips(kind, n, max, bind, marks, opts = {}) {
 function rankRow(h, key, label, building, cost) {
   const r = h.gear[key]; const mx = maxRank(h, Store.S.osada.b[building]); const can = canHero(h);
   return `<div class="rank"><span class="rl">${label}</span><span class="rp">${[1, 2, 3, 4].map(i => `<button class="rk ${i <= r ? 'on' : ''} ${i > mx ? 'lock' : ''}" data-act="rankSet" data-k="${key}" data-v="${i}" ${Store.isGM() && UI.sheetEdit ? '' : 'disabled'} title="${i > mx ? 'Zablokowane: ranga najwyżej Poziom + 1 i stopień budynku + 1' : 'Ranga ' + i}">${i}</button>`).join('')}</span>
-    ${can && r < 4 ? `<button class="btn sm ghost" data-act="rankBuy" data-k="${key}" data-b="${building}" data-c="${cost}" ${r + 1 > mx ? 'disabled' : ''}>${building}: ${cost * (r + 1)} Z</button>` : ''}</div>`;
+    ${r < 4 ? `<span class="small muted">${r + 1 > mx ? 'następna ranga zablokowana' : 'następna: ' + cost * (r + 1) + ' Z (' + building + ')'}</span>` : '<span class="chip sm gold">ranga 4</span>'}</div>`;
 }
 function statCell(st, k, label, v) {
   return `<div class="stat" title="${esc(whyText(st, k))}"><span class="sl">${label}</span><b class="sv num">${v}</b><span class="sw">${esc(whyText(st, k))}</span></div>`;
 }
 
+const SHEET_TABS = [['walka', 'Walka'], ['ekw', 'Ekwipunek'], ['oboz', 'Obóz'], ['char', 'Charakter']];
 VIEWS.bohaterowie = {
   render() {
     const all = heroes(); const filt = UI.hfilter || 'all';
@@ -4013,14 +4229,15 @@ VIEWS.bohaterowie = {
       <div class="row">
         <div class="seg">${[['all', 'Wszyscy'], ['mine', 'Moi'], ['dead', 'Cmentarz']].map(([k, t]) => `<button class="btn sm ${filt === k ? 'gold' : 'ghost'}" data-act="hfilter" data-v="${k}">${t}</button>`).join('')}</div>
         <span class="sp"></span>
-        ${W ? `<button class="btn sm primary" data-act="recruit">Rekrut z dyliżansu (k20)</button><button class="btn sm" data-act="pickClass">Wybierz klasę</button>` : ''}
+        ${W ? `<button class="btn sm" data-act="recruit">Rekrut z dyliżansu (k20)</button><button class="btn sm" data-act="pickClass">Wybierz klasę</button>` : ''}
       </div>
       <div class="rlist">${list.map(h => {
-        const st = heroStats(h);
-        return `<button class="rcard ${UI.heroSel === h.id ? 'on' : ''} ${h.dead ? 'dead' : ''} ${!h.dead && heroAway(h) ? 'sick' : ''}" data-act="heroSel" data-id="${h.id}" ${!h.dead && heroAway(h) ? `title="${esc(heroAway(h))}"` : ''}>
-          <span class="rp2">${portraitHtml(h, 'rp-img')}</span><span class="rn">${esc(heroLabel(h))}</span><span class="rc">${h.name ? esc(CLS[h.cls].name) + ' · ' : ''}Poz. ${h.level}${h.level < 6 ? ' · dośw. ' + (h.xp || 0) + '/' + xpNeed(h.level) : ''}${canLevel(h) ? ' <b class="lvbadge">★ awans</b>' : ''}</span>
+        const st = heroStats(h); const away = !h.dead && heroAway(h);
+        return `<button class="rcard ${UI.heroSel === h.id ? 'on' : ''} ${h.dead ? 'dead' : ''} ${away ? 'sick' : ''}" data-act="heroSel" data-id="${h.id}" ${away ? `title="${esc(away)}"` : ''} aria-pressed="${UI.heroSel === h.id}">
+          <span class="rp2">${portraitHtml(h, 'rp-img')}</span>
+          <span class="rinfo"><span class="rn">${esc(heroLabel(h))}${canLevel(h) ? ' <b class="lvbadge" title="Może awansować">★</b>' : ''}</span><span class="rc">${h.name ? esc(CLS[h.cls].name) + ' · ' : ''}Poz. ${h.level}</span>
           ${h.dead ? `<span class="rc">☩ ${esc(h.deathCause || '')}</span>` : bar('hp', h.hp, st.maxhp, h.hp + '/' + st.maxhp) + bar('st', h.stress, 20, 'Stres ' + h.stress)}
-          <span class="ro">${esc(ownerName(h))}${h.status && h.status !== 'osada' ? ' · ' + esc(h.status) : ''}</span></button>`;
+          <span class="ro">${esc(ownerName(h))}${h.status && h.status !== 'osada' ? ' · ' + esc(h.status) : ''}</span></span></button>`;
       }).join('') || `<div class="empty-state"><p>${filt === 'dead' ? 'Cmentarz jest jeszcze pusty.' : 'W rejestrze nie ma jeszcze bohaterów.'}</p>${W && filt !== 'dead' ? '<p class="dim">Każdy gracz wybiera na start klasę jednego bohatera, resztę losujecie z dyliżansu (k20).</p>' : ''}</div>`}</div>
     </section>
     ${sel ? this.sheet(sel) : ''}`;
@@ -4029,8 +4246,10 @@ VIEWS.bohaterowie = {
     const c = CLS[h.cls]; const st = heroStats(h); const can = canHero(h); const P = 'heroes.' + h.id;
     const dis = can ? '' : 'disabled';
     const ed = Store.isGM() && !!UI.sheetEdit;
-    const nChosen = h.skills.length;
     const affl = h.state ? h.state.kind + ':' + h.state.name : '';
+    const tab = SHEET_TABS.some(([k]) => k === UI.sheetTab) ? UI.sheetTab : 'walka';
+    const where = h.dead ? 'na cmentarzu' : (heroAway(h) || (h.status === 'wyprawa' ? 'na wyprawie' : 'w Osadzie'));
+    const body = tab === 'walka' ? this.tabWalka(h, c, st, dis) : tab === 'ekw' ? this.tabEkw(h, can, ed) : tab === 'oboz' ? this.tabOboz(h, c, ed) : this.tabChar(h, c, can, ed, dis, P);
     return `<section class="sheet panel" aria-label="Karta bohatera">
       <div class="sh-head">
         <div class="pframe">${portraitHtml(h, 'portrait')}
@@ -4038,26 +4257,20 @@ VIEWS.bohaterowie = {
         <div class="sh-id">
           <input type="text" class="hname" id="hn-${h.id}" data-bind="${P}.name" value="${esc(h.name)}" placeholder="Imię bohatera" ${dis} aria-label="Imię bohatera">
           <div class="hcls">${esc(c.name)} <span class="muted">· ${esc(c.role || '')}</span></div>
-          ${h.story ? `<div class="hstory small"><span class="muted">${esc(h.story.origin)}.</span> Marzenie: ${esc(h.story.dreamText)} <span class="muted">(${h.story.done ? '<b>spełnione</b>' : 'cel: ' + esc(h.story.goal) + ' → pozytywne dziwactwo'})</span></div>` : ed ? `<button class="btn sm ghost" data-act="storyRoll">Nadaj historię (pochodzenie i marzenie)</button>` : ''}
-          ${Object.entries(h.bonds || {}).filter(([id, n]) => n && H(id) && !H(id).dead).length ? `<div class="hbonds small">${Object.entries(h.bonds).filter(([id, n]) => n && H(id) && !H(id).dead).map(([id, n]) => `<span class="chip sm ${n >= 2 ? 'gold' : n <= -2 ? 'red' : ''}">${esc(heroLabel(H(id)))}: ${bondName(n)}</span>`).join('')}</div>` : ''}
-          <div class="row lvl"><span class="lbl">Poziom</span><b class="lvnum num">${h.level}</b>${h.level < 6 ? `<span class="lbl">doświadczenie</span><span class="xpbar" title="${h.xp || 0} z ${xpNeed(h.level)} do Poziomu ${h.level + 1}">${Array.from({ length: xpNeed(h.level) }, (_, i) => `<i class="xp ${i < (h.xp || 0) ? 'on' : ''}"></i>`).join('')}</span><span class="num small">${h.xp || 0} / ${xpNeed(h.level)} do Poziomu ${h.level + 1}</span>` : '<span class="chip sm gold">Poziom maksymalny</span>'}
+          <div class="row lvl"><span class="lbl">Poziom</span><b class="lvnum num">${h.level}</b>${h.level < 6 ? `<span class="xpbar" title="${h.xp || 0} z ${xpNeed(h.level)} do Poziomu ${h.level + 1}">${Array.from({ length: xpNeed(h.level) }, (_, i) => `<i class="xp ${i < (h.xp || 0) ? 'on' : ''}"></i>`).join('')}</span><span class="num small">${h.xp || 0} / ${xpNeed(h.level)} do Poziomu ${h.level + 1}</span>` : '<span class="chip sm gold">Poziom maksymalny</span>'}
             ${can && canLevel(h) ? `<button class="btn sm gold lvup" data-act="levelUp" ${h.status === 'wyprawa' ? 'disabled title="Awans po powrocie do Osady"' : ''}>Awansuj na Poziom ${h.level + 1}</button>` : ''}
             ${ed ? `<span class="gmfix"><button class="btn sm ghost" data-act="addXp" data-v="-1" title="Poprawka MG: −1 doświadczenia">−1</button><button class="btn sm ghost" data-act="addXp" data-v="1" title="Poprawka MG: +1 doświadczenia">+1</button></span>` : ''}</div>
-          <div class="row"><span class="chip">${esc(ownerName(h))}</span>
-            ${Store.canWrite() && h.owner !== Store.me.id && (Store.isGM() || !h.owner) ? `<button class="btn sm ghost" data-act="claim">Przypisz do mnie</button>` : ''}
+          <p class="sh-own"><span class="muted">Gra nim:</span> <b>${esc(ownerName(h))}</b> <span class="muted">·</span> ${ed ? `<label class="lbl" for="hs-${h.id}">gdzie</label> <select id="hs-${h.id}" data-bind="${P}.status">${['osada', 'wyprawa', 'leczenie'].map(x => `<option ${h.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select>` : esc(where)}</p>
+          <div class="row sh-btns">
+            ${Store.canWrite() && h.owner !== Store.me.id && (Store.isGM() || !h.owner) ? `<button class="btn sm" data-act="claim">Przypisz do mnie</button>` : ''}
             ${Store.isGM() && h.owner ? `<button class="btn sm ghost" data-act="unclaim">Zwolnij</button>` : ''}
-            ${ed ? `<label class="lbl" for="hs-${h.id}">gdzie</label><select id="hs-${h.id}" data-bind="${P}.status">${['osada', 'wyprawa', 'leczenie'].map(s => `<option ${h.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>` : `<span class="chip sm">${h.dead ? 'na cmentarzu' : esc(heroAway(h) || (h.status === 'wyprawa' ? 'na wyprawie' : 'w Osadzie'))}</span>`}
-            ${Store.isGM() ? `<span class="sp"></span><button class="btn sm ${ed ? 'gold' : 'ghost'}" data-act="sheetEdit" aria-pressed="${ed}" title="Ręczne poprawki MG: Zdrowie, Stres, stany, dziwactwa, choroby, rangi">${ed ? 'Edycja MG: włączona' : 'Edycja MG'}</button>` : ''}
+            ${Store.isGM() ? `<button class="btn sm ${ed ? 'gold' : 'ghost'}" data-act="sheetEdit" aria-pressed="${ed}" title="Ręczne poprawki MG: Zdrowie, Stres, stany, dziwactwa, choroby, rangi">${ed ? 'Edycja MG: włączona' : 'Edycja MG'}</button>` : ''}
           </div>
         </div>
-        <div class="sh-desc dim">${esc(c.desc)}</div>
-      </div>
-      ${h.dead ? `<p class="deadnote">☩ Poległ: ${esc(h.deathCause || '')}${h.deathWeek ? ', tydzień ' + h.deathWeek : ''}.</p>` : ''}
-      <div class="sh-grid">
-        <div class="col">
-          <div class="box"><div class="ph">Zdrowie <span class="hint num">${h.hp} / ${st.maxhp}</span></div>${pips('hp', h.hp, st.maxhp, 'hp', null, { dis: !ed })}
+        <div class="sh-vitals">
+          <div class="vit"><div class="ph">Zdrowie <span class="hint num">${h.hp} / ${st.maxhp}</span></div>${pips('hp', h.hp, st.maxhp, 'hp', null, { dis: !ed })}
             ${ed ? `<div class="row"><label class="chk"><input type="checkbox" data-bind="${P}.dd" ${h.dd ? 'checked' : ''}> Próg Śmierci</label><label class="chk"><input type="checkbox" data-bind="${P}.exhausted" ${h.exhausted ? 'checked' : ''}> Wyczerpanie</label>${h.dd ? `<button class="btn sm primary" data-act="sheetDeath">Rzut Śmierci (≤ ${st.death})</button>` : ''}</div>` : h.dd || h.exhausted ? `<div class="row">${h.dd ? '<span class="chip sm red">Próg Śmierci</span>' : ''}${h.exhausted ? '<span class="chip sm">Wyczerpanie</span>' : ''}</div>` : ''}</div>
-          <div class="box"><div class="ph">Stres <span class="hint num">${h.stress} / 20${st.heart < 20 ? ' · zawał przy ' + st.heart : ''}</span></div>${pips('st', h.stress, 20, 'stress', [10, 20], { hi: 10, dis: !ed })}
+          <div class="vit"><div class="ph">Stres <span class="hint num">${h.stress} / 20${st.heart < 20 ? ' · zawał przy ' + st.heart : ''}</span></div>${pips('st', h.stress, 20, 'stress', [10, 20], { hi: 10, dis: !ed })}
             ${ed ? `<div class="row"><select data-act-change="state" id="hst-${h.id}" aria-label="Cnota albo Przypadłość">
               <option value="">— bez Cnoty i Przypadłości —</option>
               <optgroup label="Cnoty">${DATA.virtues.map(v => `<option value="virtue:${v.name}" ${affl === 'virtue:' + v.name ? 'selected' : ''}>${v.name}</option>`).join('')}</optgroup>
@@ -4065,56 +4278,91 @@ VIEWS.bohaterowie = {
               <button class="btn sm" data-act="sheetTest">Próba Charakteru (≤ ${st.virtue})</button></div>` : h.state ? `<div class="row"><span class="chip sm ${h.state.kind === 'virtue' ? 'gold' : 'red'}">${h.state.kind === 'virtue' ? 'Cnota' : 'Przypadłość'}: ${esc(h.state.name)}</span></div>` : ''}
             ${h.state ? `<p class="small ${h.state.kind === 'virtue' ? 'virtue-t' : 'affl-t'}">${esc(h.state.kind === 'virtue' ? (DATA.virtues.find(v => v.name === h.state.name) || {}).perm + '; przy 1–3 na początku tury: ' + (DATA.virtues.find(v => v.name === h.state.name) || {}).proc : h.state.kind === 'ekstaza' ? 'Co turę musi atakować, nie leczy innych, traci 1 Zdrowia na początku tury; Stres z ataków wrogów go nie dotyczy.' : 'Przy 1–3 na początku tury: ' + ((DATA.afflictions.find(v => v.name === h.state.name) || {}).combat || ''))}</p>` : ''}
           </div>
-          <div class="box"><div class="ph">Statystyki <span class="hint">najedź albo dotknij, by zobaczyć skąd</span></div>
-            <div class="stats">
-              ${statCell(st, 'hp', 'Zdrowie', st.maxhp)}${statCell(st, 'dodge', 'Unik', st.dodge)}${statCell(st, 'prot', 'Pancerz', st.prot)}${statCell(st, 'speed', 'Szybkość', st.speed)}
-              ${statCell(st, 'crit', 'Kryt', st.crit)}${statCell(st, 'acc', 'Celność', sgn(st.acc))}${statCell(st, 'dmg', 'Obrażenia', sgn(st.dmg))}
-            </div>
-            <div class="ph">Odporności</div>
-            <div class="stats">${statCell(st, 'krzepa', 'Krzepa', st.krzepa)}${statCell(st, 'odp', 'Odporność', st.odp)}${statCell(st, 'death', 'Śmierć', st.death)}${statCell(st, 'virtue', 'Szansa Cnoty', st.virtue)}</div>
-          </div>
-          <div class="box"><div class="ph">Ekwipunek <span class="hint">ranga najwyżej Poziom + 1</span></div>
-            ${rankRow(h, 'weapon', 'Broń', 'Kuźnia', 6)}${rankRow(h, 'armor', 'Pancerz', 'Kuźnia', 6)}${rankRow(h, 'guild', 'Umiejętności', 'Gildia', 8)}
-            <p class="small muted">Broń: obrażenia +1 na randze 2 i 4. Pancerz: Zdrowie +1 za rangę. Gildia: Celność +1 na randze 1 i 3, Kryt +1 na 2, główna liczba +1 na 4.</p>
-          </div>
-          <div class="box"><div class="ph">Błyskotki <span class="hint">najwyżej 2, bez powtórzeń</span></div>
-            ${[0, 1].map(i => { const t = h.trinkets[i]; return `<div class="trk">${t ? `<b>${esc(t.name)}</b> <span class="dim small">${esc(trinketDesc(t))}</span>${can ? ` <button class="btn sm ghost" data-act="trkOff" data-i="${i}">Do magazynu</button>` : ''}` : `<span class="muted">puste miejsce</span>${can ? ` <button class="btn sm ghost" data-act="trkOn">Załóż z magazynu</button>` : ''}`}</div>`; }).join('')}
-          </div>
-        </div>
-        <div class="col">
-          <div class="box"><div class="ph">Umiejętności bojowe <span class="hint">zabierasz ${nChosen} z 4</span></div><p class="legend-pos"><span class="pdots from"><i class="on"></i></span> złote — z której pozycji bohatera (4 3 2 1, jak na polu) · <span class="pdots to"><i class="on"></i></span> czerwone — które pozycje wroga trafia (1 2 3 4)</p>
-            <div class="sk-list">${c.skills.map((s, i) => {
-              const v = skillView(h, i, st); const on = h.skills.includes(i);
-              return `<div class="sk ${on ? 'on' : ''}">
-                <button class="sk-t" data-act="skillToggle" data-i="${i}" ${dis} aria-pressed="${on}" title="${on ? 'Zabrana na wyprawę' : 'Zostaje w Osadzie'}"></button>
-                <div class="sk-b"><div class="sk-n">${esc(s.name)}${s.form ? ` <span class="chip sm">${esc(s.form)}</span>` : ''}${v.tb ? ' <span class="chip sm gold">błyskotka +1</span>' : ''}</div>
-                <div class="sk-m">${posDots(v.inf.from, 'from')}<span class="sep">▸</span>${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(s.w)}</span>`}<span class="ptxt">${esc(skillPosTxt(v))}</span>
-                  <span class="num">${v.cel != null ? 'Cel. ' + v.cel : ''}${v.dmg ? ' · ' + v.dmg : ''}${v.heal && !v.dmg ? ' · leczy ' + v.heal : ''}${v.stress && !v.dmg ? ' · −' + v.stress + ' Stres' : ''} · kryt ≤ ${v.crit}</span></div>
-                <div class="sk-e dim">${esc(effectText(v)) || '—'}</div></div></div>`;
-            }).join('')}</div>
-            ${c.notes.length ? `<div class="cnotes small">${c.notes.map(n => `<p>${md(n)}</p>`).join('')}</div>` : ''}
-          </div>
-          <div class="box"><div class="ph">Obóz <span class="hint">12 Punktów Odpoczynku na drużynę</span></div>
-            <ul class="camp">${c.camp.map(x => `<li><b>${esc(x.name)}</b> <span class="num muted">${x.pts} pkt</span> — ${esc(x.eff)}</li>`).join('')}
-            ${COMMON_CAMP.map(x => `<li><b>${esc(x.name)}</b> <span class="num muted">${x.pts} pkt</span> — ${esc(x.eff)}</li>`).join('')}</ul>
-            <div class="row"><span class="lbl">Obozownik ${Math.max(1, 4 - ((Store.S.osada.b || {}).Obozownik || 0))} Z</span>${LEARN_CAMP.map(x => `<label class="chk" title="${esc(x.eff)}"><input type="checkbox" data-act-change="camp" value="${x.name}" ${h.camp.includes(x.name) ? 'checked' : ''} ${dis}> ${x.name}</label>`).join('')}</div>
-          </div>
-          <div class="box qbox">
-            <div class="ph">Dziwactwa <span class="hint">do 5 pozytywnych i 5 negatywnych</span></div>
-            ${['qp', 'qn'].map(k => `<div class="qcol ${k}"><span class="lbl">${k === 'qp' ? 'Pozytywne' : 'Negatywne'}</span>
-              ${h[k].map((q, i) => `<div class="q"><span>${esc(q.t)}</span>${ed ? `<label class="chk small" title="Utrwalone w Sanatorium — nowe go nie wyprze"><input type="checkbox" data-act-change="qlock" data-k="${k}" data-i="${i}" ${q.lock ? 'checked' : ''}> utrwalone</label><button class="x" data-act="qdel" data-k="${k}" data-i="${i}" aria-label="Usuń">×</button>` : q.lock ? '<span class="chip sm" title="Utrwalone w Sanatorium — nowe go nie wyprze">utrwalone</span>' : ''}</div>`).join('') || '<p class="muted small">brak</p>'}
-              ${ed && h[k].length < 5 ? `<select data-act-change="qadd" data-k="${k}" aria-label="Dodaj dziwactwo"><option value="">+ dodaj…</option>${(k === 'qp' ? DATA.quirks_pos : DATA.quirks_neg).map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}</div>`).join('')}
-            ${ed ? `<button class="btn sm" data-act="quirkRoll">Rzut po wyprawie (k10)</button>` : ''}
-            <div class="ph">Choroby</div>
-            ${h.diseases.map((x, i) => `<div class="q"><span>${esc(x)}</span>${ed ? `<button class="x" data-act="ddel" data-i="${i}" aria-label="Usuń">×</button>` : ''}</div>`).join('') || '<p class="muted small">zdrowy</p>'}
-            ${ed ? `<select data-act-change="dadd" aria-label="Dodaj chorobę"><option value="">+ choroba…</option>${DATA.diseases.map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}
-          </div>
-          ${can && !h.dead ? this.services(h) : ''}
-          <div class="box"><div class="ph">Notatki</div><textarea id="hnote-${h.id}" data-bind="${P}.notes" ${dis} placeholder="Historia, blizny, długi, komu ufa…">${esc(h.notes || '')}</textarea></div>
-          ${can ? `<div class="row"><span class="sp"></span><button class="btn sm ghost" data-act="heroDelete">Usuń z rejestru</button></div>` : ''}
         </div>
       </div>
+      ${h.dead ? `<p class="deadnote">☩ Poległ: ${esc(h.deathCause || '')}${h.deathWeek ? ', tydzień ' + h.deathWeek : ''}.</p>` : ''}
+      <div class="sh-tabs" role="tablist" aria-label="Części karty">${SHEET_TABS.map(([k, t]) => `<button class="sh-tab ${tab === k ? 'on' : ''}" role="tab" aria-selected="${tab === k}" data-act="sheetTab" data-v="${k}">${t}</button>`).join('')}</div>
+      <div class="sh-body" role="tabpanel">${body}</div>
     </section>`;
+  },
+  tabWalka(h, c, st, dis) {
+    const on = h.skills.slice().sort((a, b) => a - b); const off = c.skills.map((x, i) => i).filter(i => !on.includes(i));
+    const legend = 'Złote kropki: z której pozycji bohatera (4 3 2 1, jak na scenie). Czerwone: które pozycje wroga trafia (1 2 3 4 od przodu). Połączone kreską: wszystkie naraz.';
+    const skRow = i => {
+      const s = c.skills[i]; const v = skillView(h, i, st); const sel = on.includes(i);
+      return `<div class="sk ${sel ? 'on' : ''}">
+        <button class="sk-t" data-act="skillToggle" data-i="${i}" ${dis} aria-pressed="${sel}" title="${sel ? 'Zabrana — kliknij, by zostawić w Osadzie' : 'Zostaje w Osadzie — kliknij, by zabrać'}">${sel ? '✓' : '+'}</button>
+        <div class="sk-b"><div class="sk-n">${esc(s.name)}${s.form ? ` <span class="chip sm">${esc(s.form)}</span>` : ''}${v.tb ? ' <span class="chip sm gold">błyskotka +1</span>' : ''}</div>
+        <div class="sk-m" title="${esc(skillPosTxt(v))}">${posDots(v.inf.from, 'from')}<span class="sep">▸</span>${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(s.w)}</span>`}
+          <span class="num">${v.cel != null ? 'Cel. ' + v.cel : ''}${v.dmg ? ' · ' + v.dmg : ''}${v.heal && !v.dmg ? ' · leczy ' + v.heal : ''}${v.stress && !v.dmg ? ' · −' + v.stress + ' Stres' : ''} · kryt ≤ ${v.crit}</span></div>
+        <div class="sk-e dim">${esc(effectText(v)) || '—'}</div></div></div>`;
+    };
+    return `<div class="sh-grid">
+      <div class="col"><div class="box"><div class="ph">Statystyki <span class="hint">dotknij, by zobaczyć skąd</span></div>
+        <div class="stats">
+          ${statCell(st, 'hp', 'Zdrowie', st.maxhp)}${statCell(st, 'dodge', 'Unik', st.dodge)}${statCell(st, 'prot', 'Pancerz', st.prot)}${statCell(st, 'speed', 'Szybkość', st.speed)}
+          ${statCell(st, 'crit', 'Kryt', st.crit)}${statCell(st, 'acc', 'Celność', sgn(st.acc))}${statCell(st, 'dmg', 'Obrażenia', sgn(st.dmg))}
+        </div>
+        <div class="ph">Odporności</div>
+        <div class="stats">${statCell(st, 'krzepa', 'Krzepa', st.krzepa)}${statCell(st, 'odp', 'Odporność', st.odp)}${statCell(st, 'death', 'Śmierć', st.death)}${statCell(st, 'virtue', 'Szansa Cnoty', st.virtue)}</div>
+        ${c.notes.length ? `<div class="cnotes small">${c.notes.map(n => `<p>${md(n)}</p>`).join('')}</div>` : ''}
+      </div></div>
+      <div class="col"><div class="box"><div class="ph">Na wyprawę <span class="hint">${on.length} z 4 · <span class="help" tabindex="0" data-gloss="${esc(legend)}" title="${esc(legend)}">kropki?</span></span></div>
+        <div class="sk-list">${on.map(skRow).join('') || '<p class="muted small">Nie wybrano żadnej umiejętności.</p>'}</div>
+        ${off.length ? `<div class="ph sk-off-h">Zostają w Osadzie <span class="hint">${off.length}</span></div><div class="sk-list off">${off.map(skRow).join('')}</div>` : ''}
+      </div></div>
+    </div>`;
+  },
+  tabEkw(h, can, ed) {
+    return `<div class="sh-grid">
+      <div class="col"><div class="box"><div class="ph">Ekwipunek <span class="hint">ranga najwyżej Poziom + 1</span></div>
+        ${rankRow(h, 'weapon', 'Broń', 'Kuźnia', 6)}${rankRow(h, 'armor', 'Pancerz', 'Kuźnia', 6)}${rankRow(h, 'guild', 'Umiejętności', 'Gildia', 8)}
+        <p class="small muted">Broń: obrażenia +1 na randze 2 i 4. Pancerz: Zdrowie +1 za rangę. Gildia: Celność +1 na randze 1 i 3, Kryt +1 na 2, główna liczba +1 na 4.</p>
+        ${!h.dead ? `<div class="row"><button class="btn sm" data-act="goBuilding" data-b="Kuźnia">Kuźnia w Osadzie →</button><button class="btn sm" data-act="goBuilding" data-b="Gildia">Gildia w Osadzie →</button></div>` : ''}
+      </div></div>
+      <div class="col"><div class="box"><div class="ph">Błyskotki <span class="hint">najwyżej 2, bez powtórzeń</span></div>
+        ${[0, 1].map(i => { const t = h.trinkets[i]; return `<div class="trk">${t ? `<b>${esc(t.name)}</b> <span class="dim small">${esc(trinketDesc(t))}</span>${can ? ` <button class="btn sm ghost" data-act="trkOff" data-i="${i}">Do magazynu</button>` : ''}` : `<span class="muted">puste miejsce</span>${can ? ` <button class="btn sm ghost" data-act="trkOn">Załóż z magazynu</button>` : ''}`}</div>`; }).join('')}
+      </div></div>
+    </div>`;
+  },
+  tabOboz(h, c, ed) {
+    const li = x => `<li><b>${esc(x.name)}</b> <span class="num muted">${x.pts} pkt</span> — ${esc(x.eff)}</li>`;
+    return `<div class="sh-grid">
+      <div class="col"><div class="box"><div class="ph">Umiejętności obozowe <span class="hint">12 Punktów Odpoczynku na drużynę</span></div>
+        <ul class="camp">${c.camp.map(li).join('')}${COMMON_CAMP.map(li).join('')}</ul>
+      </div></div>
+      <div class="col"><div class="box"><div class="ph">Nauczone w Obozowniku</div>
+        <ul class="camp learn">${LEARN_CAMP.map(x => `<li class="${h.camp.includes(x.name) ? 'on' : 'off'}"><b>${h.camp.includes(x.name) ? '✓ ' : ''}${esc(x.name)}</b> — ${esc(x.eff)}${ed && h.camp.includes(x.name) ? ` <button class="x" data-act="campDel" data-n="${esc(x.name)}" aria-label="Usuń">×</button>` : ''}</li>`).join('')}</ul>
+        ${!h.dead && LEARN_CAMP.some(x => !h.camp.includes(x.name)) ? `<div class="row"><button class="btn sm" data-act="goBuilding" data-b="Obozownik">Naucz w Obozowniku →</button></div>` : ''}
+      </div></div>
+    </div>`;
+  },
+  tabChar(h, c, can, ed, dis, P) {
+    const bonds = Object.entries(h.bonds || {}).filter(([id, n]) => n && H(id) && !H(id).dead);
+    return `<div class="sh-grid">
+      <div class="col">
+        <div class="box"><div class="ph">Kim jest</div>
+          <p class="sh-desc">${esc(c.desc)}</p>
+          ${h.story ? `<p class="hstory"><span class="muted">${esc(h.story.origin)}.</span> Marzenie: <b>${esc(h.story.dreamText)}</b> <span class="muted">(${h.story.done ? 'spełnione' : 'cel: ' + esc(h.story.goal) + ' → pozytywne dziwactwo'})</span></p>` : ed ? `<button class="btn sm ghost" data-act="storyRoll">Nadaj historię (pochodzenie i marzenie)</button>` : ''}
+          ${bonds.length ? `<div class="ph">Więzi</div><div class="hbonds">${bonds.map(([id, n]) => `<span class="chip sm ${n >= 2 ? 'gold' : n <= -2 ? 'red' : ''}">${esc(heroLabel(H(id)))}: ${bondName(n)}</span>`).join('')}</div>` : ''}
+        </div>
+        <div class="box"><div class="ph">Notatki</div><textarea id="hnote-${h.id}" data-bind="${P}.notes" ${dis} placeholder="Historia, blizny, długi, komu ufa…">${esc(h.notes || '')}</textarea></div>
+      </div>
+      <div class="col">
+        <div class="box qbox">
+          <div class="ph">Dziwactwa <span class="hint">do 5 pozytywnych i 5 negatywnych</span></div>
+          ${['qp', 'qn'].map(k => `<div class="qcol ${k}"><span class="lbl">${k === 'qp' ? 'Pozytywne' : 'Negatywne'}</span>
+            ${h[k].map((q, i) => `<div class="q"><span>${esc(q.t)}</span>${ed ? `<label class="chk small" title="Utrwalone w Sanatorium — nowe go nie wyprze"><input type="checkbox" data-act-change="qlock" data-k="${k}" data-i="${i}" ${q.lock ? 'checked' : ''}> utrwalone</label><button class="x" data-act="qdel" data-k="${k}" data-i="${i}" aria-label="Usuń">×</button>` : q.lock ? '<span class="chip sm" title="Utrwalone w Sanatorium — nowe go nie wyprze">utrwalone</span>' : ''}</div>`).join('') || '<p class="muted small">brak</p>'}
+            ${ed && h[k].length < 5 ? `<select data-act-change="qadd" data-k="${k}" aria-label="Dodaj dziwactwo"><option value="">+ dodaj…</option>${(k === 'qp' ? DATA.quirks_pos : DATA.quirks_neg).map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}</div>`).join('')}
+          ${ed ? `<button class="btn sm" data-act="quirkRoll">Rzut po wyprawie (k10)</button>` : ''}
+          <div class="ph">Choroby</div>
+          ${h.diseases.map((x, i) => `<div class="q"><span>${esc(x)}</span>${ed ? `<button class="x" data-act="ddel" data-i="${i}" aria-label="Usuń">×</button>` : ''}</div>`).join('') || '<p class="muted small">zdrowy</p>'}
+          ${ed ? `<select data-act-change="dadd" aria-label="Dodaj chorobę"><option value="">+ choroba…</option>${DATA.diseases.map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}
+          ${!h.dead && (h.diseases.length || h.qn.length) ? `<div class="row"><button class="btn sm" data-act="goBuilding" data-b="Sanatorium">Sanatorium w Osadzie →</button></div>` : ''}
+        </div>
+        ${can ? `<div class="row"><span class="sp"></span><button class="btn sm ghost" data-act="heroDelete">Usuń z rejestru</button></div>` : ''}
+      </div>
+    </div>`;
   },
   services(h) {
     const o = Store.S.osada; const b = o.b;
@@ -4221,6 +4469,16 @@ Object.assign(ACT, {
     if (!Store.isGM()) return toast('Doświadczenie poprawia tylko MG.');
     const h = curHero(); h.xp = Math.max(0, (h.xp || 0) + +el.dataset.v);
     saveHero(h); rollLog('MG poprawia doświadczenie: ' + heroLabel(h) + ' — ' + h.xp + ' / ' + xpNeed(h.level) + '.', '', 'sys');
+  },
+  sheetTab: el => { UI.sheetTab = el.dataset.v; renderView(); },
+  goBuilding: el => { UI.hbSel = el.dataset.b; location.hash = '#osada'; },
+  campDel: el => { if (!Store.isGM()) return; const h = curHero(); h.camp = h.camp.filter(x => x !== el.dataset.n); saveHero(h); },
+  campLearn: el => {
+    const h = el.dataset.hid ? clone(H(el.dataset.hid)) : curHero(); if (!h || !canHero(h)) return; const n = el.dataset.n;
+    if (h.camp.includes(n)) return toast(heroLabel(h) + ' już to umie.');
+    { const busy = heroBusy(h); if (busy) return toast(busy); }
+    const cost = Math.max(1, 4 - ((Store.S.osada.b || {}).Obozownik || 0)); if (!payGold(cost)) return;
+    h.camp = h.camp.concat(n); saveHero(h, true); rollLog(heroLabel(h) + ' uczy się w Obozowniku: ' + n + ' (' + cost + ' Z).', '', 'sys');
   },
   sheetEdit: () => { if (!Store.isGM()) return; UI.sheetEdit = !UI.sheetEdit; renderView(); },
   levelUp: () => {
@@ -4459,6 +4717,13 @@ function estateSvg() {
     ${marks}
   </svg>`;
 }
+/* zadania z tablicy jako przyciski pod mapą — na telefonie napisy na mapie są drobne */
+function mapQuestList() {
+  const b = Store.S.osada.board || []; const sel = UI.mapSel || {};
+  if (!b.length) return `<p class="maplist muted small">Tablica zadań jest pusta — MG losuje ją z nowym tygodniem.</p>`;
+  return `<div class="maplist"><span class="lbl">Zadania</span>${b.map(q => { const dd = q.dd != null; const r = dd ? 'dd' : q.region; const l = dd ? '' : q.goal === 'boss' ? 'lair' : q.dl; const nm = dd ? 'Najmroczniejszy Loch' : q.goal === 'boss' ? REGIONS[q.region].lair.name : REGIONS[q.region].locs[q.dl].name; const on = sel.r === r && (dd || String(sel.l) === String(l));
+    return `<button class="btn sm ${on ? 'gold' : ''}" data-act="mapSel" data-r="${r}" ${dd ? '' : `data-l="${l}"`}>${dd ? '' : `<span class="ldot lv${q.dl}">${DL_ROMAN[q.dl]}</span> `}${esc(nm)} <span class="muted small">${esc(QUEST_LEN[q.len] ? QUEST_LEN[q.len].name.toLowerCase() : '')}</span></button>`; }).join('')}</div>`;
+}
 function mapPanel() {
   const sel = UI.mapSel; const o = Store.S.osada;
   if (!sel) return `<section class="panel"><h2>Posiadłość</h2><p>Kliknij lokację na mapie. Rzymska cyfra to poziom lochu: <span class="ldot lv0">I</span> Uczniowski, <span class="ldot lv1">II</span> Weterański, <span class="ldot lv2">III</span> Mistrzowski. Romb to leże bossa regionu.</p>
@@ -4560,9 +4825,9 @@ function dungeonSvg() {
 VIEWS.wyprawa = {
   render() {
     let sub = UI.wsub || (Store.S.wyprawa.quest ? 'loch' : 'mapa'); if (sub === 'prep' && (Store.S.wyprawa.quest || !UI.prep || !(Store.S.osada.board || []).some(q => q.id === UI.prep.qid))) sub = Store.S.wyprawa.quest ? 'loch' : 'tablica';
-    return `<div class="seg subtabs">${[['mapa', 'Mapa posiadłości'], ['tablica', 'Tablica zadań'], ['loch', 'Mapa wyprawy']].map(([k, t]) => `<button class="btn ${sub === k ? 'gold' : 'ghost'}" data-act="wsub" data-v="${k}">${t}</button>`).join('')}</div>
+    return `<div class="seg subtabs">${[['mapa', 'Mapa posiadłości', 'Posiadłość'], ['tablica', 'Tablica zadań', 'Tablica'], ['loch', 'Mapa wyprawy', 'Loch']].map(([k, t, sh]) => `<button class="btn ${sub === k ? 'gold' : 'ghost'}" data-act="wsub" data-v="${k}" aria-label="${t}"><span class="lg">${t}</span><span class="shn" aria-hidden="true">${sh}</span></button>`).join('')}</div>
       ${sub !== 'loch' ? lootCardHtml() : ''}
-      ${sub === 'mapa' ? `<div class="mapgrid"><section class="panel mapbox">${estateSvg()}</section>${mapPanel()}</div>` : sub === 'tablica' ? this.board() : sub === 'prep' && !Store.S.wyprawa.quest ? prepView() : this.dungeon()}`;
+      ${sub === 'mapa' ? `<div class="mapgrid"><section class="panel mapbox"><div class="mapscroll">${estateSvg()}</div>${mapQuestList()}</section>${mapPanel()}</div>` : sub === 'tablica' ? this.board() : sub === 'prep' && !Store.S.wyprawa.quest ? prepView() : this.dungeon()}`;
   },
   board() {
     const o = Store.S.osada; const top = topLevel(); const W = Store.canWrite();
@@ -4591,31 +4856,16 @@ VIEWS.wyprawa = {
       ${campPanel()}</div>
       <div class="stack">
         <section class="panel"><h2>Komnata <span class="hint">${at ? esc(at.c) : ''}</span></h2>${this.roomPanel(at)}</section>
-        <section class="panel"><h2>Plecak <span class="hint ${packSlots(sup, L) > 16 ? 'bad' : ''}">${packSlots(sup, L)} z 16 miejsc</span></h2>
+        <section class="panel packp"><h2>Plecak <span class="hint ${packSlots(sup, L) > 16 ? 'bad' : ''}">${packSlots(sup, L)} z 16 miejsc</span></h2>
           ${packSlots(sup, L) > 16 ? `<p class="warn small">Plecak jest przepełniony. Wyrzućcie coś, zanim pójdziecie dalej — łup się nie mieści.${W ? ' <button class="btn sm gold" data-act="freeSlot">Zwolnij miejsce</button>' : ''}</p>` : ''}
-          <div class="supgrid">${SUPPLY.map(([k]) => `<div class="sup"><span>${k}</span><span class="row">${W ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="-1" title="Wyrzuć jedną sztukę">−</button>` : ''}<b class="num">${sup[k] || 0}</b>${Store.isGM() ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="1" title="Poprawka MG">+</button>` : ''}</span></div>`).join('')}
-            <div class="sup"><span>Drewno</span><b class="num">${w.campsLeft || 0}</b></div></div>
+          <div class="packgrid">${SUPPLY.map(([k]) => `<div class="pk ${sup[k] ? '' : 'zero'}"><span class="pk-n">${k}</span><b class="num">${sup[k] || 0}</b>${W || Store.isGM() ? `<span class="pk-b">${W ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="-1" title="Wyrzuć jedną sztukę" aria-label="Wyrzuć: ${k}" ${sup[k] ? '' : 'disabled'}>−</button>` : ''}${Store.isGM() ? `<button class="btn sm ghost" data-act="supAdj" data-k="${k}" data-v="1" title="Poprawka MG" aria-label="Dodaj: ${k}">+</button>` : ''}</span>` : ''}</div>`).join('')}
+            <div class="pk ${w.campsLeft ? '' : 'zero'}"><span class="pk-n">Drewno</span><b class="num">${w.campsLeft || 0}</b></div></div>
           ${lootStrip()}
-          <div class="row"><input type="number" id="scoutB" value="${UI.scoutB || 0}" min="-3" max="6" style="width:4.5em" aria-label="Premia do zwiadu"><span class="small muted">premia do najbliższego zwiadu (Tropienie +2, Rozpoznanie +3…)</span></div>
         </section>
-        ${this.scoutPanel()}
-        ${W ? `<section class="panel"><h2>Koniec wyprawy</h2><div class="row"><button class="btn primary" data-act="endQuest" data-v="done" ${goalProgress(w).ok || Store.isGM() ? '' : 'disabled title="Cel jeszcze niespełniony"'}>Zadanie wykonane</button><button class="btn" data-act="endQuest" data-v="leave">Wyjście bez zadania (+3 Stres)</button></div><p class="small muted">${goalProgress(w).ok ? 'Cel wykonany.' : 'Cel: ' + esc(goalProgress(w).txt) + '.'} Wyjść bez zadania można z pustej albo oczyszczonej komnaty.</p></section>` : ''}
+        ${W ? (() => { const g = goalProgress(w); return `<section class="panel"><h2>Koniec wyprawy</h2>
+          <p class="small ${g.ok ? '' : 'muted'}">${g.ok ? '<b>Cel wykonany</b> — możecie wracać po nagrodę.' : 'Cel: ' + esc(g.txt) + '.'} Wyjść można z pustej albo oczyszczonej komnaty.</p>
+          <div class="row"><button class="btn ${g.ok ? 'primary' : ''}" data-act="endQuest" data-v="done" ${g.ok || Store.isGM() ? '' : 'disabled title="Cel jeszcze niespełniony"'}>Zadanie wykonane${g.ok ? '' : Store.isGM() ? ' (MG)' : ''}</button><button class="btn ghost" data-act="endQuest" data-v="leave">Wyjście bez zadania (+3 Stres)</button></div></section>`; })() : ''}
       </div></div>`;
-  },
-  scoutPanel() {
-    const w = Store.S.wyprawa; const W = Store.canWrite(); if (!w.at) return '';
-    const byId = Object.fromEntries(w.rooms.map(r => [r.id, r]));
-    const adj = w.edges.map((e, i) => [e, i]).filter(([e]) => e.a === w.at || e.b === w.at);
-    const pt = party(); const sc = scoutChance(Store.S.stol, pt);
-    const rows = adj.map(([e, i]) => {
-      const to = byId[e.a === w.at ? e.b : e.a];
-      const lbl = to.visited || to.seen ? to.c : 'nieznana komnata';
-      const st = e.crossed ? 'przebyty' : e.scout ? (e.scout.ok ? 'zwiad udany (k10 = ' + e.scout.r + ' ≤ ' + e.scout.chance + '): ' + e.scout.ev.text : 'zwiad nieudany (k10 = ' + e.scout.r + ' przy Szansie ' + e.scout.chance + ')') : '';
-      return `<div class="scout-row"><span>→ <b>${esc(lbl)}</b>${st ? ` <span class="muted small">(${esc(st)})</span>` : ''}</span>${W && !e.crossed && !e.scout ? `<button class="btn sm gold" data-act="scout" data-i="${i}" ${sc.chance ? '' : 'disabled'}>Zwiad</button>` : ''}</div>`;
-    }).join('');
-    return `<section class="panel"><h2>Korytarze <span class="hint">Szansa zwiadu ${sc.chance}${sc.bonus ? ' (w tym premia ' + sc.bonus + ')' : ''} · ${sc.name}</span></h2>
-      <p class="small muted">Każdy korytarz można zwiadować raz: przed wejściem albo samo przejście zrobi to za was. Udany zwiad zdradza komnatę za korytarzem i to, co czeka w nim samym (pułapkę da się wtedy rozbroić). Przy Pochodni 0 zwiad jest niemożliwy.</p>
-      ${rows || '<p class="muted">Stąd nie prowadzi żaden korytarz.</p>'}</section>`;
   },
   roomPanel(r) {
     if (!r) return '';
@@ -4709,7 +4959,7 @@ function resolveHunger() {
 function setW(fn, text, cls) { const w = clone(Store.S.wyprawa); fn(w); const ops = [opSet('wyprawa', w)]; if (text) ops.push({ log: { id: uid(), t: Date.now(), by: byName(), uid: Store.me.id, kind: 'roll', cls: cls || '', text } }); Store.act(ops); }
 function party() { return Store.S.stol.heroes.map(H).filter(h => h && !h.dead); }
 Object.assign(ACT, {
-  wsub: el => { UI.wsub = el.dataset.v; renderView(); },
+  wsub: el => { UI.wsub = el.dataset.v; renderView(); renderTorch(); },
   mapSel: el => {
     UI.mapSel = { r: el.dataset.r, l: el.dataset.l === 'lair' ? 'lair' : el.dataset.l != null ? +el.dataset.l : null };
     const sel = UI.mapSel; const here = (Store.S.osada.board || []).filter(q => q.region === sel.r && (sel.l === 'lair' ? q.goal === 'boss' : q.dl === sel.l && q.goal !== 'boss'));
@@ -4724,7 +4974,7 @@ Object.assign(ACT, {
     const w = Store.S.wyprawa; if (w.pending) return toast('Najpierw rozstrzygnijcie wydarzenie: ' + pendingTitle(w.pending) + '.');
     if (w.camp) return toast('Najpierw zakończcie obóz (noc).');
     if (Store.S.stol.fight && !Store.S.stol.enemies.some(e => !e.corpse)) ACT.fightEnd();
-    if (Store.S.stol.enemies.some(e => !e.corpse)) { toast('Na Stole czekają wrogowie — najpierw walka.'); return goFight(); }
+    if (Store.S.stol.enemies.some(e => !e.corpse)) { toast('Czekają wrogowie — najpierw walka.'); return goFight(); }
     const at = w.rooms.find(r => r.id === w.at); if (at && /walka|boss/.test(at.c) && !at.cleared && at.id !== 'r0' && w.prev !== el.dataset.id) return toast('W tej komnacie czekają wrogowie — walczcie albo wycofajcie się tam, skąd przyszliście.');
     if (packSlots(w.sup, w.loot) > 16) return toast('Plecak jest przepełniony (' + packSlots(w.sup, w.loot) + ' z 16) — wyrzućcie coś.');
     crossTo(el.dataset.id);
@@ -4831,10 +5081,18 @@ function scoutable() {
   return w.edges.map((e, i) => ({ e, i, to: byId[e.a === w.at ? e.b : e.a] })).filter(x => (x.e.a === w.at || x.e.b === w.at) && !x.e.crossed && !x.e.scout);
 }
 function scoutBar() {
-  const list = scoutable(); const W = Store.canWrite(); if (!W || !list.length) return '';
+  const w = Store.S.wyprawa; const W = Store.canWrite(); if (!W || !w.at) return '';
+  const byId = Object.fromEntries(w.rooms.map(r => [r.id, r]));
+  const adj = w.edges.map((e, i) => ({ e, i, to: byId[e.a === w.at ? e.b : e.a] })).filter(x => x.e.a === w.at || x.e.b === w.at);
+  if (!adj.length) return '';
   const sc = scoutChance(Store.S.stol, party());
-  return `<div class="scoutbar"><div><span class="lbl">Zwiad</span> <b class="sc-ch">Szansa ${sc.chance}</b> <span class="muted small">${esc(sc.name)}${sc.bonus ? ', premia ' + sc.bonus : ''} · każdy korytarz raz</span></div>
-    <div class="row">${list.map(x => `<button class="btn scoutbtn" data-act="scout" data-i="${x.i}" ${sc.chance ? '' : 'disabled title="W Ciemności zwiad jest niemożliwy"'}>Zwiad → ${esc(x.to.visited || x.to.seen ? x.to.c : 'nieznana komnata')}</button>`).join('')}</div></div>`;
+  const help = 'Każdy korytarz można zwiadować raz: przed wejściem albo samo przejście zrobi to za was. Udany zwiad zdradza komnatę za korytarzem i to, co czeka w nim samym (pułapkę da się wtedy rozbroić). Przy Pochodni 0 zwiad jest niemożliwy. Premia: Tropienie +2, Rozpoznanie +3 itp.';
+  const nm = x => x.to.visited || x.to.seen ? x.to.c : 'nieznana komnata';
+  const open = adj.filter(x => !x.e.crossed && !x.e.scout); const done = adj.filter(x => x.e.crossed || x.e.scout);
+  return `<div class="scoutbar"><div><span class="lbl">Zwiad</span> <b class="sc-ch">Szansa ${sc.chance}</b> <span class="muted small">${esc(sc.name)}${sc.bonus ? ', premia ' + sc.bonus : ''}</span> <span class="hint help" tabindex="0" data-gloss="${esc(help)}" title="${esc(help)}">jak działa?</span>
+      <label class="sc-b small muted">premia <input type="number" id="scoutB" value="${UI.scoutB || 0}" min="-3" max="6" aria-label="Premia do najbliższego zwiadu"></label></div>
+    ${open.length ? `<div class="row">${open.map(x => `<button class="btn scoutbtn" data-act="scout" data-i="${x.i}" ${sc.chance ? '' : 'disabled title="W Ciemności zwiad jest niemożliwy"'}>Zwiad → ${esc(nm(x))}</button>`).join('')}</div>` : ''}
+    ${done.length ? `<ul class="sc-done">${done.map(x => `<li>→ <b>${esc(nm(x))}</b> <span class="muted">${x.e.crossed ? 'przebyty' : x.e.scout.ok ? 'zwiad udany (k10 = ' + x.e.scout.r + ' ≤ ' + x.e.scout.chance + '): ' + esc(x.e.scout.ev.text) : 'zwiad nieudany (k10 = ' + x.e.scout.r + ' przy Szansie ' + x.e.scout.chance + ')'}</span></li>`).join('')}</ul>` : ''}</div>`;
 }
 /* zwiad korytarza: rzut na Szansę Zwiadu z Pochodni, zdarzenie losowane od razu, ukryta komnata po sukcesie */
 function scoutChance(st, pt) {
@@ -5238,7 +5496,7 @@ function prepView() {
   const benchHtml = bench.map(h => { const why = heroAway(h) || refuses(h, q) || (h.status === 'wyprawa' ? 'na wyprawie' : ''); return `<button class="bench ${why ? 'off' : ''}" data-act="prepAdd" data-id="${h.id}" ${why || pt.length >= 4 || !W ? 'disabled' : ''} title="${esc(why || 'Dodaj do drużyny')}"><b>${esc(heroLabel(h))}</b> <span class="small dim">${esc(CLS[h.cls].name)} · Poz. ${h.level} · Stres ${h.stress} · najlepiej ${esc(CLS[h.cls].pos || '?')}</span>${why ? `<span class="small warn">${esc(why)}</span>` : ''}</button>`; }).join('') || '<p class="muted small">Wszyscy dostępni bohaterowie są już w drużynie.</p>';
   return `<div class="prep">
     <section class="panel"><h2>Przygotowanie wyprawy</h2>${questCard(Object.assign({}, q), true).replace(/<button[^>]*takeQuest[^>]*>[^<]*<\/button>/, '')}</section>
-    <section class="panel"><h2>Drużyna <span class="hint">${pt.length} z 4 · ustawienie jak na Stole (1 = przód)</span></h2>
+    <section class="panel"><h2>Drużyna <span class="hint">${pt.length} z 4 · ustawienie jak w walce (1 = przód)</span></h2>
       <div class="pslots">${slotHtml}</div>
       <div class="ph">Dostępni w Osadzie</div><div class="benchlist">${benchHtml}</div></section>
     <section class="panel"><h2>Plecak <span class="hint">${slots} z 16 miejsc · koszt ${cost} Z · w skarbcu ${o.gold} Z</span></h2>
@@ -5457,7 +5715,7 @@ function hbPanel(n) {
   } else if (n === 'Obozownik') {
     body = `${head('Obozownik', 'nauka: ' + Math.max(1, 4 - (b.Obozownik || 0)) + ' Z za umiejętność')}
       <p class="small dim">${LEARN_CAMP.map(x => '<b>' + esc(x.name) + '</b> — ' + esc(x.eff)).join(' · ')}</p>
-      <div class="hb-heroes">${townHeroes().map(h => hbHeroRow(h, `<span class="small">${h.camp && h.camp.length ? 'zna: ' + esc(h.camp.join(', ')) : 'nie zna jeszcze żadnej'}</span> <button class="btn sm ghost" data-act="hbHero" data-hid="${h.id}">Naucz na karcie bohatera</button>`)).join('') || '<p class="muted small">W Osadzie nie ma bohaterów.</p>'}</div>
+      <div class="hb-heroes">${townHeroes().map(h => { const cost = Math.max(1, 4 - (b.Obozownik || 0)); const busy = heroBusy(h); return hbHeroRow(h, LEARN_CAMP.map(x => h.camp.includes(x.name) ? `<span class="chip sm gold" title="${esc(x.eff)}">✓ ${esc(x.name)}</span>` : `<button class="btn sm" data-act="campLearn" data-hid="${h.id}" data-n="${esc(x.name)}" ${W && !busy ? '' : 'disabled'} title="${esc(busy || x.eff)}">${esc(x.name)} <span class="num">${cost} Z</span></button>`).join('')); }).join('') || '<p class="muted small">W Osadzie nie ma bohaterów.</p>'}</div>
       ${hbUpgrade('Obozownik')}`;
   } else if (n === 'Wóz Nomadów') {
     body = `${head('Wóz Nomadów', 'magazyn błyskotek rodu')}
@@ -5800,7 +6058,7 @@ VIEWS.mg = {
         <p class="num dim">Zdrowie ${e.hp}/${e.maxhp} · Unik ${e.dodge} · Pancerz ${e.prot} · Szybkość ${e.speed} · Krzepa ${e.krzepa} · Odporność ${e.odp} · ${esc(e.type || '')}</p>
         ${pips('hp', e.hp, e.maxhp, 'npchp')}
         ${(e.attacks || []).map(a => `<p class="small">${attackText(a)}</p>`).join('')}
-        <div class="row"><button class="btn sm primary" data-act="npcToTable">Wystaw na Stół</button><button class="btn sm ghost" data-act="npcNoFight">Usuń blok walki</button></div></div>`;
+        <div class="row"><button class="btn sm primary" data-act="npcToTable">Wystaw do walki</button><button class="btn sm ghost" data-act="npcNoFight">Usuń blok walki</button></div></div>`;
     }
     const allE = REG_OPTS.map(([k, nm]) => `<optgroup label="${nm}">${(k === 'DD' ? DATA.bestiary.DD.enemies : DATA.bestiary[k].enemies).map(e => `<option value="${esc(e.name)}">${esc(e.name)}</option>`).join('')}</optgroup>`).join('');
     return `<div class="npcgrid">
@@ -6000,7 +6258,7 @@ function foeCard(ref) {
     ${e.where ? `<p class="small muted">Ustawienie: ${esc(e.where)}</p>` : ''}
     ${f && (f.desc || f.tactics || f.loot) ? `<div class="fc-lore">${f.desc ? `<p><span class="lbl">Wygląd</span> ${esc(f.desc)}</p>` : ''}${f.tactics ? `<p><span class="lbl">Taktyka</span> ${esc(f.tactics)}</p>` : ''}${f.loot ? `<p><span class="lbl">Łup</span> ${esc(f.loot)}</p>` : ''}</div>` : ''}
     <div class="row fc-act">
-      <button class="btn primary" data-act="foeTable">Wystaw na Stół${flat ? '' : ' (' + DL[dl] + ')'}</button>
+      <button class="btn primary" data-act="foeTable">Wystaw do walki${flat ? '' : ' (' + DL[dl] + ')'}</button>
       ${custom ? `<button class="btn" data-act="foeEditOn">Edytuj</button><button class="btn ghost" data-act="foeDel">Usuń</button>` : `<button class="btn" data-act="foeCopy">Zrób własną wersję</button>`}
     </div>
   </section>`;
@@ -6055,13 +6313,13 @@ Object.assign(ACT, {
   foeCopy: () => { const e = buildFoe(UI.foeSel, 0); const f = foeToCustom(e, UI.foeSel); UI.foeSel = 'c:' + f.id; UI.foeEdit = true; saveFoe(f, true); },
   foeEditOn: () => { UI.foeEdit = true; renderView(); },
   foeEditOff: () => { UI.foeEdit = false; T.saveG(); renderView(); },
-  foeDel: () => confirmBox('Usunąć tego wroga?', 'Karta zniknie z listy. Wrogowie już stojący na Stole zostają.', 'Usuń', () => { Store.actG(G => { delete G.foes[UI.foeSel.slice(2)]; }); UI.foeSel = null; renderView(); }),
+  foeDel: () => confirmBox('Usunąć tego wroga?', 'Karta zniknie z listy. Wrogowie już stojący w szyku zostają.', 'Usuń', () => { Store.actG(G => { delete G.foes[UI.foeSel.slice(2)]; }); UI.foeSel = null; renderView(); }),
   foeAtkAdd: () => { const f = clone(foesG()[UI.foeSel.slice(2)]); f.attacks = (f.attacks || []).concat([{ name: '', w: '1–4', cel: 8, dmg: 'k4', eff: '' }]); saveFoe(f, true); },
   foeAtkDel: el => { const f = clone(foesG()[UI.foeSel.slice(2)]); f.attacks.splice(+el.dataset.i, 1); saveFoe(f, true); },
   foeTable: () => {
     const e = buildFoe(UI.foeSel, foeFlat(UI.foeSel) ? 0 : +(UI.foeDl || 0)); if (!e) return;
     const used = Store.S.stol.enemies.reduce((a, x) => a + (x.size || 1), 0);
-    if (used + (e.size || 1) > 4) return toast('Szyk wrogów jest pełny — usuń kogoś na Stole.');
+    if (used + (e.size || 1) > 4) return toast('Szyk wrogów jest pełny — usuń kogoś w zakładce Walka.');
     setStol(st => { st.enemies.push(e); }, '**' + e.name + '** staje do walki.'); location.hash = '#stol';
   }
 });
@@ -6152,11 +6410,12 @@ function renderGuide() {
   const el = $('#guide'); if (!el) return;
   if (!Store.ready || UI.guideOff) { el.innerHTML = UI.guideOff ? `<button class="btn sm ghost" data-act="guideToggle">Pokaż „Co teraz?”</button>` : ''; return; }
   const n = nextStep();
-  el.innerHTML = `<div class="guidebar"><span class="lbl">Co teraz?</span> <span class="gtxt">${n.txt}${n.prz || ''}</span>
+  el.innerHTML = `<div class="guidebar ${UI.guideMore ? 'more' : ''}"><span class="lbl">Co teraz?</span> <span class="gtxt" data-act="guideMore" title="Dotknij, by rozwinąć albo zwinąć">${n.txt}${n.prz || ''}</span>
     <span class="sp"></span>${n.tab ? `<button class="btn sm gold" data-act="guideGo">Pokaż</button>` : ''}<button class="btn sm ghost" data-act="guideToggle" title="Ukryj podpowiedzi">×</button></div>`;
   UI._guide = n;
 }
 Object.assign(ACT, {
+  guideMore: () => { UI.guideMore = !UI.guideMore; renderGuide(); },
   guideToggle: () => { UI.guideOff = !UI.guideOff; LS.set('pio:guideOff', UI.guideOff); renderGuide(); },
   guideGo: () => {
     const n = UI._guide; if (!n) return;
@@ -6316,7 +6575,7 @@ function threatTick(o, lines, ops) {
     if (r <= lim) raid(o, lines, 'k10 = ' + r + ' ≤ ' + lim);
     else lines.push('Ciemność krąży wokół palisady (k10 = ' + r + ', napad przy ≤ ' + lim + ').');
   }
-  if (o.threat >= 10) { o.siege = true; lines.push('**Oblężenie!** Ciemność wylewa się z lochów prosto na Osadę. MG wystawia walkę na Stole — przegrana kosztuje stopień budynku.'); }
+  if (o.threat >= 10) { o.siege = true; lines.push('**Oblężenie!** Ciemność wylewa się z lochów prosto na Osadę. MG wystawia walkę w zakładce Walka — przegrana kosztuje stopień budynku.'); }
 }
 /* napad: k4 na to, co stwory zabiorą */
 function raid(o, lines, why) {
@@ -6331,8 +6590,8 @@ function raid(o, lines, why) {
 function threatBar() {
   const o = Store.S.osada; const t = o.threat || 0;
   return `<div class="threat"><span class="lbl">Ciemność</span><span class="tbar">${Array.from({ length: 10 }, (_, i) => `<i class="${i < t ? 'on' : ''} ${i >= 5 ? 'hi' : ''}"></i>`).join('')}</span><b class="num">${t}/10</b>
-    <span class="small muted">${t >= 10 ? 'oblężenie!' : t >= 4 ? 'napady na Osadę (k10 ≤ ' + (t - 3) + ' co tydzień)' : 'rośnie o 1 co tydzień (o 2 bez wyprawy); spada za wykonane średnie i długie zadania oraz pokonanych bossów; od 4 — napady'}</span>
-    ${o.siege && Store.isGM() ? `<button class="btn sm primary" data-act="siege">Wystaw oblężenie na Stole</button>` : ''}</div>`;
+    ${(() => { const why = 'Rośnie o 1 co tydzień (o 2 bez wyprawy); spada za wykonane średnie i długie zadania oraz pokonanych bossów; od 4 — napady na Osadę, przy 10 — oblężenie.'; return t >= 10 ? '<span class="small warn">oblężenie!</span>' : t >= 4 ? `<span class="small muted">napady na Osadę (k10 ≤ ${t - 3} co tydzień)</span>` : `<span class="small muted tdesc">${esc(why)}</span><span class="hint help tq" tabindex="0" data-gloss="${esc(why)}" title="${esc(why)}">co to?</span>`; })()}
+    ${o.siege && Store.isGM() ? `<button class="btn sm primary" data-act="siege">Wystaw oblężenie do walki</button>` : ''}</div>`;
 }
 Object.assign(ACT, {
   siege: () => {

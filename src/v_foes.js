@@ -70,7 +70,7 @@ function foeCard(ref) {
     ${e.where ? `<p class="small muted">Ustawienie: ${esc(e.where)}</p>` : ''}
     ${f && (f.desc || f.tactics || f.loot) ? `<div class="fc-lore">${f.desc ? `<p><span class="lbl">Wygląd</span> ${esc(f.desc)}</p>` : ''}${f.tactics ? `<p><span class="lbl">Taktyka</span> ${esc(f.tactics)}</p>` : ''}${f.loot ? `<p><span class="lbl">Łup</span> ${esc(f.loot)}</p>` : ''}</div>` : ''}
     <div class="row fc-act">
-      <button class="btn primary" data-act="foeTable">Wystaw na Stół${flat ? '' : ' (' + DL[dl] + ')'}</button>
+      <button class="btn primary" data-act="foeTable">Wystaw do walki${flat ? '' : ' (' + DL[dl] + ')'}</button>
       ${custom ? `<button class="btn" data-act="foeEditOn">Edytuj</button><button class="btn ghost" data-act="foeDel">Usuń</button>` : `<button class="btn" data-act="foeCopy">Zrób własną wersję</button>`}
     </div>
   </section>`;
@@ -125,13 +125,13 @@ Object.assign(ACT, {
   foeCopy: () => { const e = buildFoe(UI.foeSel, 0); const f = foeToCustom(e, UI.foeSel); UI.foeSel = 'c:' + f.id; UI.foeEdit = true; saveFoe(f, true); },
   foeEditOn: () => { UI.foeEdit = true; renderView(); },
   foeEditOff: () => { UI.foeEdit = false; T.saveG(); renderView(); },
-  foeDel: () => confirmBox('Usunąć tego wroga?', 'Karta zniknie z listy. Wrogowie już stojący na Stole zostają.', 'Usuń', () => { Store.actG(G => { delete G.foes[UI.foeSel.slice(2)]; }); UI.foeSel = null; renderView(); }),
+  foeDel: () => confirmBox('Usunąć tego wroga?', 'Karta zniknie z listy. Wrogowie już stojący w szyku zostają.', 'Usuń', () => { Store.actG(G => { delete G.foes[UI.foeSel.slice(2)]; }); UI.foeSel = null; renderView(); }),
   foeAtkAdd: () => { const f = clone(foesG()[UI.foeSel.slice(2)]); f.attacks = (f.attacks || []).concat([{ name: '', w: '1–4', cel: 8, dmg: 'k4', eff: '' }]); saveFoe(f, true); },
   foeAtkDel: el => { const f = clone(foesG()[UI.foeSel.slice(2)]); f.attacks.splice(+el.dataset.i, 1); saveFoe(f, true); },
   foeTable: () => {
     const e = buildFoe(UI.foeSel, foeFlat(UI.foeSel) ? 0 : +(UI.foeDl || 0)); if (!e) return;
     const used = Store.S.stol.enemies.reduce((a, x) => a + (x.size || 1), 0);
-    if (used + (e.size || 1) > 4) return toast('Szyk wrogów jest pełny — usuń kogoś na Stole.');
+    if (used + (e.size || 1) > 4) return toast('Szyk wrogów jest pełny — usuń kogoś w zakładce Walka.');
     setStol(st => { st.enemies.push(e); }, '**' + e.name + '** staje do walki.'); location.hash = '#stol';
   }
 });

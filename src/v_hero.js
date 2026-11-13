@@ -21,12 +21,13 @@ function pips(kind, n, max, bind, marks, opts = {}) {
 function rankRow(h, key, label, building, cost) {
   const r = h.gear[key]; const mx = maxRank(h, Store.S.osada.b[building]); const can = canHero(h);
   return `<div class="rank"><span class="rl">${label}</span><span class="rp">${[1, 2, 3, 4].map(i => `<button class="rk ${i <= r ? 'on' : ''} ${i > mx ? 'lock' : ''}" data-act="rankSet" data-k="${key}" data-v="${i}" ${Store.isGM() && UI.sheetEdit ? '' : 'disabled'} title="${i > mx ? 'Zablokowane: ranga najwyżej Poziom + 1 i stopień budynku + 1' : 'Ranga ' + i}">${i}</button>`).join('')}</span>
-    ${can && r < 4 ? `<button class="btn sm ghost" data-act="rankBuy" data-k="${key}" data-b="${building}" data-c="${cost}" ${r + 1 > mx ? 'disabled' : ''}>${building}: ${cost * (r + 1)} Z</button>` : ''}</div>`;
+    ${r < 4 ? `<span class="small muted">${r + 1 > mx ? 'następna ranga zablokowana' : 'następna: ' + cost * (r + 1) + ' Z (' + building + ')'}</span>` : '<span class="chip sm gold">ranga 4</span>'}</div>`;
 }
 function statCell(st, k, label, v) {
   return `<div class="stat" title="${esc(whyText(st, k))}"><span class="sl">${label}</span><b class="sv num">${v}</b><span class="sw">${esc(whyText(st, k))}</span></div>`;
 }
 
+const SHEET_TABS = [['walka', 'Walka'], ['ekw', 'Ekwipunek'], ['oboz', 'Obóz'], ['char', 'Charakter']];
 VIEWS.bohaterowie = {
   render() {
     const all = heroes(); const filt = UI.hfilter || 'all';
@@ -41,14 +42,15 @@ VIEWS.bohaterowie = {
       <div class="row">
         <div class="seg">${[['all', 'Wszyscy'], ['mine', 'Moi'], ['dead', 'Cmentarz']].map(([k, t]) => `<button class="btn sm ${filt === k ? 'gold' : 'ghost'}" data-act="hfilter" data-v="${k}">${t}</button>`).join('')}</div>
         <span class="sp"></span>
-        ${W ? `<button class="btn sm primary" data-act="recruit">Rekrut z dyliżansu (k20)</button><button class="btn sm" data-act="pickClass">Wybierz klasę</button>` : ''}
+        ${W ? `<button class="btn sm" data-act="recruit">Rekrut z dyliżansu (k20)</button><button class="btn sm" data-act="pickClass">Wybierz klasę</button>` : ''}
       </div>
       <div class="rlist">${list.map(h => {
-        const st = heroStats(h);
-        return `<button class="rcard ${UI.heroSel === h.id ? 'on' : ''} ${h.dead ? 'dead' : ''} ${!h.dead && heroAway(h) ? 'sick' : ''}" data-act="heroSel" data-id="${h.id}" ${!h.dead && heroAway(h) ? `title="${esc(heroAway(h))}"` : ''}>
-          <span class="rp2">${portraitHtml(h, 'rp-img')}</span><span class="rn">${esc(heroLabel(h))}</span><span class="rc">${h.name ? esc(CLS[h.cls].name) + ' · ' : ''}Poz. ${h.level}${h.level < 6 ? ' · dośw. ' + (h.xp || 0) + '/' + xpNeed(h.level) : ''}${canLevel(h) ? ' <b class="lvbadge">★ awans</b>' : ''}</span>
+        const st = heroStats(h); const away = !h.dead && heroAway(h);
+        return `<button class="rcard ${UI.heroSel === h.id ? 'on' : ''} ${h.dead ? 'dead' : ''} ${away ? 'sick' : ''}" data-act="heroSel" data-id="${h.id}" ${away ? `title="${esc(away)}"` : ''} aria-pressed="${UI.heroSel === h.id}">
+          <span class="rp2">${portraitHtml(h, 'rp-img')}</span>
+          <span class="rinfo"><span class="rn">${esc(heroLabel(h))}${canLevel(h) ? ' <b class="lvbadge" title="Może awansować">★</b>' : ''}</span><span class="rc">${h.name ? esc(CLS[h.cls].name) + ' · ' : ''}Poz. ${h.level}</span>
           ${h.dead ? `<span class="rc">☩ ${esc(h.deathCause || '')}</span>` : bar('hp', h.hp, st.maxhp, h.hp + '/' + st.maxhp) + bar('st', h.stress, 20, 'Stres ' + h.stress)}
-          <span class="ro">${esc(ownerName(h))}${h.status && h.status !== 'osada' ? ' · ' + esc(h.status) : ''}</span></button>`;
+          <span class="ro">${esc(ownerName(h))}${h.status && h.status !== 'osada' ? ' · ' + esc(h.status) : ''}</span></span></button>`;
       }).join('') || `<div class="empty-state"><p>${filt === 'dead' ? 'Cmentarz jest jeszcze pusty.' : 'W rejestrze nie ma jeszcze bohaterów.'}</p>${W && filt !== 'dead' ? '<p class="dim">Każdy gracz wybiera na start klasę jednego bohatera, resztę losujecie z dyliżansu (k20).</p>' : ''}</div>`}</div>
     </section>
     ${sel ? this.sheet(sel) : ''}`;
@@ -57,8 +59,10 @@ VIEWS.bohaterowie = {
     const c = CLS[h.cls]; const st = heroStats(h); const can = canHero(h); const P = 'heroes.' + h.id;
     const dis = can ? '' : 'disabled';
     const ed = Store.isGM() && !!UI.sheetEdit;
-    const nChosen = h.skills.length;
     const affl = h.state ? h.state.kind + ':' + h.state.name : '';
+    const tab = SHEET_TABS.some(([k]) => k === UI.sheetTab) ? UI.sheetTab : 'walka';
+    const where = h.dead ? 'na cmentarzu' : (heroAway(h) || (h.status === 'wyprawa' ? 'na wyprawie' : 'w Osadzie'));
+    const body = tab === 'walka' ? this.tabWalka(h, c, st, dis) : tab === 'ekw' ? this.tabEkw(h, can, ed) : tab === 'oboz' ? this.tabOboz(h, c, ed) : this.tabChar(h, c, can, ed, dis, P);
     return `<section class="sheet panel" aria-label="Karta bohatera">
       <div class="sh-head">
         <div class="pframe">${portraitHtml(h, 'portrait')}
@@ -66,26 +70,20 @@ VIEWS.bohaterowie = {
         <div class="sh-id">
           <input type="text" class="hname" id="hn-${h.id}" data-bind="${P}.name" value="${esc(h.name)}" placeholder="Imię bohatera" ${dis} aria-label="Imię bohatera">
           <div class="hcls">${esc(c.name)} <span class="muted">· ${esc(c.role || '')}</span></div>
-          ${h.story ? `<div class="hstory small"><span class="muted">${esc(h.story.origin)}.</span> Marzenie: ${esc(h.story.dreamText)} <span class="muted">(${h.story.done ? '<b>spełnione</b>' : 'cel: ' + esc(h.story.goal) + ' → pozytywne dziwactwo'})</span></div>` : ed ? `<button class="btn sm ghost" data-act="storyRoll">Nadaj historię (pochodzenie i marzenie)</button>` : ''}
-          ${Object.entries(h.bonds || {}).filter(([id, n]) => n && H(id) && !H(id).dead).length ? `<div class="hbonds small">${Object.entries(h.bonds).filter(([id, n]) => n && H(id) && !H(id).dead).map(([id, n]) => `<span class="chip sm ${n >= 2 ? 'gold' : n <= -2 ? 'red' : ''}">${esc(heroLabel(H(id)))}: ${bondName(n)}</span>`).join('')}</div>` : ''}
-          <div class="row lvl"><span class="lbl">Poziom</span><b class="lvnum num">${h.level}</b>${h.level < 6 ? `<span class="lbl">doświadczenie</span><span class="xpbar" title="${h.xp || 0} z ${xpNeed(h.level)} do Poziomu ${h.level + 1}">${Array.from({ length: xpNeed(h.level) }, (_, i) => `<i class="xp ${i < (h.xp || 0) ? 'on' : ''}"></i>`).join('')}</span><span class="num small">${h.xp || 0} / ${xpNeed(h.level)} do Poziomu ${h.level + 1}</span>` : '<span class="chip sm gold">Poziom maksymalny</span>'}
+          <div class="row lvl"><span class="lbl">Poziom</span><b class="lvnum num">${h.level}</b>${h.level < 6 ? `<span class="xpbar" title="${h.xp || 0} z ${xpNeed(h.level)} do Poziomu ${h.level + 1}">${Array.from({ length: xpNeed(h.level) }, (_, i) => `<i class="xp ${i < (h.xp || 0) ? 'on' : ''}"></i>`).join('')}</span><span class="num small">${h.xp || 0} / ${xpNeed(h.level)} do Poziomu ${h.level + 1}</span>` : '<span class="chip sm gold">Poziom maksymalny</span>'}
             ${can && canLevel(h) ? `<button class="btn sm gold lvup" data-act="levelUp" ${h.status === 'wyprawa' ? 'disabled title="Awans po powrocie do Osady"' : ''}>Awansuj na Poziom ${h.level + 1}</button>` : ''}
             ${ed ? `<span class="gmfix"><button class="btn sm ghost" data-act="addXp" data-v="-1" title="Poprawka MG: −1 doświadczenia">−1</button><button class="btn sm ghost" data-act="addXp" data-v="1" title="Poprawka MG: +1 doświadczenia">+1</button></span>` : ''}</div>
-          <div class="row"><span class="chip">${esc(ownerName(h))}</span>
-            ${Store.canWrite() && h.owner !== Store.me.id && (Store.isGM() || !h.owner) ? `<button class="btn sm ghost" data-act="claim">Przypisz do mnie</button>` : ''}
+          <p class="sh-own"><span class="muted">Gra nim:</span> <b>${esc(ownerName(h))}</b> <span class="muted">·</span> ${ed ? `<label class="lbl" for="hs-${h.id}">gdzie</label> <select id="hs-${h.id}" data-bind="${P}.status">${['osada', 'wyprawa', 'leczenie'].map(x => `<option ${h.status === x ? 'selected' : ''}>${x}</option>`).join('')}</select>` : esc(where)}</p>
+          <div class="row sh-btns">
+            ${Store.canWrite() && h.owner !== Store.me.id && (Store.isGM() || !h.owner) ? `<button class="btn sm" data-act="claim">Przypisz do mnie</button>` : ''}
             ${Store.isGM() && h.owner ? `<button class="btn sm ghost" data-act="unclaim">Zwolnij</button>` : ''}
-            ${ed ? `<label class="lbl" for="hs-${h.id}">gdzie</label><select id="hs-${h.id}" data-bind="${P}.status">${['osada', 'wyprawa', 'leczenie'].map(s => `<option ${h.status === s ? 'selected' : ''}>${s}</option>`).join('')}</select>` : `<span class="chip sm">${h.dead ? 'na cmentarzu' : esc(heroAway(h) || (h.status === 'wyprawa' ? 'na wyprawie' : 'w Osadzie'))}</span>`}
-            ${Store.isGM() ? `<span class="sp"></span><button class="btn sm ${ed ? 'gold' : 'ghost'}" data-act="sheetEdit" aria-pressed="${ed}" title="Ręczne poprawki MG: Zdrowie, Stres, stany, dziwactwa, choroby, rangi">${ed ? 'Edycja MG: włączona' : 'Edycja MG'}</button>` : ''}
+            ${Store.isGM() ? `<button class="btn sm ${ed ? 'gold' : 'ghost'}" data-act="sheetEdit" aria-pressed="${ed}" title="Ręczne poprawki MG: Zdrowie, Stres, stany, dziwactwa, choroby, rangi">${ed ? 'Edycja MG: włączona' : 'Edycja MG'}</button>` : ''}
           </div>
         </div>
-        <div class="sh-desc dim">${esc(c.desc)}</div>
-      </div>
-      ${h.dead ? `<p class="deadnote">☩ Poległ: ${esc(h.deathCause || '')}${h.deathWeek ? ', tydzień ' + h.deathWeek : ''}.</p>` : ''}
-      <div class="sh-grid">
-        <div class="col">
-          <div class="box"><div class="ph">Zdrowie <span class="hint num">${h.hp} / ${st.maxhp}</span></div>${pips('hp', h.hp, st.maxhp, 'hp', null, { dis: !ed })}
+        <div class="sh-vitals">
+          <div class="vit"><div class="ph">Zdrowie <span class="hint num">${h.hp} / ${st.maxhp}</span></div>${pips('hp', h.hp, st.maxhp, 'hp', null, { dis: !ed })}
             ${ed ? `<div class="row"><label class="chk"><input type="checkbox" data-bind="${P}.dd" ${h.dd ? 'checked' : ''}> Próg Śmierci</label><label class="chk"><input type="checkbox" data-bind="${P}.exhausted" ${h.exhausted ? 'checked' : ''}> Wyczerpanie</label>${h.dd ? `<button class="btn sm primary" data-act="sheetDeath">Rzut Śmierci (≤ ${st.death})</button>` : ''}</div>` : h.dd || h.exhausted ? `<div class="row">${h.dd ? '<span class="chip sm red">Próg Śmierci</span>' : ''}${h.exhausted ? '<span class="chip sm">Wyczerpanie</span>' : ''}</div>` : ''}</div>
-          <div class="box"><div class="ph">Stres <span class="hint num">${h.stress} / 20${st.heart < 20 ? ' · zawał przy ' + st.heart : ''}</span></div>${pips('st', h.stress, 20, 'stress', [10, 20], { hi: 10, dis: !ed })}
+          <div class="vit"><div class="ph">Stres <span class="hint num">${h.stress} / 20${st.heart < 20 ? ' · zawał przy ' + st.heart : ''}</span></div>${pips('st', h.stress, 20, 'stress', [10, 20], { hi: 10, dis: !ed })}
             ${ed ? `<div class="row"><select data-act-change="state" id="hst-${h.id}" aria-label="Cnota albo Przypadłość">
               <option value="">— bez Cnoty i Przypadłości —</option>
               <optgroup label="Cnoty">${DATA.virtues.map(v => `<option value="virtue:${v.name}" ${affl === 'virtue:' + v.name ? 'selected' : ''}>${v.name}</option>`).join('')}</optgroup>
@@ -93,56 +91,91 @@ VIEWS.bohaterowie = {
               <button class="btn sm" data-act="sheetTest">Próba Charakteru (≤ ${st.virtue})</button></div>` : h.state ? `<div class="row"><span class="chip sm ${h.state.kind === 'virtue' ? 'gold' : 'red'}">${h.state.kind === 'virtue' ? 'Cnota' : 'Przypadłość'}: ${esc(h.state.name)}</span></div>` : ''}
             ${h.state ? `<p class="small ${h.state.kind === 'virtue' ? 'virtue-t' : 'affl-t'}">${esc(h.state.kind === 'virtue' ? (DATA.virtues.find(v => v.name === h.state.name) || {}).perm + '; przy 1–3 na początku tury: ' + (DATA.virtues.find(v => v.name === h.state.name) || {}).proc : h.state.kind === 'ekstaza' ? 'Co turę musi atakować, nie leczy innych, traci 1 Zdrowia na początku tury; Stres z ataków wrogów go nie dotyczy.' : 'Przy 1–3 na początku tury: ' + ((DATA.afflictions.find(v => v.name === h.state.name) || {}).combat || ''))}</p>` : ''}
           </div>
-          <div class="box"><div class="ph">Statystyki <span class="hint">najedź albo dotknij, by zobaczyć skąd</span></div>
-            <div class="stats">
-              ${statCell(st, 'hp', 'Zdrowie', st.maxhp)}${statCell(st, 'dodge', 'Unik', st.dodge)}${statCell(st, 'prot', 'Pancerz', st.prot)}${statCell(st, 'speed', 'Szybkość', st.speed)}
-              ${statCell(st, 'crit', 'Kryt', st.crit)}${statCell(st, 'acc', 'Celność', sgn(st.acc))}${statCell(st, 'dmg', 'Obrażenia', sgn(st.dmg))}
-            </div>
-            <div class="ph">Odporności</div>
-            <div class="stats">${statCell(st, 'krzepa', 'Krzepa', st.krzepa)}${statCell(st, 'odp', 'Odporność', st.odp)}${statCell(st, 'death', 'Śmierć', st.death)}${statCell(st, 'virtue', 'Szansa Cnoty', st.virtue)}</div>
-          </div>
-          <div class="box"><div class="ph">Ekwipunek <span class="hint">ranga najwyżej Poziom + 1</span></div>
-            ${rankRow(h, 'weapon', 'Broń', 'Kuźnia', 6)}${rankRow(h, 'armor', 'Pancerz', 'Kuźnia', 6)}${rankRow(h, 'guild', 'Umiejętności', 'Gildia', 8)}
-            <p class="small muted">Broń: obrażenia +1 na randze 2 i 4. Pancerz: Zdrowie +1 za rangę. Gildia: Celność +1 na randze 1 i 3, Kryt +1 na 2, główna liczba +1 na 4.</p>
-          </div>
-          <div class="box"><div class="ph">Błyskotki <span class="hint">najwyżej 2, bez powtórzeń</span></div>
-            ${[0, 1].map(i => { const t = h.trinkets[i]; return `<div class="trk">${t ? `<b>${esc(t.name)}</b> <span class="dim small">${esc(trinketDesc(t))}</span>${can ? ` <button class="btn sm ghost" data-act="trkOff" data-i="${i}">Do magazynu</button>` : ''}` : `<span class="muted">puste miejsce</span>${can ? ` <button class="btn sm ghost" data-act="trkOn">Załóż z magazynu</button>` : ''}`}</div>`; }).join('')}
-          </div>
-        </div>
-        <div class="col">
-          <div class="box"><div class="ph">Umiejętności bojowe <span class="hint">zabierasz ${nChosen} z 4</span></div><p class="legend-pos"><span class="pdots from"><i class="on"></i></span> złote — z której pozycji bohatera (4 3 2 1, jak na polu) · <span class="pdots to"><i class="on"></i></span> czerwone — które pozycje wroga trafia (1 2 3 4)</p>
-            <div class="sk-list">${c.skills.map((s, i) => {
-              const v = skillView(h, i, st); const on = h.skills.includes(i);
-              return `<div class="sk ${on ? 'on' : ''}">
-                <button class="sk-t" data-act="skillToggle" data-i="${i}" ${dis} aria-pressed="${on}" title="${on ? 'Zabrana na wyprawę' : 'Zostaje w Osadzie'}"></button>
-                <div class="sk-b"><div class="sk-n">${esc(s.name)}${s.form ? ` <span class="chip sm">${esc(s.form)}</span>` : ''}${v.tb ? ' <span class="chip sm gold">błyskotka +1</span>' : ''}</div>
-                <div class="sk-m">${posDots(v.inf.from, 'from')}<span class="sep">▸</span>${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(s.w)}</span>`}<span class="ptxt">${esc(skillPosTxt(v))}</span>
-                  <span class="num">${v.cel != null ? 'Cel. ' + v.cel : ''}${v.dmg ? ' · ' + v.dmg : ''}${v.heal && !v.dmg ? ' · leczy ' + v.heal : ''}${v.stress && !v.dmg ? ' · −' + v.stress + ' Stres' : ''} · kryt ≤ ${v.crit}</span></div>
-                <div class="sk-e dim">${esc(effectText(v)) || '—'}</div></div></div>`;
-            }).join('')}</div>
-            ${c.notes.length ? `<div class="cnotes small">${c.notes.map(n => `<p>${md(n)}</p>`).join('')}</div>` : ''}
-          </div>
-          <div class="box"><div class="ph">Obóz <span class="hint">12 Punktów Odpoczynku na drużynę</span></div>
-            <ul class="camp">${c.camp.map(x => `<li><b>${esc(x.name)}</b> <span class="num muted">${x.pts} pkt</span> — ${esc(x.eff)}</li>`).join('')}
-            ${COMMON_CAMP.map(x => `<li><b>${esc(x.name)}</b> <span class="num muted">${x.pts} pkt</span> — ${esc(x.eff)}</li>`).join('')}</ul>
-            <div class="row"><span class="lbl">Obozownik ${Math.max(1, 4 - ((Store.S.osada.b || {}).Obozownik || 0))} Z</span>${LEARN_CAMP.map(x => `<label class="chk" title="${esc(x.eff)}"><input type="checkbox" data-act-change="camp" value="${x.name}" ${h.camp.includes(x.name) ? 'checked' : ''} ${dis}> ${x.name}</label>`).join('')}</div>
-          </div>
-          <div class="box qbox">
-            <div class="ph">Dziwactwa <span class="hint">do 5 pozytywnych i 5 negatywnych</span></div>
-            ${['qp', 'qn'].map(k => `<div class="qcol ${k}"><span class="lbl">${k === 'qp' ? 'Pozytywne' : 'Negatywne'}</span>
-              ${h[k].map((q, i) => `<div class="q"><span>${esc(q.t)}</span>${ed ? `<label class="chk small" title="Utrwalone w Sanatorium — nowe go nie wyprze"><input type="checkbox" data-act-change="qlock" data-k="${k}" data-i="${i}" ${q.lock ? 'checked' : ''}> utrwalone</label><button class="x" data-act="qdel" data-k="${k}" data-i="${i}" aria-label="Usuń">×</button>` : q.lock ? '<span class="chip sm" title="Utrwalone w Sanatorium — nowe go nie wyprze">utrwalone</span>' : ''}</div>`).join('') || '<p class="muted small">brak</p>'}
-              ${ed && h[k].length < 5 ? `<select data-act-change="qadd" data-k="${k}" aria-label="Dodaj dziwactwo"><option value="">+ dodaj…</option>${(k === 'qp' ? DATA.quirks_pos : DATA.quirks_neg).map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}</div>`).join('')}
-            ${ed ? `<button class="btn sm" data-act="quirkRoll">Rzut po wyprawie (k10)</button>` : ''}
-            <div class="ph">Choroby</div>
-            ${h.diseases.map((x, i) => `<div class="q"><span>${esc(x)}</span>${ed ? `<button class="x" data-act="ddel" data-i="${i}" aria-label="Usuń">×</button>` : ''}</div>`).join('') || '<p class="muted small">zdrowy</p>'}
-            ${ed ? `<select data-act-change="dadd" aria-label="Dodaj chorobę"><option value="">+ choroba…</option>${DATA.diseases.map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}
-          </div>
-          ${can && !h.dead ? this.services(h) : ''}
-          <div class="box"><div class="ph">Notatki</div><textarea id="hnote-${h.id}" data-bind="${P}.notes" ${dis} placeholder="Historia, blizny, długi, komu ufa…">${esc(h.notes || '')}</textarea></div>
-          ${can ? `<div class="row"><span class="sp"></span><button class="btn sm ghost" data-act="heroDelete">Usuń z rejestru</button></div>` : ''}
         </div>
       </div>
+      ${h.dead ? `<p class="deadnote">☩ Poległ: ${esc(h.deathCause || '')}${h.deathWeek ? ', tydzień ' + h.deathWeek : ''}.</p>` : ''}
+      <div class="sh-tabs" role="tablist" aria-label="Części karty">${SHEET_TABS.map(([k, t]) => `<button class="sh-tab ${tab === k ? 'on' : ''}" role="tab" aria-selected="${tab === k}" data-act="sheetTab" data-v="${k}">${t}</button>`).join('')}</div>
+      <div class="sh-body" role="tabpanel">${body}</div>
     </section>`;
+  },
+  tabWalka(h, c, st, dis) {
+    const on = h.skills.slice().sort((a, b) => a - b); const off = c.skills.map((x, i) => i).filter(i => !on.includes(i));
+    const legend = 'Złote kropki: z której pozycji bohatera (4 3 2 1, jak na scenie). Czerwone: które pozycje wroga trafia (1 2 3 4 od przodu). Połączone kreską: wszystkie naraz.';
+    const skRow = i => {
+      const s = c.skills[i]; const v = skillView(h, i, st); const sel = on.includes(i);
+      return `<div class="sk ${sel ? 'on' : ''}">
+        <button class="sk-t" data-act="skillToggle" data-i="${i}" ${dis} aria-pressed="${sel}" title="${sel ? 'Zabrana — kliknij, by zostawić w Osadzie' : 'Zostaje w Osadzie — kliknij, by zabrać'}">${sel ? '✓' : '+'}</button>
+        <div class="sk-b"><div class="sk-n">${esc(s.name)}${s.form ? ` <span class="chip sm">${esc(s.form)}</span>` : ''}${v.tb ? ' <span class="chip sm gold">błyskotka +1</span>' : ''}</div>
+        <div class="sk-m" title="${esc(skillPosTxt(v))}">${posDots(v.inf.from, 'from')}<span class="sep">▸</span>${v.inf.to ? posDots(v.inf.to, v.inf.target === 'multi' ? 'to multi' : 'to') : `<span class="tw">${esc(s.w)}</span>`}
+          <span class="num">${v.cel != null ? 'Cel. ' + v.cel : ''}${v.dmg ? ' · ' + v.dmg : ''}${v.heal && !v.dmg ? ' · leczy ' + v.heal : ''}${v.stress && !v.dmg ? ' · −' + v.stress + ' Stres' : ''} · kryt ≤ ${v.crit}</span></div>
+        <div class="sk-e dim">${esc(effectText(v)) || '—'}</div></div></div>`;
+    };
+    return `<div class="sh-grid">
+      <div class="col"><div class="box"><div class="ph">Statystyki <span class="hint">dotknij, by zobaczyć skąd</span></div>
+        <div class="stats">
+          ${statCell(st, 'hp', 'Zdrowie', st.maxhp)}${statCell(st, 'dodge', 'Unik', st.dodge)}${statCell(st, 'prot', 'Pancerz', st.prot)}${statCell(st, 'speed', 'Szybkość', st.speed)}
+          ${statCell(st, 'crit', 'Kryt', st.crit)}${statCell(st, 'acc', 'Celność', sgn(st.acc))}${statCell(st, 'dmg', 'Obrażenia', sgn(st.dmg))}
+        </div>
+        <div class="ph">Odporności</div>
+        <div class="stats">${statCell(st, 'krzepa', 'Krzepa', st.krzepa)}${statCell(st, 'odp', 'Odporność', st.odp)}${statCell(st, 'death', 'Śmierć', st.death)}${statCell(st, 'virtue', 'Szansa Cnoty', st.virtue)}</div>
+        ${c.notes.length ? `<div class="cnotes small">${c.notes.map(n => `<p>${md(n)}</p>`).join('')}</div>` : ''}
+      </div></div>
+      <div class="col"><div class="box"><div class="ph">Na wyprawę <span class="hint">${on.length} z 4 · <span class="help" tabindex="0" data-gloss="${esc(legend)}" title="${esc(legend)}">kropki?</span></span></div>
+        <div class="sk-list">${on.map(skRow).join('') || '<p class="muted small">Nie wybrano żadnej umiejętności.</p>'}</div>
+        ${off.length ? `<div class="ph sk-off-h">Zostają w Osadzie <span class="hint">${off.length}</span></div><div class="sk-list off">${off.map(skRow).join('')}</div>` : ''}
+      </div></div>
+    </div>`;
+  },
+  tabEkw(h, can, ed) {
+    return `<div class="sh-grid">
+      <div class="col"><div class="box"><div class="ph">Ekwipunek <span class="hint">ranga najwyżej Poziom + 1</span></div>
+        ${rankRow(h, 'weapon', 'Broń', 'Kuźnia', 6)}${rankRow(h, 'armor', 'Pancerz', 'Kuźnia', 6)}${rankRow(h, 'guild', 'Umiejętności', 'Gildia', 8)}
+        <p class="small muted">Broń: obrażenia +1 na randze 2 i 4. Pancerz: Zdrowie +1 za rangę. Gildia: Celność +1 na randze 1 i 3, Kryt +1 na 2, główna liczba +1 na 4.</p>
+        ${!h.dead ? `<div class="row"><button class="btn sm" data-act="goBuilding" data-b="Kuźnia">Kuźnia w Osadzie →</button><button class="btn sm" data-act="goBuilding" data-b="Gildia">Gildia w Osadzie →</button></div>` : ''}
+      </div></div>
+      <div class="col"><div class="box"><div class="ph">Błyskotki <span class="hint">najwyżej 2, bez powtórzeń</span></div>
+        ${[0, 1].map(i => { const t = h.trinkets[i]; return `<div class="trk">${t ? `<b>${esc(t.name)}</b> <span class="dim small">${esc(trinketDesc(t))}</span>${can ? ` <button class="btn sm ghost" data-act="trkOff" data-i="${i}">Do magazynu</button>` : ''}` : `<span class="muted">puste miejsce</span>${can ? ` <button class="btn sm ghost" data-act="trkOn">Załóż z magazynu</button>` : ''}`}</div>`; }).join('')}
+      </div></div>
+    </div>`;
+  },
+  tabOboz(h, c, ed) {
+    const li = x => `<li><b>${esc(x.name)}</b> <span class="num muted">${x.pts} pkt</span> — ${esc(x.eff)}</li>`;
+    return `<div class="sh-grid">
+      <div class="col"><div class="box"><div class="ph">Umiejętności obozowe <span class="hint">12 Punktów Odpoczynku na drużynę</span></div>
+        <ul class="camp">${c.camp.map(li).join('')}${COMMON_CAMP.map(li).join('')}</ul>
+      </div></div>
+      <div class="col"><div class="box"><div class="ph">Nauczone w Obozowniku</div>
+        <ul class="camp learn">${LEARN_CAMP.map(x => `<li class="${h.camp.includes(x.name) ? 'on' : 'off'}"><b>${h.camp.includes(x.name) ? '✓ ' : ''}${esc(x.name)}</b> — ${esc(x.eff)}${ed && h.camp.includes(x.name) ? ` <button class="x" data-act="campDel" data-n="${esc(x.name)}" aria-label="Usuń">×</button>` : ''}</li>`).join('')}</ul>
+        ${!h.dead && LEARN_CAMP.some(x => !h.camp.includes(x.name)) ? `<div class="row"><button class="btn sm" data-act="goBuilding" data-b="Obozownik">Naucz w Obozowniku →</button></div>` : ''}
+      </div></div>
+    </div>`;
+  },
+  tabChar(h, c, can, ed, dis, P) {
+    const bonds = Object.entries(h.bonds || {}).filter(([id, n]) => n && H(id) && !H(id).dead);
+    return `<div class="sh-grid">
+      <div class="col">
+        <div class="box"><div class="ph">Kim jest</div>
+          <p class="sh-desc">${esc(c.desc)}</p>
+          ${h.story ? `<p class="hstory"><span class="muted">${esc(h.story.origin)}.</span> Marzenie: <b>${esc(h.story.dreamText)}</b> <span class="muted">(${h.story.done ? 'spełnione' : 'cel: ' + esc(h.story.goal) + ' → pozytywne dziwactwo'})</span></p>` : ed ? `<button class="btn sm ghost" data-act="storyRoll">Nadaj historię (pochodzenie i marzenie)</button>` : ''}
+          ${bonds.length ? `<div class="ph">Więzi</div><div class="hbonds">${bonds.map(([id, n]) => `<span class="chip sm ${n >= 2 ? 'gold' : n <= -2 ? 'red' : ''}">${esc(heroLabel(H(id)))}: ${bondName(n)}</span>`).join('')}</div>` : ''}
+        </div>
+        <div class="box"><div class="ph">Notatki</div><textarea id="hnote-${h.id}" data-bind="${P}.notes" ${dis} placeholder="Historia, blizny, długi, komu ufa…">${esc(h.notes || '')}</textarea></div>
+      </div>
+      <div class="col">
+        <div class="box qbox">
+          <div class="ph">Dziwactwa <span class="hint">do 5 pozytywnych i 5 negatywnych</span></div>
+          ${['qp', 'qn'].map(k => `<div class="qcol ${k}"><span class="lbl">${k === 'qp' ? 'Pozytywne' : 'Negatywne'}</span>
+            ${h[k].map((q, i) => `<div class="q"><span>${esc(q.t)}</span>${ed ? `<label class="chk small" title="Utrwalone w Sanatorium — nowe go nie wyprze"><input type="checkbox" data-act-change="qlock" data-k="${k}" data-i="${i}" ${q.lock ? 'checked' : ''}> utrwalone</label><button class="x" data-act="qdel" data-k="${k}" data-i="${i}" aria-label="Usuń">×</button>` : q.lock ? '<span class="chip sm" title="Utrwalone w Sanatorium — nowe go nie wyprze">utrwalone</span>' : ''}</div>`).join('') || '<p class="muted small">brak</p>'}
+            ${ed && h[k].length < 5 ? `<select data-act-change="qadd" data-k="${k}" aria-label="Dodaj dziwactwo"><option value="">+ dodaj…</option>${(k === 'qp' ? DATA.quirks_pos : DATA.quirks_neg).map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}</div>`).join('')}
+          ${ed ? `<button class="btn sm" data-act="quirkRoll">Rzut po wyprawie (k10)</button>` : ''}
+          <div class="ph">Choroby</div>
+          ${h.diseases.map((x, i) => `<div class="q"><span>${esc(x)}</span>${ed ? `<button class="x" data-act="ddel" data-i="${i}" aria-label="Usuń">×</button>` : ''}</div>`).join('') || '<p class="muted small">zdrowy</p>'}
+          ${ed ? `<select data-act-change="dadd" aria-label="Dodaj chorobę"><option value="">+ choroba…</option>${DATA.diseases.map(q => `<option>${esc(q)}</option>`).join('')}</select>` : ''}
+          ${!h.dead && (h.diseases.length || h.qn.length) ? `<div class="row"><button class="btn sm" data-act="goBuilding" data-b="Sanatorium">Sanatorium w Osadzie →</button></div>` : ''}
+        </div>
+        ${can ? `<div class="row"><span class="sp"></span><button class="btn sm ghost" data-act="heroDelete">Usuń z rejestru</button></div>` : ''}
+      </div>
+    </div>`;
   },
   services(h) {
     const o = Store.S.osada; const b = o.b;
@@ -249,6 +282,16 @@ Object.assign(ACT, {
     if (!Store.isGM()) return toast('Doświadczenie poprawia tylko MG.');
     const h = curHero(); h.xp = Math.max(0, (h.xp || 0) + +el.dataset.v);
     saveHero(h); rollLog('MG poprawia doświadczenie: ' + heroLabel(h) + ' — ' + h.xp + ' / ' + xpNeed(h.level) + '.', '', 'sys');
+  },
+  sheetTab: el => { UI.sheetTab = el.dataset.v; renderView(); },
+  goBuilding: el => { UI.hbSel = el.dataset.b; location.hash = '#osada'; },
+  campDel: el => { if (!Store.isGM()) return; const h = curHero(); h.camp = h.camp.filter(x => x !== el.dataset.n); saveHero(h); },
+  campLearn: el => {
+    const h = el.dataset.hid ? clone(H(el.dataset.hid)) : curHero(); if (!h || !canHero(h)) return; const n = el.dataset.n;
+    if (h.camp.includes(n)) return toast(heroLabel(h) + ' już to umie.');
+    { const busy = heroBusy(h); if (busy) return toast(busy); }
+    const cost = Math.max(1, 4 - ((Store.S.osada.b || {}).Obozownik || 0)); if (!payGold(cost)) return;
+    h.camp = h.camp.concat(n); saveHero(h, true); rollLog(heroLabel(h) + ' uczy się w Obozowniku: ' + n + ' (' + cost + ' Z).', '', 'sys');
   },
   sheetEdit: () => { if (!Store.isGM()) return; UI.sheetEdit = !UI.sheetEdit; renderView(); },
   levelUp: () => {

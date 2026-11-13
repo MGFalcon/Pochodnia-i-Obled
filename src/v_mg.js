@@ -87,7 +87,7 @@ VIEWS.mg = {
         <p class="num dim">Zdrowie ${e.hp}/${e.maxhp} · Unik ${e.dodge} · Pancerz ${e.prot} · Szybkość ${e.speed} · Krzepa ${e.krzepa} · Odporność ${e.odp} · ${esc(e.type || '')}</p>
         ${pips('hp', e.hp, e.maxhp, 'npchp')}
         ${(e.attacks || []).map(a => `<p class="small">${attackText(a)}</p>`).join('')}
-        <div class="row"><button class="btn sm primary" data-act="npcToTable">Wystaw na Stół</button><button class="btn sm ghost" data-act="npcNoFight">Usuń blok walki</button></div></div>`;
+        <div class="row"><button class="btn sm primary" data-act="npcToTable">Wystaw do walki</button><button class="btn sm ghost" data-act="npcNoFight">Usuń blok walki</button></div></div>`;
     }
     const allE = REG_OPTS.map(([k, nm]) => `<optgroup label="${nm}">${(k === 'DD' ? DATA.bestiary.DD.enemies : DATA.bestiary[k].enemies).map(e => `<option value="${esc(e.name)}">${esc(e.name)}</option>`).join('')}</optgroup>`).join('');
     return `<div class="npcgrid">
