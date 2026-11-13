@@ -1639,6 +1639,54 @@
    },
    "notes": [
     "Wszystkie szkielety są niewrażliwe na krwawienie."
+   ],
+   "elites": [
+    {
+     "name": "Kościany rycerz",
+     "hp": 34,
+     "dodge": 0,
+     "prot": 2,
+     "speed": 2,
+     "type": "Nieumarły",
+     "pos": "1–2",
+     "attacks": "Miażdżący cios: W 1–2, Cel. 9, k8+4, ogłuszenie · Zamach: W 1+2, Cel. 7, k4+3, odrzut 1 · Osłona: tylny sojusznik pod Ochroną przez 2 rundy",
+     "trait": "Pancerz 2, odporny na krwawienie; osłania tylnych sojuszników.",
+     "desc": "Strażnik krypty w zardzewiałej pełnej zbroi. Nie czuje bólu i nie krwawi.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    },
+    {
+     "name": "Upiór krypty",
+     "hp": 30,
+     "dodge": 4,
+     "prot": 0,
+     "speed": 6,
+     "type": "Nieumarły",
+     "pos": "2–3",
+     "nobleed": true,
+     "attacks": "Lodowaty dotyk: W 1–3, Cel. 10, k8+3, groza 1 · Zgaszenie światła: W 1+2+3+4, Cel. 7, +2 Stres, Pochodnia −2",
+     "trait": "Unik 4, odporny na krwawienie; gasi Pochodnię.",
+     "desc": "Bezcielesna zjawa, która żywi się światłem. Gdzie przejdzie, płomienie maleją.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    },
+    {
+     "name": "Arcykapłan kultu",
+     "hp": 32,
+     "dodge": 3,
+     "prot": 0,
+     "speed": 5,
+     "type": "Człowiek",
+     "pos": "3–4",
+     "attacks": "Płomień bluźnierstwa: W 1+2+3+4, Cel. 7, +3 Stres · Pętla ofiarna: W 1–4, Cel. 9, k8+2, przyciąga o 2, Znak · Mroczne zszycie: najbardziej ranny wróg odzyskuje k4+2 Zdrowia",
+     "trait": "Wyciąga ofiarę na przód i znaczy ją; leczy sojuszników.",
+     "desc": "Przywódca kultu z Ruin. Wybiera ofiarę, a reszta kultu dokańcza dzieła.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    }
    ]
   },
   "Nory": {
@@ -1686,7 +1734,55 @@
      "**Wzór ruchów:** pierwsza tura — Zgniecenie; druga — k6: 1–3 Zamach cielskiem, 4–5 Rzut ochłapem, 6 Ryk świni."
     ]
    },
-   "notes": []
+   "notes": [],
+   "elites": [
+    {
+     "name": "Wielki knur",
+     "hp": 38,
+     "dodge": 0,
+     "prot": 1,
+     "speed": 3,
+     "type": "Bestia",
+     "pos": "1–2",
+     "enrage": true,
+     "attacks": "Szarża: W 1–2, Cel. 9, k10+4, odrzut 2 · Tratowanie: W 1+2, Cel. 7, k6+2",
+     "trait": "Przy połowie Zdrowia wpada w szał: obrażenia +2 do końca walki.",
+     "desc": "Knur wielkości wozu, karmiony resztkami z Nor. Rozjuszony nie zatrzymuje się przed niczym.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    },
+    {
+     "name": "Matka ścierwojadów",
+     "hp": 32,
+     "dodge": 2,
+     "prot": 0,
+     "speed": 5,
+     "type": "Bestia",
+     "pos": "2–3",
+     "attacks": "Rozszarpanie: W 1–2, Cel. 9, k8+3, krwawienie 2 · Skowyt: W 1+2+3+4, Cel. 7, +2 Stres · Przywołanie: Ścierwojad",
+     "trait": "Przywołuje Ścierwojady (najwyżej 2 razy na walkę, na wolne miejsce albo w miejsce zwłok).",
+     "desc": "Stara samica, wokół której kręci się całe stado. Jej skowyt ściąga młode z ciemności.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    },
+    {
+     "name": "Świński kapłan zarazy",
+     "hp": 32,
+     "dodge": 1,
+     "prot": 0,
+     "speed": 4,
+     "type": "Człowiek, Bestia",
+     "pos": "3–4",
+     "attacks": "Kadzidło zgnilizny: W 1+2+3+4, Cel. 7, zaraza 1 · Rzut truchłem: W 1–4, Cel. 9, k6+2, choroba · Błogosławieństwo błota: najbardziej ranny wróg odzyskuje k4+2 Zdrowia",
+     "trait": "Zaraża całą drużynę naraz i leczy sojuszników.",
+     "desc": "Świniogłowy kaznodzieja w szatach z błota. Odprawia msze, po których nikt nie wstaje zdrowy.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    }
+   ]
   },
   "Knieja": {
    "enemies": [
@@ -1731,7 +1827,55 @@
      "**Wzór ruchów:** pierwsza tura — Do kotła! (gdy kocioł jest zajęty, Chochla); druga — k6: 1–3 i 6 Chochla, 4–5 Złe oko."
     ]
    },
-   "notes": []
+   "notes": [],
+   "elites": [
+    {
+     "name": "Herszt bandytów",
+     "hp": 34,
+     "dodge": 2,
+     "prot": 1,
+     "speed": 4,
+     "type": "Człowiek",
+     "pos": "1–2",
+     "attacks": "Topór: W 1–2, Cel. 10, k8+4, krwawienie 1 · Zastraszenie: W 1+2+3+4, Cel. 7, +3 Stres · Przywołanie: Bandzior",
+     "trait": "Woła posiłki: Bandziorów (najwyżej 2 razy na walkę).",
+     "desc": "Najstarszy z bandy, z bliznami po każdej zdradzie, którą przeżył. Jego ludzie bardziej boją się jego niż was.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    },
+    {
+     "name": "Grzybowy kolos",
+     "hp": 38,
+     "dodge": 0,
+     "prot": 1,
+     "speed": 1,
+     "type": "Plugawy",
+     "pos": "2–3",
+     "regen": 2,
+     "attacks": "Uderzenie pnia: W 1–2, Cel. 9, k8+3 · Chmura zarodników: W 1+2+3+4, Cel. 7, zaraza 2",
+     "trait": "Na początku swojej tury odrasta: +2 Zdrowia.",
+     "desc": "Martwy dąb przerośnięty grzybnią, który nauczył się chodzić. Każda rana zarasta pleśnią.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    },
+    {
+     "name": "Kłusownik",
+     "hp": 30,
+     "dodge": 3,
+     "prot": 0,
+     "speed": 6,
+     "type": "Człowiek",
+     "pos": "3–4",
+     "attacks": "Strzał z ukrycia: W 1–4, Cel. 10, k8+4 (woli cele z tyłu) · Sidła: W 1–2, Cel. 9, k4+2, ogłuszenie · Tropienie: W 1–4, Cel. 10, Znak",
+     "trait": "Poluje na tylną linię; znaczy cel, a potem do niego strzela.",
+     "desc": "Myśliwy, który dawno przestał polować na zwierzęta. Zna każdą ścieżkę Kniei.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    }
+   ]
   },
   "Zatoka": {
    "enemies": [
@@ -1776,7 +1920,55 @@
      "**Wzór ruchów:** pierwsza tura — Pieśń syreny (gdy ktoś już jest zauroczony, Fala); druga — k6: 1–3 i 6 Fala, 4–5 Szept otchłani."
     ]
    },
-   "notes": []
+   "notes": [],
+   "elites": [
+    {
+     "name": "Krabołak",
+     "hp": 36,
+     "dodge": 1,
+     "prot": 2,
+     "speed": 2,
+     "type": "Plugawy",
+     "pos": "1–2",
+     "attacks": "Kleszcze: W 1–2, Cel. 9, k8+4, krwawienie 1 · Przyduszenie: W 1–2, Cel. 8, k4+2, ogłuszenie",
+     "trait": "Pancerz 2; trzyma przód i ogłusza.",
+     "desc": "Coś między człowiekiem a krabem, w skorupie twardej jak tarcza.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    },
+    {
+     "name": "Topielica",
+     "hp": 32,
+     "dodge": 2,
+     "prot": 0,
+     "speed": 4,
+     "type": "Nieumarły",
+     "pos": "2–3",
+     "regen": 2,
+     "attacks": "Pocałunek otchłani: W 1–3, Cel. 9, k6+2, groza 1, przyciąga o 1 · Wciągnięcie pod wodę: W 1–2, Cel. 8, k6+4",
+     "trait": "Na początku swojej tury odzyskuje 2 Zdrowia; ciągnie ofiary na przód.",
+     "desc": "Utopiona narzeczona z Zatoki. Woła po imieniu tych, którzy podejdą za blisko wody.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    },
+    {
+     "name": "Kapłan głębin",
+     "hp": 30,
+     "dodge": 3,
+     "prot": 0,
+     "speed": 5,
+     "type": "Plugawy",
+     "pos": "3–4",
+     "attacks": "Mgła z morza: W 1+2+3+4, Cel. 7, +2 Stres, Pochodnia −2 · Przypływ: W 1–4, Cel. 9, k6+3 · Przywołanie: Pelagiczny łowca",
+     "trait": "Gasi Pochodnię mgłą i przywołuje Pelagicznych łowców (najwyżej 2 razy na walkę).",
+     "desc": "Ślepy kapłan ludzi-ryb. Śpiewa do morza, a morze odpowiada.",
+     "size": 2,
+     "elite": true,
+     "res": 5
+    }
+   ]
   },
   "Shambler": {
    "line": "Zdrowie 34 · Unik 2 · Pancerz 1 · Szybkość 3 · Plugawy · 2 pozycje · zasady bossów, ale wolno od niego uciec (zwykły Odwrót; nagroda przepada). W symulacji, przy Pochodni 0 i drużynie po lochu: Poziom 2 wygrywa ok. 45% walk i w pozostałych ucieka, Poziom 4 z rangami 3 wygrywa ok. 75%, Poziom 6 z rangami 4 — ok. 90%.",

@@ -49,7 +49,8 @@ function glossText(key, label) {
 /* pojęcia wyprawy i Osady — zgodne z podręcznikiem (rozdziały Wyprawa, Osada, Rozwój) */
 const GLOSS_CAMP = [
   ['Doświadczenie i awans', 'Zadanie daje doświadczenie: krótkie 1, średnie 2, długie 3, za bossa +1. Próg awansu to 2 + obecny Poziom (kolejno 2, 3, 4, 5, 6, 7 — razem 27). Awans klika gracz na karcie bohatera, w Osadzie, zawsze o jeden Poziom.'],
-  ['Łup', 'Wygrana walka daje 1 rzut, skrzynia i dobra osobliwość 2, boss 4; Pochodnia dodaje albo odejmuje rzuty. Walka daje zawsze co najmniej 1 — przy jasnym świetle wtedy gorszy z dwóch k10.'],
+  ['Mini-boss', 'Silny wróg na 2 pozycjach, 1 tura na rundę. Tylko w lochu Weterańskim (spotkanie k10 = 1–2) i Mistrzowskim (1–3), po trzech na region. Pokonany daje +2 rzuty na łup.'],
+  ['Łup', 'Wygrana walka daje 1 rzut, skrzynia i dobra osobliwość 2, boss 4, mini-boss dodatkowo +2; Pochodnia dodaje albo odejmuje rzuty. Walka daje zawsze co najmniej 1 — przy jasnym świetle wtedy gorszy z dwóch k10.'],
   ['Osobliwość', 'Gołą ręką k10: 1–4 dobrze, 5–7 nic, 8–10 źle. Właściwy przedmiot daje pewny dobry wynik, niewłaściwy przepada bez skutku. Który działa, odkrywacie sami — ród to zapamiętuje.'],
   ['Zaopatrzenie', 'Plecak ma 16 miejsc (4 sztuki zapasów na miejsce) i startuje pusty. Ile czego zabrać, decyduje drużyna. Niewykorzystane zapasy przepadają po powrocie.'],
   ['Boss się budzi', 'Po 3 wykonanych zadaniach w regionie na tablicy co tydzień czeka zadanie z jego bossem, dopóki go nie pokonacie.'],
@@ -336,6 +337,7 @@ function killEnemy(stol, e, how) {
   if (e.name === 'Giermek') { const p = stol.enemies.find(x => x.name === 'Świński Książę' && !x.corpse); if (p) { p.fx = Object.assign({}, p.fx); p.fx.buffs = (p.fx.buffs || []).concat([['obrażenia +2 (szał)', 999]]); stol.notes = (stol.notes || []).concat('**Giermek ginie — Świński Książę wpada w szał:** obrażenia +2 do końca walki.'); } }
   if (e.name === 'Wiedźma z kotłem' && stol.cauldron) stol.notes = (stol.notes || []).concat('Wiedźma pada, kocioł się przewraca — uwięziony bohater wychodzi na początku swojej tury.');
   stol.init = (stol.init || []).filter(x => x.id !== e.id);
+  if (e.elite) { stol.eliteKills = (stol.eliteKills || 0) + 1; stol.notes = (stol.notes || []).concat('**Mini-boss ' + e.name + ' pada** — po walce +2 rzuty na łup.'); }
   if (how === 'hit' && !e.boss && !e.corpse && e.name !== 'Macka') stol.enemies[i] = { id: e.id, name: 'Zwłoki', corpse: true, hp: 3, maxhp: 3, dodge: 0, prot: 0, speed: 0, attacks: [], fx: {}, size: e.size || 1, type: '', krzepa: 0, odp: 0 };
   else stol.enemies.splice(i, 1);
   stol.init = (stol.init || []).filter(x => x.id !== e.id);
@@ -424,6 +426,7 @@ function enemyAttack(e0, aIdx, heroIds) {
     if (sub.length) sum[sumIdx] += ' ' + sub.filter(x => !/^\S+ \+\d+ Stresu/.test(x) || true).join(' ');
     if (sub._deaths) lines._deaths = (lines._deaths || []).concat(sub._deaths);
   });
+  { const tm = (a.rest || '').match(/Pochodnia −(\d+)/); if (tm && ev.some(x => x.k === 'hit' || x.k === 'crit')) { const t0 = stol.torch || 0; stol.torch = Math.max(0, t0 - +tm[1]); lines.push('**Pochodnia −' + tm[1] + '** (' + t0 + ' → ' + stol.torch + ').'); sum.push('Pochodnia przygasa: ' + t0 + ' → ' + stol.torch + '.'); } }
   rip.forEach(h => {
     if (h.dead || e.hp <= 0 || !stol.enemies.includes(e)) return;
     const r = d(4); const prot = enemyProt(e); const dmg = Math.max(1, r - prot);
@@ -556,6 +559,8 @@ function startTurn(entry) {
     e.fx = e.fx || {};
     const { dot } = tick(e.fx);
     if (dot) { e.hp -= dot; lines.push(e.name + ': ' + obrN(dot) + ' od krwawienia i zarazy.'); witchDamage(stol, e, dot, lines, id => touched[id] || (touched[id] = clone(s.heroes[id]))); heartCheck(stol, lines, id => touched[id] || (touched[id] = clone(s.heroes[id]))); if (e.hp <= 0) { lines.push('**' + e.name + ' pada.**'); killEnemy(stol, e, 'dot'); } }
+    if (e.regen && !e.corpse && e.hp > 0 && e.hp < e.maxhp) { const g = Math.min(e.regen, e.maxhp - e.hp); e.hp += g; lines.push(e.name + ' odrasta: +' + g + ' Zdrowia (' + e.hp + '/' + e.maxhp + ').'); }
+    if (e.enrage && !e.enraged && !e.corpse && e.hp > 0 && e.hp <= e.maxhp / 2) { e.enraged = true; e.fx.buffs = (e.fx.buffs || []).concat([['obrażenia +2 (szał)', 999]]); lines.push('**' + e.name + ' wpada w szał:** obrażenia +2 do końca walki.'); }
     if (e.fx.stun && !e.corpse && e.hp > 0) {
       e.fx.stun = 0; e.fx.stunImm = (stol.round || 0) + 1; e.fx.lostTurn = stol.round || 0; e.fx.lostWhy = 'stun';
       lines.push('**' + e.name + ' jest ogłuszony i traci turę.**');
@@ -641,7 +646,7 @@ const BOSS_AI = {
   'Serce Ciemności': { first: 'Puls', table: [[1, 2, 'Puls'], [3, 4, 'Spojrzenie pustki'], [5, 5, 'Puls'], [6, 6, 'Spojrzenie pustki']] }
 };
 /* ruchy bez rzutu na trafienie, które wykonuje się automatycznie */
-const SPECIAL_MOVES = ['Wezwanie kości', 'Przyzwanie macek', 'Mroczne zszycie', 'Porodzenie', 'Proporzec', 'Osłona'];
+const SPECIAL_MOVES = ['Wezwanie kości', 'Przyzwanie macek', 'Mroczne zszycie', 'Błogosławieństwo błota', 'Porodzenie', 'Proporzec', 'Osłona', 'Przywołanie'];
 const specialName = n => SPECIAL_MOVES.find(x => n && n.indexOf(x) === 0) || null;
 function enemySpecials(e) {
   const out = [];
@@ -674,7 +679,16 @@ function enemySpecial(e0, name) {
     if (freeEnemySlots(stol) <= 0) return null;
     const o = makeEnemy('Ochłap', 0, { summon: true }); stol.enemies.unshift(o); sum.push('Z przodu staje nowy Ochłap.'); ev.push({ id: o.id, k: 'fx', txt: 'PRZYZWANY' });
   }
-  if (name === 'Mroczne zszycie') {
+  if (name === 'Przywołanie') {
+    const what = ((e.attacks || []).find(a => a.name === 'Przywołanie') || {}).text || '';
+    if ((e.summoned || 0) >= 2) return null;
+    const z = makeEnemy(what.trim(), dl); if (!z) return null;
+    const ci = stol.enemies.findIndex(x => x.corpse && (x.size || 1) === 1); const free = freeEnemySlots(stol) > 0;
+    if (free) stol.enemies.unshift(z); else if (ci >= 0) stol.enemies[ci] = z; else return null;
+    e.summoned = (e.summoned || 0) + 1;
+    sum.push((free ? 'Z ciemności na przód szyku wychodzi: ' : 'Na miejsce zwłok staje: ') + z.name + (e.summoned >= 2 ? ' (to ostatnie przywołanie w tej walce).' : '.')); ev.push({ id: z.id, k: 'fx', txt: 'PRZYWOŁANY' });
+  }
+  if (name === 'Mroczne zszycie' || name === 'Błogosławieństwo błota') {
     const living = stol.enemies.filter(x => !x.corpse && x.hp < x.maxhp);
     if (!living.length) return null;
     const t = living.sort((a, b) => (b.maxhp - b.hp) - (a.maxhp - a.hp))[0];
@@ -736,7 +750,8 @@ function enemyAuto(e0, entry) {
     e.attacks.forEach((a, k) => { if (a.w && usable(k)) opts.push({ idx: k, name: a.name }); });
     enemySpecials(e).forEach(n => {
       if (n === 'Osłona' && !stol.enemies.slice(stol.enemies.indexOf(e) + 1).some(x => !x.corpse && !(x.fx || {}).guard)) return;
-      if (n === 'Mroczne zszycie' && !stol.enemies.some(x => !x.corpse && x.hp < x.maxhp)) return;
+      if ((n === 'Mroczne zszycie' || n === 'Błogosławieństwo błota') && !stol.enemies.some(x => !x.corpse && x.hp < x.maxhp)) return;
+      if (n === 'Przywołanie' && ((e.summoned || 0) >= 2 || (freeEnemySlots(stol) <= 0 && !stol.enemies.some(x => x.corpse && (x.size || 1) === 1)))) return;
       if (n === 'Proporzec' && !stol.enemies.some(x => x.boss && !x.corpse)) return;
       opts.push({ special: n, name: n });
     });

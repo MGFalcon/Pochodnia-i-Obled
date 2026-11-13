@@ -454,9 +454,10 @@ Object.assign(ACT, {
       lines.push('**Walka!** Zaskoczenie (' + ti.name + ', ' + sur + '): k10 = **' + r + '** → ' + (who === 'nikt' ? 'nikt nie jest zaskoczony.' : who === 'wrogowie' ? '**wrogowie zaskoczeni** — drużyna ma całą pierwszą rundę.' : '**drużyna zaskoczona** — wrogowie mają całą pierwszą rundę, pozycje bohaterów losuje się od nowa, każdy +1 Stres.') + note);
     }
     if (w.quest && w.noSurprise) Store.act([opSet('wyprawa.noSurprise', false)], { quiet: true });
-    const st = clone(s); st.fight = true; st.round = 0; st.init = []; st.turn = -1; st.transformed = []; st.looted = false; st.acted = null; st.atk = null; st.fallen = []; st.forceSurprise = null; st.bossFight = s.enemies.some(e => e.boss); st.bossName = (s.enemies.find(e => e.boss) || {}).name || null; st.cauldron = null; st.witchDmg = null; st.heartTaken = false; st.notes = [];
+    const st = clone(s); st.fight = true; st.round = 0; st.init = []; st.turn = -1; st.transformed = []; st.looted = false; st.acted = null; st.atk = null; st.fallen = []; st.forceSurprise = null; st.eliteKills = 0; st.bossFight = s.enemies.some(e => e.boss); st.bossName = (s.enemies.find(e => e.boss) || {}).name || null; st.cauldron = null; st.witchDmg = null; st.heartTaken = false; st.notes = [];
     const touched = {};
     const hasUndead = s.enemies.some(e => /Nieumar/.test(e.type || ''));
+    s.enemies.filter(e => e.elite && !e.corpse).forEach(e => lines.push('**Mini-boss: ' + e.name + '**' + (e.eliteRoll ? ' (spotkanie z mini-bossem, ' + e.eliteRoll + ')' : '') + ' — zajmuje 2 pola. ' + (((findEnemyDef(e.name) || {}).e || {}).trait || '')));
     st.heroes.forEach(id => {
       const h = touched[id] = clone(H(id)); const hs = heroStats(h); let add = 0; const why = [];
       if (who === 'drużyna') { add++; why.push('zaskoczenie'); }
@@ -537,7 +538,7 @@ Object.assign(ACT, {
       if (r && !r.cleared) { r.cleared = true; lines.push('Komnata oczyszczona' + (r.c === 'boss' ? ' — **boss pokonany**' : '') + '.'); const g = goalProgress(w2); if (g.ok) lines.push('**Cel zadania wykonany** (' + g.txt + ').'); }
       ops.push(opSet('wyprawa', w2));
     }
-    s.fight = false; s.init = []; s.turn = -1; s.round = 0; s.last = null; s.enemies = s.enemies.filter(e => !e.corpse); s.fallen = []; s.roomId = null; s.forceSurprise = null; s.lootBonus = 0; s.acted = null; s.cauldron = null; s.witchDmg = null; s.bossName = null; s.bossFight = false;
+    s.fight = false; s.init = []; s.turn = -1; s.round = 0; s.last = null; s.enemies = s.enemies.filter(e => !e.corpse); s.fallen = []; s.roomId = null; s.forceSurprise = null; s.lootBonus = 0; s.eliteKills = 0; s.acted = null; s.cauldron = null; s.witchDmg = null; s.bossName = null; s.bossFight = false;
     if (ops.length) Store.act(ops, { quiet: true });
     commit({ lines, stol: s, touched }, 'sys');
     if (Store.S.wyprawa.quest && won && !s.siege) { UI.wsub = 'loch'; setTimeout(() => { if (location.hash === '#stol' && !Store.S.stol.fight) location.hash = '#wyprawa'; }, 1800); }
@@ -547,10 +548,10 @@ Object.assign(ACT, {
     if (s.enemies.some(e => !e.corpse)) return toast('Najpierw pokonajcie wszystkich wrogów.');
     const boss = s.bossFight || s.enemies.some(e => e.boss);
     const ti = torchInfo(s.torch); const extra = { 'Jasno': -1, 'Półmrok': 0, 'Cienie': 1, 'Mrok': 1, 'Ciemność': 2 }[ti.name];
-    const bonus = s.lootBonus || 0;
+    const bonus = (s.lootBonus || 0) + 2 * (s.eliteKills || 0);
     Store.act([opSet('stol.looted', true)], { quiet: true });
     const raw = (boss ? 4 : 1) + extra + bonus; const n = Math.max(1, raw);
-    rollLoot(n, 'wygrana walka' + (boss ? ', boss' : '') + ', Pochodnia ' + ti.name + (bonus ? ', +' + bonus + ' za zgaszone ognisko' : '') + (raw < 1 ? ', w jasnym świetle gorszy z dwóch k10' : ''), raw < 1);
+    rollLoot(n, 'wygrana walka' + (boss ? ', boss' : '') + ', Pochodnia ' + ti.name + (s.lootBonus ? ', +' + s.lootBonus + ' za zgaszone ognisko' : '') + (s.eliteKills ? ', +' + 2 * s.eliteKills + ' za mini-bossa' : '') + (raw < 1 ? ', w jasnym świetle gorszy z dwóch k10' : ''), raw < 1);
   }
 });
 const MEM_TYPES = ['Popiersie', 'Portret', 'Akt', 'Herb'];

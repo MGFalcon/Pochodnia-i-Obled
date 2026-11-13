@@ -159,7 +159,7 @@ function parseEffects(eff) {
 /* ---------- wrogowie ---------- */
 function findEnemyDef(name) {
   for (const r of ['Ruiny', 'Nory', 'Knieja', 'Zatoka']) {
-    const e = DATA.bestiary[r].enemies.find(x => x.name === name); if (e) return { e, region: r };
+    const e = DATA.bestiary[r].enemies.concat(DATA.bestiary[r].elites || []).find(x => x.name === name); if (e) return { e, region: r };
   }
   const e = DATA.bestiary.DD.enemies.find(x => x.name === name); if (e) return { e, region: 'DD' };
   return null;
@@ -171,8 +171,9 @@ function makeEnemy(name, dl, opts = {}) {
   const hp = e.hp + (flat || opts.summon ? 0 : 5 * dl);
   return {
     id: uid(), name, dl, flat, region: f.region, hp, maxhp: hp, dodge: e.dodge + (flat ? 0 : dl), prot: e.prot, speed: e.speed + (dl === 2 ? 1 : 0),
-    type: e.type, pos: e.pos, attacks, boss: false, size: name === 'Templariusz' ? 2 : 1,
-    krzepa: flat ? 5 : 3 + dl, odp: flat ? 5 : 3 + dl, noBleed: /^Kości/.test(name), fx: {}, corpse: false
+    type: e.type, pos: e.pos, attacks, boss: false, size: e.size || (name === 'Templariusz' ? 2 : 1),
+    krzepa: flat ? 5 : (e.res || 3) + dl, odp: flat ? 5 : (e.res || 3) + dl, noBleed: !!e.nobleed || /^Kości/.test(name), fx: {}, corpse: false,
+    elite: !!e.elite, regen: e.regen || 0, enrage: !!e.enrage
   };
 }
 function makeBoss(region, dl, floorIdx) {
@@ -210,6 +211,14 @@ function rollEncounter(region, dl) {
   }
   const enc = DATA.encounters[region]; const r = d(10); const n = r <= 4 ? 3 : 4;
   const fr = enc.front.split(', '), bk = enc.back.split(', ');
+  /* mini-boss: tylko w lochu Weterańskim (k10 = 1–2) i Mistrzowskim (1–3); zajmuje 2 pola, obok niego 2 zwykłych wrogów */
+  const els = (DATA.bestiary[region] || {}).elites || [];
+  if (dl >= 1 && els.length && d(10) <= (dl === 1 ? 2 : 3)) {
+    const k = d(els.length); const def = els[k - 1]; const m = makeEnemy(def.name, dl); m.eliteRoll = 'k' + els.length + ' = ' + k;
+    const at = (posList(def.pos) || [1])[0];
+    const list = at === 1 ? [m, makeEnemy(pick(bk), dl), makeEnemy(pick(bk), dl)] : at === 2 ? [makeEnemy(pick(fr), dl), m, makeEnemy(pick(bk), dl)] : [makeEnemy(pick(fr), dl), makeEnemy(pick(fr), dl), m];
+    return { r, list, elite: def.name };
+  }
   const list = [makeEnemy(pick(fr), dl), makeEnemy(pick(fr), dl)];
   for (let i = 2; i < n; i++) list.push(makeEnemy(pick(bk), dl));
   return { r, list };

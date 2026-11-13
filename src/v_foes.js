@@ -5,6 +5,7 @@ function foeRefs() {
   Object.values(foesG()).sort((a, b) => (a.created || 0) - (b.created || 0)).forEach(f => out.push({ ref: 'c:' + f.id, name: f.name || 'Nowy wróg', group: 'Twoi wrogowie' }));
   ['Ruiny', 'Nory', 'Knieja', 'Zatoka'].forEach(r => {
     DATA.bestiary[r].enemies.forEach(e => out.push({ ref: 'b:' + e.name, name: e.name, group: r }));
+    (DATA.bestiary[r].elites || []).forEach(e => out.push({ ref: 'b:' + e.name, name: e.name, group: r, mini: true }));
     out.push({ ref: 'boss:' + r, name: DATA.bestiary[r].boss.name, group: r, boss: true });
   });
   out.push({ ref: 'shambler', name: 'Shambler', group: 'Ciemność', boss: true }, { ref: 'b:Macka', name: 'Macka', group: 'Ciemność' });
@@ -48,22 +49,24 @@ function foeToCustom(e, ref) {
   };
 }
 function foeCard(ref) {
-  const flat = foeFlat(ref); const dl = flat ? 0 : +(UI.foeDl || 0);
+  const flat = foeFlat(ref); const isEl = ref.startsWith('b:') && !!(((findEnemyDef(ref.slice(2)) || {}).e || {}).elite);
+  const dl = flat ? 0 : Math.max(isEl ? 1 : 0, +(UI.foeDl || 0));
   const e = buildFoe(ref, dl); if (!e) return '<section class="panel"><p class="muted">Ten wróg już nie istnieje.</p></section>';
   const custom = ref.startsWith('c:'); const f = custom ? foesG()[ref.slice(2)] : null;
   const pos = posList(e.pos);
   if (custom && UI.foeEdit) return foeEditor(f);
   return `<section class="panel foecard">
     <div class="fc-head"><div><h3 class="fc-name">${esc(e.name)}</h3>
-      <div class="chips">${e.type ? `<span class="chip">${esc(e.type)}</span>` : ''}${e.boss ? '<span class="chip red">boss · 2 tury na rundę</span>' : ''}${e.size === 2 ? '<span class="chip">zajmuje 2 pozycje</span>' : ''}${e.noBleed ? '<span class="chip">niewrażliwy na krwawienie</span>' : ''}${custom ? '<span class="chip gold">własny</span>' : ''}</div></div>
+      <div class="chips">${e.type ? `<span class="chip">${esc(e.type)}</span>` : ''}${e.boss ? '<span class="chip red">boss · 2 tury na rundę</span>' : ''}${e.elite ? '<span class="chip gold">mini-boss · 1 tura na rundę</span>' : ''}${e.size === 2 ? '<span class="chip">zajmuje 2 pozycje</span>' : ''}${e.noBleed ? '<span class="chip">niewrażliwy na krwawienie</span>' : ''}${custom ? '<span class="chip gold">własny</span>' : ''}</div></div>
       ${pos ? `<div class="fc-pos"><span class="lbl">Pozycje</span>${posDots(pos, 'stand', 'enemy', 'Stoi na pozycjach wroga')}<span class="ptxt">pozycje wroga</span></div>` : ''}</div>
-    ${flat ? '<p class="small muted">Wartości ostateczne — bez premii poziomu lochu.</p>' : `<div class="seg">${DL.map((n, i) => `<button class="btn sm ${dl === i ? 'gold' : 'ghost'}" data-act="foeDl" data-v="${i}"><span class="ldot lv${i}">${DL_ROMAN[i]}</span> ${n}</button>`).join('')}</div>`}
+    ${flat ? '<p class="small muted">Wartości ostateczne — bez premii poziomu lochu.</p>' : `<div class="seg">${DL.map((n, i) => isEl && i === 0 ? '' : `<button class="btn sm ${dl === i ? 'gold' : 'ghost'}" data-act="foeDl" data-v="${i}"><span class="ldot lv${i}">${DL_ROMAN[i]}</span> ${n}</button>`).join('')}</div>`}
     <div class="stats fc-stats">
       ${[['Zdrowie', e.maxhp], ['Unik', e.dodge], ['Pancerz', e.prot], ['Szybkość', e.speed], ['Krzepa', e.krzepa], ['Odporność', e.odp]].map(([l, v]) => `<div class="stat"><span class="sl">${l}</span><b class="sv num">${v}</b></div>`).join('')}
     </div>
     <div class="ph">Ataki</div>
     <div class="fc-atks">${(e.attacks || []).map(a => a.w ? `<div class="fc-atk"><b>${esc(a.name)}</b>${posDots(posList(a.w), a.aoe ? 'to multi' : 'to', 'hero')}<span class="ptxt">w bohaterów ${esc(a.w)}</span><span class="num">Cel. ${a.celS}${a.dmgS ? ' · ' + esc(a.dmgS) : ''}${a.stress ? ' · +' + a.stressS + ' Stres' : ''}</span>${(() => { const r = (a.rest || '').replace(/(^|,?\s*(i\s+)?)\+\d+ Stres(u)?/, '').replace(/^[,\s]+|[,\s]+$/g, ''); return r ? `<span class="dim small">${esc(r)}</span>` : ''; })()}</div>` : `<div class="fc-atk"><b>${esc(a.name)}</b><span class="dim small">${esc(a.text || '')}</span></div>`).join('') || '<p class="muted">Brak ataków.</p>'}</div>
     ${(e.notes || []).length ? `<div class="bnotes">${e.notes.map(n => `<p>${md(String(n).replace(/^([^:]{1,40}):/, '**$1:**'))}</p>`).join('')}</div>` : ''}
+    ${e.elite ? (D => `<div class="fc-lore">${D.desc ? `<p><span class="lbl">Wygląd</span> ${esc(D.desc)}</p>` : ''}${D.trait ? `<p><span class="lbl">Cecha</span> ${esc(D.trait)}</p>` : ''}<p class="small muted">Pojawia się tylko w lochu Weterańskim (spotkanie k10 = 1–2) i Mistrzowskim (1–3). Pokonany daje +2 rzuty na łup.</p></div>`)(((findEnemyDef(e.name) || {}).e) || {}) : ''}
     ${e.where ? `<p class="small muted">Ustawienie: ${esc(e.where)}</p>` : ''}
     ${f && (f.desc || f.tactics || f.loot) ? `<div class="fc-lore">${f.desc ? `<p><span class="lbl">Wygląd</span> ${esc(f.desc)}</p>` : ''}${f.tactics ? `<p><span class="lbl">Taktyka</span> ${esc(f.tactics)}</p>` : ''}${f.loot ? `<p><span class="lbl">Łup</span> ${esc(f.loot)}</p>` : ''}</div>` : ''}
     <div class="row fc-act">
@@ -105,7 +108,7 @@ function foesView() {
       <div class="foelist">${groups.map(g => {
         const items = refs.filter(r => r.group === g && (!q || r.name.toLowerCase().includes(q)));
         if (!items.length) return g === 'Twoi wrogowie' ? '' : '';
-        return `<div class="fg"><span class="lbl">${esc(g)}</span>${items.map(r => `<button class="fitem ${r.ref === UI.foeSel ? 'on' : ''} ${r.boss ? 'boss' : ''}" data-act="foeSel" data-ref="${esc(r.ref)}">${esc(r.name)}</button>`).join('')}</div>`;
+        return `<div class="fg"><span class="lbl">${esc(g)}</span>${items.map(r => `<button class="fitem ${r.ref === UI.foeSel ? 'on' : ''} ${r.boss ? 'boss' : ''} ${r.mini ? 'mini' : ''}" data-act="foeSel" data-ref="${esc(r.ref)}">${r.mini ? '★ ' : ''}${esc(r.name)}</button>`).join('')}</div>`;
       }).join('')}${!Object.keys(foesG()).length && !q ? '<p class="small muted">Własnych wrogów tworzysz przyciskiem „Nowy wróg” albo z karty dowolnego wroga („Zrób własną wersję”).</p>' : ''}</div>
     </section>
     ${UI.foeSel ? foeCard(UI.foeSel) : ''}
