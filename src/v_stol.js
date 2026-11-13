@@ -91,6 +91,30 @@ function enemySlot(x) {
   </div>`;
 }
 
+/* ---------- scena walki: tło regionu i całe postacie (klikane jak karty) ---------- */
+function figHero(id, pos) {
+  const h = H(id); if (!h) return '<div class="fig empty" aria-hidden="true"></div>';
+  const ce = curEntry(); const isCur = ce && ce.k === 'h' && ce.id === id; const st = heroStats(h);
+  const P = UI.pend; const tgt = P && P.need === 'ally' && Store.S.stol.heroes.includes(id); const tgtE = UI.epend && UI.epend.valid.includes(id);
+  const sel = UI.sel.k === 'h' && UI.sel.id === id;
+  return `<button class="fig hero ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt || tgtE ? 'tgt' : ''} ${h.dd ? 'dd' : ''}" data-act="${tgt ? 'pickAlly' : tgtE ? 'pickHeroT' : 'selH'}" data-id="${id}" aria-label="${esc(heroLabel(h))}, pozycja ${pos}, Zdrowie ${h.hp} z ${st.maxhp}, Stres ${h.stress}">
+    <svg viewBox="0 0 100 200" class="fig-svg" aria-hidden="true">${heroFigure(h)}</svg>
+    <span class="fig-tag">${esc(heroLabel(h))}</span><span class="fig-bar"><i class="hp" style="width:${Math.round(100 * h.hp / Math.max(1, st.maxhp))}%"></i></span><span class="fig-bar st"><i style="width:${Math.min(100, h.stress * 5)}%"></i></span></button>`;
+}
+function figEnemy(x) {
+  const e = x.e; const ce = curEntry(); const isCur = ce && ce.k === 'e' && ce.id === e.id; const wide = (e.size || 1) === 2;
+  const P = UI.pend; const tgt = P && P.need === 'enemy' && P.valid.includes(e.id); const sel = UI.sel.k === 'e' && UI.sel.id === e.id;
+  const vw = wide ? 200 : 100; const vh = wide && !e.corpse && FIG_ELITE[e.name] ? 220 : 200;
+  return `<button class="fig enemy ${wide ? 'wide' : ''} ${e.boss ? 'boss' : ''} ${e.elite ? 'elite' : ''} ${e.corpse ? 'corpse' : ''} ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt ? 'tgt' : ''}" data-act="${tgt ? 'pickEnemy' : 'selE'}" data-id="${e.id}" aria-label="${esc(e.name)}, pozycja ${x.pos}, Zdrowie ${e.hp} z ${e.maxhp}">
+    <svg viewBox="0 0 ${vw} ${vh}" class="fig-svg" aria-hidden="true"><g transform="translate(${vw} 0) scale(-1 1)">${enemyFigure(e)}</g></svg>
+    <span class="fig-tag">${esc(e.name)}</span>${e.corpse ? '' : `<span class="fig-bar"><i class="hp" style="width:${Math.round(100 * e.hp / Math.max(1, e.maxhp))}%"></i></span>`}</button>`;
+}
+function stageHtml(s, enemies) {
+  const w = Store.S.wyprawa; const region = s.region || (w.quest ? (w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key) : 'Ruiny');
+  const empties = Math.max(0, 4 - enemies.reduce((a, x) => a + (x.e.size || 1), 0));
+  return `<div class="stage-wrap"><div class="stage">${battleBg(region, s.torch)}<svg class="fig-defs" width="0" height="0" aria-hidden="true"><defs><filter id="fg-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg>
+    <div class="stage-field"><div class="stage-h">${[3, 2, 1, 0].map(i => figHero(s.heroes[i], i + 1)).join('')}</div><div></div><div class="stage-e">${enemies.map(figEnemy).join('')}${'<div class="fig empty" aria-hidden="true"></div>'.repeat(empties)}</div></div></div></div>`;
+}
 function lastActHtml(L) {
   const col = h => h.replace(/<b>(PUDŁO|UNIK|BLOK)<\/b>/g, '<b class="k-miss">$1</b>').replace(/<b>(TRAFIENIE)<\/b>/g, '<b class="k-hit">$1</b>').replace(/<b>(KRYTYK)<\/b>/g, '<b class="k-crit">$1</b>');
   return `<div class="lastact" aria-live="polite"><span class="lbl">Ostatnia akcja</span> <b class="la-head">${esc(L.head)}</b>${(L.sum || []).length ? `<ul>${L.sum.map(x => `<li>${col(md(x))}</li>`).join('')}</ul>` : ''}</div>`;
@@ -103,7 +127,8 @@ function showPops() {
   if (!layer) { layer = document.createElement('div'); layer.id = 'pops'; layer.setAttribute('aria-hidden', 'true'); document.body.appendChild(layer); }
   const count = {};
   (L.ev || []).forEach(ev => {
-    let el = document.querySelector('.slot[data-id="' + ev.id + '"]');
+    let el = document.querySelector('.fig[data-id="' + ev.id + '"]') || document.querySelector('.slot[data-id="' + ev.id + '"]');
+    if (ev.k === 'act' && el && el.classList.contains('fig')) { el.classList.remove('act-h', 'act-e'); void el.offsetWidth; el.classList.add(el.classList.contains('hero') ? 'act-h' : 'act-e'); }
     if (!el) el = document.querySelector(ev.k === 'act' ? '.side-h' : '.side-e'); if (!el) return;
     const r = el.getBoundingClientRect(); const n = count[ev.id] = (count[ev.id] || 0) + 1;
     const p = document.createElement('div'); p.className = 'pop pop-' + ev.k; p.textContent = ev.txt;
@@ -126,7 +151,7 @@ VIEWS.stol = {
     return `
     ${UI.pend ? `<div class="pendbar">Wybierz cel: <b>${esc(UI.pend.label)}</b> <button class="btn sm" data-act="cancelPend">Anuluj</button>${UI.pend.multi ? ` <button class="btn sm primary" data-act="fireMulti">Użyj na wszystkich</button>` : ''}</div>` : ''}
     ${UI.epend ? `<div class="pendbar">Wybierz bohatera, w którego ${esc(UI.epend.label)} <button class="btn sm" data-act="cancelPend">Anuluj</button></div>` : ''}
-    <section class="panel fieldp">
+    <section class="panel fieldp has-stage">
       <div class="fhead">
         <div><span class="lbl">${s.fight ? 'Walka' : 'Spokój'}</span> <b class="round">${s.fight ? 'Runda ' + s.round : 'Drużyna w szyku'}</b>${curName ? ` <span class="chip gold">tura: ${esc(curName)}${(() => { const x = ce.k === 'h' ? H(ce.id) : s.enemies.find(e => e.id === ce.id); return x && x.fx && x.fx.lostTurn === (s.round || 0) ? (x.fx.lostWhy === 'stun' ? ' · ogłuszony, tura przepada' : ' · tura przejęta') : s.acted === turnKey() ? ' · już działał' : ''; })()}</span>` : ''}</div>
         <div class="row">
@@ -145,6 +170,7 @@ VIEWS.stol = {
       ${lootCardHtml()}
       ${lootStrip()}
       ${s.last ? lastActHtml(s.last) : ''}
+      ${s.heroes.length || s.enemies.length ? stageHtml(s, enemies) : ''}
       <div class="field">
         <div class="side-h">${heroesRev}</div>
         <div class="vs" aria-hidden="true"><span>⟷</span></div>

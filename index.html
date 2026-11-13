@@ -715,13 +715,55 @@ body.scene-on { overflow: hidden; }
 .recruit { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; padding: 4px 0; }
 @media (max-width: 700px) { .hb-hero { grid-template-columns: 1fr; } }
 
+/* scena walki */
+.stage-wrap { overflow-x: auto; margin: 8px 0 10px; border-radius: 4px; }
+.stage { position: relative; height: 300px; min-width: 640px; overflow: hidden; border: 1px solid var(--rule2); border-radius: 4px; background: #0c0a09; }
+.stage-bg { position: absolute; inset: 0; width: 100%; height: 100%; }
+.fig-defs { position: absolute; }
+.stage-field { position: absolute; left: 2%; right: 2%; top: 14px; bottom: 6px; display: grid; grid-template-columns: minmax(0, 1fr) 30px minmax(0, 1fr); }
+.stage-h, .stage-e { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 2px; align-items: end; }
+.fig { position: relative; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 2px; height: 100%; min-width: 0; padding: 0 0 2px; border: 0; background: none; color: var(--pale); cursor: pointer; }
+.fig.empty { cursor: default; }
+.fig.wide { grid-column: span 2; }
+.fig-svg { width: 100%; max-width: 118px; height: auto; max-height: 220px; overflow: visible; transform-origin: 50% 100%; animation: breathe 3.4s ease-in-out infinite; }
+.fig.wide .fig-svg { max-width: 236px; }
+.fig.boss .fig-svg { max-width: 136px; }
+.stage-h .fig:nth-child(2) .fig-svg, .stage-e .fig:nth-child(2) .fig-svg { animation-delay: -1.1s; }
+.stage-h .fig:nth-child(3) .fig-svg, .stage-e .fig:nth-child(3) .fig-svg { animation-delay: -2.2s; }
+.stage-h .fig:nth-child(4) .fig-svg, .stage-e .fig:nth-child(4) .fig-svg { animation-delay: -.6s; }
+@keyframes breathe { 50% { transform: scaleY(1.015) translateY(-1px); } }
+.fig-tag { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; text-shadow: 0 1px 2px #000, 0 0 6px #000; }
+.fig-bar { width: 72%; max-width: 90px; height: 5px; background: rgba(0,0,0,.65); border: 1px solid rgba(255,255,255,.18); border-radius: 2px; overflow: hidden; }
+.fig-bar i { display: block; height: 100%; background: #9a8ad0; }
+.fig-bar i.hp { background: var(--blood2); }
+.fig.cur::before { content: ''; position: absolute; left: 12%; right: 12%; bottom: 30px; height: 14px; border-radius: 50%; background: radial-gradient(rgba(242,190,90,.75), rgba(242,190,90,0) 70%); }
+.fig.sel .fig-svg { filter: drop-shadow(0 0 3px var(--gold)) drop-shadow(0 0 1px var(--gold)); }
+.fig.tgt .fig-svg { filter: drop-shadow(0 0 5px var(--blood2)) drop-shadow(0 0 2px var(--blood2)); }
+.fig.tgt .fig-tag { color: #ffb0a0; }
+.fig.dd .fig-svg { filter: sepia(.6) saturate(2) hue-rotate(-25deg) brightness(.8); }
+.fig.corpse .fig-svg { animation: none; opacity: .85; }
+.fig:focus-visible { outline: 2px solid var(--gold); outline-offset: -2px; }
+.fig.act-h .fig-svg { animation: lungeR .55s ease-out; }
+.fig.act-e .fig-svg { animation: lungeL .55s ease-out; }
+@keyframes lungeR { 35% { transform: translateX(14px) scaleY(1.02); } }
+@keyframes lungeL { 35% { transform: translateX(-14px) scaleY(1.02); } }
+.fig.flash-hit .fig-svg { animation: fighit .5s ease-out 2; }
+@keyframes fighit { 30% { filter: brightness(2) sepia(1) hue-rotate(-40deg) saturate(4); transform: translateX(-3px); } 60% { transform: translateX(3px); } }
+.fig.flash-heal .fig-svg { animation: figheal .7s ease-out 1; }
+@keyframes figheal { 40% { filter: brightness(1.5) sepia(.6) hue-rotate(60deg); } }
+.stage .flick { animation: flick 1.6s ease-in-out infinite; transform-origin: center bottom; transform-box: fill-box; }
+@keyframes flick { 30% { transform: scale(1.06, .94); } 60% { transform: scale(.95, 1.07); } }
+.fieldp.has-stage .slot .pt { display: none; }
+@media (prefers-reduced-motion: reduce) { .fig-svg, .stage .flick, .fig.act-h .fig-svg, .fig.act-e .fig-svg, .fig.flash-hit .fig-svg { animation: none; } }
+@media (max-width: 700px) { .stage { height: 210px; min-width: 0; } .stage-field { left: 1%; right: 1%; top: 8px; grid-template-columns: minmax(0, 1fr) 8px minmax(0, 1fr); } .fig-tag { font-size: 9px; } .fig-bar { width: 86%; height: 4px; } .fig.cur::before { bottom: 24px; } }
+
 </style>
 </head><body>
 <svg width="0" height="0" style="position:absolute" aria-hidden="true" focusable="false"><defs><radialGradient id="pbg" cx="50%" cy="40%" r="70%"><stop offset="0" stop-color="#3a2c24"/><stop offset="1" stop-color="#0e0c0b"/></radialGradient><radialGradient id="pvig" cx="50%" cy="45%" r="65%"><stop offset=".6" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".65"/></radialGradient></defs></svg>
 <div id="dark" aria-hidden="true"></div>
 <div class="wrap" id="app">
   <header class="top" id="top">
-    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 13.11 · 04:59</span></small><h1>Stół <em>rodu</em></h1></div>
+    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 13.11 · 05:10</span></small><h1>Stół <em>rodu</em></h1></div>
     <nav class="tabs" id="tabs" aria-label="Widoki stołu"></nav>
     <div class="toolbar"><span class="sync" data-s="local">gra na jednym urządzeniu</span><span id="who" class="who"></span></div>
   </header>
@@ -1622,6 +1664,116 @@ function loadPortrait(file, done) {
     img.src = r.result;
   };
   r.readAsDataURL(file);
+}
+
+/* ======================= postacie na scenie walki (SVG, 100×200, stopy na y=192) ======================= */
+const FIG_OUT = '#16120f';
+const figShadow = (rx = 26) => `<ellipse cx="50" cy="193" rx="${rx}" ry="5" fill="#000" opacity=".55"/>`;
+function figSkeleton(o = {}) {
+  const B = '#dad1bf', L = '#5a5246';
+  const limb = (d, w) => `<path d="${d}" stroke="${L}" stroke-width="${w + 2}" stroke-linecap="round" fill="none"/><path d="${d}" stroke="${B}" stroke-width="${w}" stroke-linecap="round" fill="none"/>`;
+  return `${limb('M44 124L41 156L44 188', 5)}${limb('M56 124L59 156L57 188', 5)}<path d="M38 188h10M52 188h10" stroke="${B}" stroke-width="4" stroke-linecap="round"/>
+    <path d="M40 117Q50 128 60 117L58 127Q50 133 42 127Z" fill="${B}" stroke="${L}" stroke-width="1.5"/>${limb('M50 52V118', 4)}
+    <g fill="none" stroke="${B}" stroke-width="3">${[62, 71, 80, 89].map((y, i) => `<path d="M${38 + i} ${y}Q50 ${y - 7} ${62 - i} ${y}"/>`).join('')}</g>
+    ${o.cloth || ''}${limb(o.armBack || 'M39 62L33 90L35 114', 4)}${o.headBack || ''}
+    <circle cx="50" cy="38" r="11.5" fill="${B}" stroke="${L}" stroke-width="1.5"/><rect x="44" y="46" width="12" height="7" rx="2" fill="${B}" stroke="${L}" stroke-width="1.2"/>
+    <circle cx="46" cy="36" r="3.2" fill="#140f0c"/><circle cx="55" cy="36" r="3.2" fill="#140f0c"/><circle cx="46" cy="36" r="1.1" fill="${o.eye || '#ff5a3a'}"/><circle cx="55" cy="36" r="1.1" fill="${o.eye || '#ff5a3a'}"/><path d="M50 40l-2 4h4z" fill="#140f0c"/>
+    ${o.head || ''}${o.gear || ''}${limb(o.armFront || 'M61 62L68 88L74 104', 4)}${o.hand || ''}`;
+}
+const FIG_ENEMY = {
+  'Kościany żołdak': () => figShadow() + figSkeleton({ head: '<path d="M38 34Q38 20 50 20Q62 20 62 34Z" fill="#6b5a44" stroke="#2a2016" stroke-width="2"/><path d="M38 33h24" stroke="#2a2016" stroke-width="2"/>',
+    gear: '<path d="M72 106L94 52 98 55 77 108Z" fill="#9a8a72" stroke="#3a2e22" stroke-width="1.5"/><path d="M68 102l14 8" stroke="#5a4a36" stroke-width="4"/>', cloth: '<path d="M42 112h16l3 14H39z" fill="#4a3a2a" opacity=".85"/>' }),
+  'Kościany obrońca': () => figShadow(30) + figSkeleton({ head: '<path d="M37 36Q37 18 50 18Q63 18 63 36V42H37Z" fill="#5a5048" stroke="#2a2420" stroke-width="2"/><rect x="40" y="31" width="20" height="3" fill="#140f0c"/>',
+    gear: '<path d="M28 40V150" stroke="#5a4a36" stroke-width="4"/><path d="M24 40l4-12 4 12z" fill="#8a8a86"/>', armFront: 'M61 62L70 84L72 100',
+    hand: '<rect x="60" y="70" width="32" height="94" rx="5" fill="#4e3f2e" stroke="#22190f" stroke-width="2.5"/><rect x="60" y="70" width="32" height="94" rx="5" fill="none" stroke="#7a7066" stroke-width="2" stroke-dasharray="0" transform="scale(1)"/><circle cx="76" cy="116" r="7" fill="#7a7066" stroke="#2a2420" stroke-width="2"/><path d="M60 92h32M60 140h32" stroke="#2a2016" stroke-width="2"/>' }),
+  'Kościany kusznik': () => figShadow() + figSkeleton({ headBack: '<path d="M34 50Q32 16 50 14Q68 16 66 50L70 66Q50 60 30 66Z" fill="#2e2a26" stroke="#141210" stroke-width="2"/>', head: '<path d="M37 34Q40 22 50 22Q60 22 63 34Q56 26 50 26Q44 26 37 34Z" fill="#2e2a26"/>', armBack: 'M39 62L42 80L54 88', armFront: 'M61 62L64 80L72 86',
+    hand: '<path d="M30 88h56" stroke="#5a4028" stroke-width="5" stroke-linecap="round"/><path d="M84 72Q92 88 84 104" stroke="#4a3624" stroke-width="4" fill="none"/><path d="M84 72L74 88 84 104" stroke="#cfc4ad" stroke-width="1"/><path d="M76 86h18" stroke="#9a9a96" stroke-width="2"/>' }),
+  'Kościany dworzanin': () => figShadow() + figSkeleton({ eye: '#c08aff', cloth: '<path d="M34 60Q50 52 66 60L70 128L58 134 50 120 42 134 30 128Z" fill="#46284a" stroke="#1e1020" stroke-width="2"/><path d="M50 60V120" stroke="#c9a24e" stroke-width="1.5" stroke-dasharray="3 3"/>',
+    head: '<path d="M36 52Q50 60 64 52L62 58Q50 64 38 58Z" fill="#e8e0d0" stroke="#6b6558" stroke-width="1"/>', armFront: 'M61 62L72 76L80 70',
+    hand: '<path d="M78 58h10l-2 10h-6z" fill="#c9a24e" stroke="#6b5420" stroke-width="1.5"/><path d="M83 68v8M79 76h8" stroke="#c9a24e" stroke-width="2"/><path d="M34 112L24 176" stroke="#b8bcc0" stroke-width="2"/>' }),
+  'Kultysta akolita': () => figShadow() + `<path d="M32 64Q50 54 68 64L74 188H26Z" fill="#4e1414" stroke="${FIG_OUT}" stroke-width="2"/><path d="M50 64V188" stroke="#2a0a0a" stroke-width="2"/><path d="M40 118h20" stroke="#c9a24e" stroke-width="2"/>
+    <path d="M34 50Q32 18 50 16Q68 18 66 50L68 68Q50 76 32 68Z" fill="#3a0e0e" stroke="${FIG_OUT}" stroke-width="2"/><ellipse cx="50" cy="44" rx="10" ry="12" fill="#0d0606"/><circle cx="46" cy="42" r="1.8" fill="#ffb85a"/><circle cx="55" cy="42" r="1.8" fill="#ffb85a"/>
+    <path d="M64 72L76 96" stroke="#4e1414" stroke-width="9" stroke-linecap="round"/><g filter="url(#fg-glow)"><circle cx="80" cy="98" r="7" fill="none" stroke="#c070ff" stroke-width="2"/><path d="M80 91v14M73 98h14" stroke="#c070ff" stroke-width="1.5"/></g>
+    <path d="M36 72L28 110" stroke="#4e1414" stroke-width="8" stroke-linecap="round"/><path d="M27 110l-6 18" stroke="#b8bcc0" stroke-width="3"/>`,
+  'Uczeń Nekromanty': () => figShadow(18) + `<g transform="translate(0 -10)"><g filter="url(#fg-glow)" opacity=".7"><path d="M30 190Q40 170 36 150M64 192Q58 172 66 152" stroke="#7fe0a0" stroke-width="2" fill="none"/></g>
+    <path d="M28 64Q50 52 72 64L80 180Q50 196 20 180Z" fill="#1f2a22" stroke="${FIG_OUT}" stroke-width="2"/><path d="M50 64V184" stroke="#121a14" stroke-width="2"/><path d="M34 100h32" stroke="#6b8a5a" stroke-width="2" stroke-dasharray="4 3"/>
+    <path d="M32 50Q30 14 50 12Q70 14 68 50L72 70Q50 80 28 70Z" fill="#16201a" stroke="${FIG_OUT}" stroke-width="2"/><ellipse cx="50" cy="42" rx="10" ry="12" fill="#dad1bf"/><circle cx="46" cy="40" r="3" fill="#0d1a10"/><circle cx="55" cy="40" r="3" fill="#0d1a10"/><circle cx="46" cy="40" r="1.2" fill="#7fe0a0"/><circle cx="55" cy="40" r="1.2" fill="#7fe0a0"/><path d="M45 50h10" stroke="#5a5246" stroke-width="2"/>
+    <path d="M30 74L22 106" stroke="#1f2a22" stroke-width="9" stroke-linecap="round"/><path d="M86 26V190" stroke="#4a3624" stroke-width="4"/><path d="M68 74L84 96" stroke="#1f2a22" stroke-width="9" stroke-linecap="round"/>
+    <g filter="url(#fg-glow)"><circle cx="86" cy="22" r="8" fill="#7fe0a0" opacity=".85"/><circle cx="86" cy="22" r="4" fill="#e6ffe9"/></g><path d="M80 30q6 4 12 0" stroke="#dad1bf" stroke-width="2" fill="none"/></g>`
+};
+const FIG_ELITE = {
+  'Kościany rycerz': () => `<ellipse cx="100" cy="213" rx="58" ry="7" fill="#000" opacity=".55"/><g transform="translate(18 -8) scale(1.3)">${figSkeleton({ eye: '#ff8a3a',
+    cloth: '<path d="M34 58Q50 50 66 58L64 112H36Z" fill="#5a4636" stroke="#22190f" stroke-width="2"/><path d="M36 74h28M36 90h28" stroke="#3a2e22" stroke-width="2"/><ellipse cx="34" cy="60" rx="9" ry="7" fill="#6a5442" stroke="#22190f" stroke-width="1.5"/><ellipse cx="66" cy="60" rx="9" ry="7" fill="#6a5442" stroke="#22190f" stroke-width="1.5"/>',
+    head: '<path d="M37 40Q37 20 50 20Q63 20 63 40V50H37Z" fill="#5e4c3c" stroke="#22190f" stroke-width="2"/><rect x="40" y="33" width="20" height="3.5" fill="#140f0c"/><path d="M38 24l-8-10M62 24l8-10" stroke="#cfc4ad" stroke-width="3" stroke-linecap="round"/>',
+    armFront: 'M61 62L70 84L76 96', hand: '<path d="M74 100L104 8 109 10 80 102Z" fill="#a69a86" stroke="#3a2e22" stroke-width="1.5"/><path d="M66 96l22 10" stroke="#6a5442" stroke-width="5" stroke-linecap="round"/>' })}</g>`
+};
+const FIG_HERO = {
+  0: () => figShadow() + `<path d="M36 62Q26 122 30 186H58Q52 122 56 62Z" fill="#6e1a16" stroke="${FIG_OUT}" stroke-width="1.5"/>
+    <rect x="38" y="128" width="10" height="58" fill="#7b8088" stroke="${FIG_OUT}" stroke-width="1.5"/><rect x="52" y="128" width="10" height="58" fill="#868b93" stroke="${FIG_OUT}" stroke-width="1.5"/><rect x="36" y="178" width="13" height="10" rx="2" fill="#3a3d42"/><rect x="51" y="178" width="14" height="10" rx="2" fill="#3a3d42"/>
+    <path d="M34 62Q50 54 66 62L64 132H36Z" fill="#8a8f96" stroke="${FIG_OUT}" stroke-width="2"/><path d="M40 70H60L62 142 50 148 38 142Z" fill="#dcd4c3" stroke="#6b6558" stroke-width="1.5"/><rect x="47" y="78" width="6" height="44" fill="#9a2218"/><rect x="41" y="90" width="18" height="6" fill="#9a2218"/><rect x="36" y="112" width="28" height="5" fill="#4a3524"/>
+    <path d="M34 66L30 112" stroke="#7b8088" stroke-width="9" stroke-linecap="round"/><ellipse cx="36" cy="64" rx="9" ry="7" fill="#9aa0a8" stroke="${FIG_OUT}" stroke-width="1.5"/>
+    <path d="M40 30Q50 16 60 30L61 54Q50 61 39 54Z" fill="#9aa0a8" stroke="${FIG_OUT}" stroke-width="2"/><rect x="43" y="37" width="18" height="3" fill="#111"/><path d="M52 44v8M56 44v8" stroke="#555" stroke-width="1.2"/><path d="M50 20q-2-10 10-12" stroke="#9a2218" stroke-width="4" fill="none" stroke-linecap="round"/>
+    <path d="M73 98L77 20 82 98Z" fill="#cfd4da" stroke="#5a5f66" stroke-width="1.5"/><path d="M65 100l20-2" stroke="#c9a24e" stroke-width="4" stroke-linecap="round"/><path d="M75 100v16" stroke="#4a3524" stroke-width="4"/>
+    <path d="M64 66L74 104" stroke="#868b93" stroke-width="9" stroke-linecap="round"/><ellipse cx="64" cy="64" rx="9" ry="7" fill="#a3a9b1" stroke="${FIG_OUT}" stroke-width="1.5"/>`,
+  1: () => figShadow() + `<rect x="40" y="166" width="8" height="22" fill="#2e2a26"/><rect x="53" y="166" width="8" height="22" fill="#2e2a26"/><path d="M38 182h11v7H36zM52 182h11v7H51z" fill="#1e1a16"/>
+    <path d="M34 64Q50 56 66 64L72 176H28Z" fill="#5a3b25" stroke="${FIG_OUT}" stroke-width="2"/><path d="M44 66H56L54 112H46Z" fill="#b8a88a"/><path d="M50 112V176" stroke="#3a2416" stroke-width="2"/><rect x="34" y="110" width="32" height="5" fill="#2a1d14"/><rect x="47" y="109" width="6" height="7" fill="#c9a24e"/>
+    <path d="M35 70L30 112" stroke="#5a3b25" stroke-width="9" stroke-linecap="round"/><path d="M29 112l-3 14" stroke="#b8bcc0" stroke-width="3"/>
+    <circle cx="50" cy="44" r="11" fill="#c9a587" stroke="${FIG_OUT}" stroke-width="1.5"/><path d="M39 46H61L60 56Q50 61 40 56Z" fill="#7a2a22"/><circle cx="46" cy="42" r="1.4" fill="#111"/><circle cx="55" cy="42" r="1.4" fill="#111"/>
+    <ellipse cx="50" cy="34" rx="22" ry="5" fill="#2a1d14" stroke="${FIG_OUT}" stroke-width="1.5"/><path d="M40 34Q42 18 50 18Q58 18 60 34Z" fill="#33241a" stroke="${FIG_OUT}" stroke-width="1.5"/>
+    <path d="M64 70L80 90" stroke="#5a3b25" stroke-width="9" stroke-linecap="round"/><circle cx="82" cy="92" r="4" fill="#c9a587"/><path d="M80 87h18v5H80z" fill="#555"/><path d="M78 90l7 0-2 11-5 0z" fill="#3a2a1e"/>`,
+  2: () => figShadow() + `<rect x="40" y="172" width="8" height="16" fill="#1a1718"/><rect x="53" y="172" width="8" height="16" fill="#1a1718"/>
+    <path d="M32 66Q50 58 68 66L72 182H28Z" fill="#1f1c1e" stroke="${FIG_OUT}" stroke-width="2"/><path d="M50 70V182" stroke="#121012" stroke-width="2"/><rect x="34" y="118" width="32" height="5" fill="#4a3524"/><rect x="38" y="112" width="5" height="9" rx="1" fill="#6fcf7a"/><rect x="45" y="112" width="5" height="9" rx="1" fill="#c94a3a"/>
+    <path d="M30 64Q50 52 70 64L68 88Q50 81 32 88Z" fill="#2a2628" stroke="${FIG_OUT}" stroke-width="1.5"/><path d="M34 72L28 112" stroke="#1f1c1e" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="48" cy="42" r="10" fill="#3a302a" stroke="${FIG_OUT}" stroke-width="1.5"/><path d="M55 38L85 52 55 50Z" fill="#d8ccb0" stroke="#6b5d48" stroke-width="1.5"/><circle cx="52" cy="39" r="4" fill="#9ad0d8" stroke="#2a2a2a" stroke-width="1.5"/><circle cx="53.5" cy="37.5" r="1.2" fill="#fff"/>
+    <ellipse cx="48" cy="31" rx="24" ry="5" fill="#151314" stroke="${FIG_OUT}" stroke-width="1.5"/><path d="M38 31L40 14H58L60 31Z" fill="#1c1a1b" stroke="${FIG_OUT}" stroke-width="1.5"/>
+    <path d="M64 72L78 88" stroke="#1f1c1e" stroke-width="9" stroke-linecap="round"/><g filter="url(#fg-glow)"><circle cx="82" cy="86" r="6" fill="#6fcf7a"/></g><rect x="80" y="76" width="4" height="5" fill="#8a6440"/>`,
+  3: () => figShadow() + `<path d="M34 40Q34 16 50 16Q66 16 66 40L72 70H28Z" fill="#2a2a36" stroke="${FIG_OUT}" stroke-width="1.5"/><circle cx="50" cy="40" r="22" fill="none" stroke="#e8c76a" stroke-width="1.5" opacity=".45"/>
+    <path d="M34 62Q50 54 66 62L72 188H28Z" fill="#2a2a36" stroke="${FIG_OUT}" stroke-width="2"/><path d="M44 66H56L58 186H42Z" fill="#cfc6b4" stroke="#6b6558" stroke-width="1"/><path d="M47 80h6M50 76v10" stroke="#9a2218" stroke-width="2"/><path d="M36 116h28" stroke="#c9a24e" stroke-width="2"/>
+    <path d="M38 44Q38 24 50 24Q62 24 62 44L62 60Q50 68 38 60Z" fill="#e8e0d0" stroke="#6b6558" stroke-width="1.2"/><ellipse cx="50" cy="44" rx="7.5" ry="9.5" fill="#d8b89a"/><circle cx="47" cy="43" r="1.2" fill="#111"/><circle cx="54" cy="43" r="1.2" fill="#111"/>
+    <path d="M35 70L32 100" stroke="#2a2a36" stroke-width="9" stroke-linecap="round"/><rect x="22" y="96" width="18" height="22" rx="2" fill="#5a2a1a" stroke="#2a140c" stroke-width="1.5"/><path d="M31 100v14M26 105h10" stroke="#c9a24e" stroke-width="1.5"/>
+    <path d="M64 70L74 92" stroke="#2a2a36" stroke-width="9" stroke-linecap="round"/><path d="M74 94L86 66" stroke="#5a4028" stroke-width="4"/><circle cx="88" cy="62" r="7" fill="#a89a7a" stroke="#4a4030" stroke-width="2"/><path d="M88 52v20M78 62h20" stroke="#4a4030" stroke-width="2"/>`
+};
+function figGenericHero(h) {
+  const c = CLS[h.cls] || {}; const ini = (c.name || '?').split(' ').map(x => x[0]).join('').slice(0, 2);
+  const hue = (h.cls * 47) % 360;
+  return figShadow() + `<path d="M32 64Q50 54 68 64L74 188H26Z" fill="hsl(${hue} 25% 24%)" stroke="${FIG_OUT}" stroke-width="2"/><path d="M34 48Q32 16 50 14Q68 16 66 48L70 70Q50 78 30 70Z" fill="hsl(${hue} 22% 18%)" stroke="${FIG_OUT}" stroke-width="2"/>
+    <ellipse cx="50" cy="44" rx="9" ry="11" fill="#c9a587"/><circle cx="46" cy="43" r="1.3" fill="#111"/><circle cx="54" cy="43" r="1.3" fill="#111"/><circle cx="50" cy="106" r="13" fill="rgba(0,0,0,.35)" stroke="#c9a24e" stroke-width="1.5"/><text x="50" y="111" text-anchor="middle" font-size="13" fill="#e8dcc0" font-family="Georgia,serif">${esc(ini)}</text>
+    <path d="M34 72L28 112M66 72L74 108" stroke="hsl(${hue} 25% 24%)" stroke-width="9" stroke-linecap="round"/>`;
+}
+function figGenericEnemy(e) {
+  const t = e.type || ''; const col = /Nieumar/.test(t) ? '#bdb4a2' : /Plugaw/.test(t) ? '#3f5a3a' : /Bestia/.test(t) ? '#5a3a2a' : '#4e1a1a';
+  return figShadow() + `<path d="M24 188Q22 120 40 90Q50 70 64 78Q82 92 78 188Z" fill="${col}" stroke="${FIG_OUT}" stroke-width="2"/><path d="M34 96Q38 56 56 54Q72 58 70 88Q56 100 34 96Z" fill="${col}" stroke="${FIG_OUT}" stroke-width="2" filter="brightness(.85)"/>
+    <circle cx="46" cy="76" r="2.6" fill="#ff4a2a"/><circle cx="58" cy="76" r="2.6" fill="#ff4a2a"/><path d="M30 120l-12 30M74 120l12 26" stroke="${col}" stroke-width="8" stroke-linecap="round"/>`;
+}
+function figCorpse(wide) {
+  const B = '#cfc6b2';
+  return `<g transform="translate(${wide ? 50 : 0} 0)"><ellipse cx="50" cy="190" rx="30" ry="6" fill="#000" opacity=".5"/><path d="M26 188l40-10M34 178l36 12" stroke="${B}" stroke-width="5" stroke-linecap="round"/><path d="M30 186q10-14 24-6" stroke="#4a3a2a" stroke-width="6" fill="none"/><circle cx="66" cy="180" r="8" fill="${B}" stroke="#5a5246" stroke-width="1.5"/><circle cx="63" cy="179" r="1.8" fill="#140f0c"/><circle cx="69" cy="179" r="1.8" fill="#140f0c"/></g>`;
+}
+/* tło sceny: krypta Ruin; pozostałe regiony na razie jako wariant kolorystyczny */
+function battleBg(region, torch) {
+  const t = Math.max(0, Math.min(10, torch == null ? 7 : +torch));
+  const P = { Ruiny: ['#1a1612', '#2b231c', '#0d0b09', '#2e2620'], Nory: ['#1c120d', '#2e1d14', '#0e0806', '#33221a'], Knieja: ['#0f1610', '#1a261b', '#070b07', '#1e2a1e'], Zatoka: ['#0d1418', '#16232a', '#060a0c', '#1a2a30'], DD: ['#140e14', '#241626', '#0a060a', '#2a1a2a'] }[region] || ['#1a1612', '#2b231c', '#0d0b09', '#2e2620'];
+  const glowA = (0.18 + t * 0.045).toFixed(2); const dark = ((10 - t) * 0.05).toFixed(2);
+  const arch = x => `<path d="M${x - 62} 250V120Q${x - 62} 52 ${x} 52Q${x + 62} 52 ${x + 62} 120V250Z" fill="${P[2]}"/><path d="M${x - 62} 120Q${x - 62} 52 ${x} 52Q${x + 62} 52 ${x + 62} 120" fill="none" stroke="#3a3028" stroke-width="5"/>`;
+  const pillar = x => `<rect x="${x - 22}" y="30" width="44" height="225" fill="${P[3]}" stroke="#120e0b" stroke-width="2"/><rect x="${x - 28}" y="24" width="56" height="14" fill="#352c24"/><rect x="${x - 28}" y="240" width="56" height="14" fill="#352c24"/><path d="M${x - 10} 60v170" stroke="#3e342b" stroke-width="3"/>`;
+  const torchAt = x => `<path d="M${x} 150v-24" stroke="#4a3220" stroke-width="5"/><path d="M${x - 8} 128h16" stroke="#3a2a1e" stroke-width="4"/><circle cx="${x}" cy="118" r="${70 + t * 9}" fill="url(#bg-glow)"/><g class="flick"><path d="M${x} 126c-7-8-5-17 1-25 1 8 8 10 5 21-1 3-3 4-6 4z" fill="#f08a2c"/><path d="M${x + 1} 124c-2-4-1-8 2-12 1 4 3 6 1 11z" fill="#ffd27a"/></g>`;
+  const forest = region === 'Knieja' ? Array.from({ length: 9 }, (_, i) => `<path d="M${i * 120 - 20} 250L${i * 120 + 40} ${70 + (i % 3) * 20}L${i * 120 + 100} 250Z" fill="#0b120c" opacity=".9"/>`).join('') : '';
+  const water = region === 'Zatoka' ? '<path d="M0 262Q120 254 250 262T500 262T750 262T1000 262V300H0Z" fill="#12303a" opacity=".55"/>' : '';
+  return `<svg viewBox="0 0 1000 360" preserveAspectRatio="xMidYMax slice" class="stage-bg" aria-hidden="true"><defs>
+    <linearGradient id="bg-wall" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${P[0]}"/><stop offset="1" stop-color="${P[1]}"/></linearGradient>
+    <linearGradient id="bg-floor" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#2a221b"/><stop offset="1" stop-color="#0f0c0a"/></linearGradient>
+    <radialGradient id="bg-glow" cx=".5" cy=".5" r=".5"><stop offset="0" stop-color="#ffb862" stop-opacity="${glowA}"/><stop offset="1" stop-color="#ffb862" stop-opacity="0"/></radialGradient>
+    <radialGradient id="bg-vig" cx=".5" cy=".6" r=".75"><stop offset=".55" stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".85"/></radialGradient></defs>
+    <rect width="1000" height="360" fill="url(#bg-wall)"/>${region === 'Knieja' ? forest : [140, 380, 620, 860].map(arch).join('') + [20, 260, 500, 740, 980].map(pillar).join('')}${region === 'Knieja' ? '' : [260, 740].map(torchAt).join('')}
+    <path d="M0 252H1000V360H0Z" fill="url(#bg-floor)"/>${water}<g stroke="#1a1410" stroke-width="2" opacity=".8"><path d="M0 280H1000M0 312H1000"/>${[-300, -100, 100, 300, 500, 700, 900, 1100, 1300].map(x => `<path d="M500 252L${x} 360"/>`).join('')}</g>
+    ${region === 'Ruiny' ? '<g fill="#bfb6a3" opacity=".55"><circle cx="70" cy="300" r="6"/><path d="M80 304l26-6" stroke="#bfb6a3" stroke-width="4"/><circle cx="930" cy="296" r="5"/><path d="M900 300l20 4" stroke="#bfb6a3" stroke-width="4"/></g><g stroke="#8a8278" stroke-width="1" opacity=".35" fill="none"><path d="M0 0l70 60M0 30l60 30M30 0l40 60M0 0q40 20 70 60"/><path d="M1000 0l-70 60M1000 30l-60 30M970 0l-40 60"/></g>' : ''}
+    <rect width="1000" height="360" fill="#000" opacity="${dark}"/><rect width="1000" height="360" fill="url(#bg-vig)"/></svg>`;
+}
+function heroFigure(h) { const f = FIG_HERO[h.cls]; return f ? f() : figGenericHero(h); }
+function enemyFigure(e) {
+  if (e.corpse) return figCorpse((e.size || 1) === 2);
+  if (FIG_ELITE[e.name]) return FIG_ELITE[e.name]();
+  const f = FIG_ENEMY[e.name]; return f ? f() : figGenericEnemy(e);
 }
 
 /* Stan gry i połączenie. Jeden stan S dla wszystkich, prywatne G tylko dla MG.
@@ -3107,6 +3259,30 @@ function enemySlot(x) {
   </div>`;
 }
 
+/* ---------- scena walki: tło regionu i całe postacie (klikane jak karty) ---------- */
+function figHero(id, pos) {
+  const h = H(id); if (!h) return '<div class="fig empty" aria-hidden="true"></div>';
+  const ce = curEntry(); const isCur = ce && ce.k === 'h' && ce.id === id; const st = heroStats(h);
+  const P = UI.pend; const tgt = P && P.need === 'ally' && Store.S.stol.heroes.includes(id); const tgtE = UI.epend && UI.epend.valid.includes(id);
+  const sel = UI.sel.k === 'h' && UI.sel.id === id;
+  return `<button class="fig hero ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt || tgtE ? 'tgt' : ''} ${h.dd ? 'dd' : ''}" data-act="${tgt ? 'pickAlly' : tgtE ? 'pickHeroT' : 'selH'}" data-id="${id}" aria-label="${esc(heroLabel(h))}, pozycja ${pos}, Zdrowie ${h.hp} z ${st.maxhp}, Stres ${h.stress}">
+    <svg viewBox="0 0 100 200" class="fig-svg" aria-hidden="true">${heroFigure(h)}</svg>
+    <span class="fig-tag">${esc(heroLabel(h))}</span><span class="fig-bar"><i class="hp" style="width:${Math.round(100 * h.hp / Math.max(1, st.maxhp))}%"></i></span><span class="fig-bar st"><i style="width:${Math.min(100, h.stress * 5)}%"></i></span></button>`;
+}
+function figEnemy(x) {
+  const e = x.e; const ce = curEntry(); const isCur = ce && ce.k === 'e' && ce.id === e.id; const wide = (e.size || 1) === 2;
+  const P = UI.pend; const tgt = P && P.need === 'enemy' && P.valid.includes(e.id); const sel = UI.sel.k === 'e' && UI.sel.id === e.id;
+  const vw = wide ? 200 : 100; const vh = wide && !e.corpse && FIG_ELITE[e.name] ? 220 : 200;
+  return `<button class="fig enemy ${wide ? 'wide' : ''} ${e.boss ? 'boss' : ''} ${e.elite ? 'elite' : ''} ${e.corpse ? 'corpse' : ''} ${sel ? 'sel' : ''} ${isCur ? 'cur' : ''} ${tgt ? 'tgt' : ''}" data-act="${tgt ? 'pickEnemy' : 'selE'}" data-id="${e.id}" aria-label="${esc(e.name)}, pozycja ${x.pos}, Zdrowie ${e.hp} z ${e.maxhp}">
+    <svg viewBox="0 0 ${vw} ${vh}" class="fig-svg" aria-hidden="true"><g transform="translate(${vw} 0) scale(-1 1)">${enemyFigure(e)}</g></svg>
+    <span class="fig-tag">${esc(e.name)}</span>${e.corpse ? '' : `<span class="fig-bar"><i class="hp" style="width:${Math.round(100 * e.hp / Math.max(1, e.maxhp))}%"></i></span>`}</button>`;
+}
+function stageHtml(s, enemies) {
+  const w = Store.S.wyprawa; const region = s.region || (w.quest ? (w.quest.dd != null ? 'DD' : REGIONS[w.quest.region].key) : 'Ruiny');
+  const empties = Math.max(0, 4 - enemies.reduce((a, x) => a + (x.e.size || 1), 0));
+  return `<div class="stage-wrap"><div class="stage">${battleBg(region, s.torch)}<svg class="fig-defs" width="0" height="0" aria-hidden="true"><defs><filter id="fg-glow" x="-100%" y="-100%" width="300%" height="300%"><feGaussianBlur stdDeviation="2" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter></defs></svg>
+    <div class="stage-field"><div class="stage-h">${[3, 2, 1, 0].map(i => figHero(s.heroes[i], i + 1)).join('')}</div><div></div><div class="stage-e">${enemies.map(figEnemy).join('')}${'<div class="fig empty" aria-hidden="true"></div>'.repeat(empties)}</div></div></div></div>`;
+}
 function lastActHtml(L) {
   const col = h => h.replace(/<b>(PUDŁO|UNIK|BLOK)<\/b>/g, '<b class="k-miss">$1</b>').replace(/<b>(TRAFIENIE)<\/b>/g, '<b class="k-hit">$1</b>').replace(/<b>(KRYTYK)<\/b>/g, '<b class="k-crit">$1</b>');
   return `<div class="lastact" aria-live="polite"><span class="lbl">Ostatnia akcja</span> <b class="la-head">${esc(L.head)}</b>${(L.sum || []).length ? `<ul>${L.sum.map(x => `<li>${col(md(x))}</li>`).join('')}</ul>` : ''}</div>`;
@@ -3119,7 +3295,8 @@ function showPops() {
   if (!layer) { layer = document.createElement('div'); layer.id = 'pops'; layer.setAttribute('aria-hidden', 'true'); document.body.appendChild(layer); }
   const count = {};
   (L.ev || []).forEach(ev => {
-    let el = document.querySelector('.slot[data-id="' + ev.id + '"]');
+    let el = document.querySelector('.fig[data-id="' + ev.id + '"]') || document.querySelector('.slot[data-id="' + ev.id + '"]');
+    if (ev.k === 'act' && el && el.classList.contains('fig')) { el.classList.remove('act-h', 'act-e'); void el.offsetWidth; el.classList.add(el.classList.contains('hero') ? 'act-h' : 'act-e'); }
     if (!el) el = document.querySelector(ev.k === 'act' ? '.side-h' : '.side-e'); if (!el) return;
     const r = el.getBoundingClientRect(); const n = count[ev.id] = (count[ev.id] || 0) + 1;
     const p = document.createElement('div'); p.className = 'pop pop-' + ev.k; p.textContent = ev.txt;
@@ -3142,7 +3319,7 @@ VIEWS.stol = {
     return `
     ${UI.pend ? `<div class="pendbar">Wybierz cel: <b>${esc(UI.pend.label)}</b> <button class="btn sm" data-act="cancelPend">Anuluj</button>${UI.pend.multi ? ` <button class="btn sm primary" data-act="fireMulti">Użyj na wszystkich</button>` : ''}</div>` : ''}
     ${UI.epend ? `<div class="pendbar">Wybierz bohatera, w którego ${esc(UI.epend.label)} <button class="btn sm" data-act="cancelPend">Anuluj</button></div>` : ''}
-    <section class="panel fieldp">
+    <section class="panel fieldp has-stage">
       <div class="fhead">
         <div><span class="lbl">${s.fight ? 'Walka' : 'Spokój'}</span> <b class="round">${s.fight ? 'Runda ' + s.round : 'Drużyna w szyku'}</b>${curName ? ` <span class="chip gold">tura: ${esc(curName)}${(() => { const x = ce.k === 'h' ? H(ce.id) : s.enemies.find(e => e.id === ce.id); return x && x.fx && x.fx.lostTurn === (s.round || 0) ? (x.fx.lostWhy === 'stun' ? ' · ogłuszony, tura przepada' : ' · tura przejęta') : s.acted === turnKey() ? ' · już działał' : ''; })()}</span>` : ''}</div>
         <div class="row">
@@ -3161,6 +3338,7 @@ VIEWS.stol = {
       ${lootCardHtml()}
       ${lootStrip()}
       ${s.last ? lastActHtml(s.last) : ''}
+      ${s.heroes.length || s.enemies.length ? stageHtml(s, enemies) : ''}
       <div class="field">
         <div class="side-h">${heroesRev}</div>
         <div class="vs" aria-hidden="true"><span>⟷</span></div>
