@@ -135,55 +135,129 @@ function lastActHtml(L) {
   const col = h => h.replace(/<b>(PUDŁO|UNIK|BLOK)<\/b>/g, '<b class="k-miss">$1</b>').replace(/<b>(TRAFIENIE)<\/b>/g, '<b class="k-hit">$1</b>').replace(/<b>(KRYTYK)<\/b>/g, '<b class="k-crit">$1</b>');
   return `<div class="lastact" aria-live="polite"><span class="lbl">Ostatnia akcja</span> <b class="la-head">${esc(L.head)}</b>${(L.sum || []).length ? `<ul>${L.sum.map(x => `<li>${col(md(x))}</li>`).join('')}</ul>` : ''}</div>`;
 }
-/* ---------- zbliżenia akcji: ~1 s na atak, unik, obronę (jak w grze) ---------- */
-const CINE_MS = 1150;
+/* ---------- zbliżenia w stylu Darkest Dungeon 2: kamera najeżdża na atakującego i cel,
+   zamach, cios, krótkie zatrzymanie, wstrząs, krew i iskry, unik z cieniami, kamera wraca ---------- */
+const CINE_MS = 1800;
 function cineOn() { try { return localStorage.getItem('pio:cine') !== 'off' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } }
+function cineLeft() { return UI.cine ? Math.max(0, CINE_MS - (Date.now() - UI.cine.t)) : 0; }
+function cineRand(seed) { let x = 2166136261; for (const ch of String(seed)) x = Math.imul(x ^ ch.charCodeAt(0), 16777619) >>> 0; return () => { x = (Math.imul(x, 1664525) + 1013904223) >>> 0; return x / 4294967296; }; }
 function startCine(L) {
   if (!cineOn()) return false;
   const act = (L.ev || []).find(e => e.k === 'act'); if (!act) return false;
-  const kinds = {}; (L.ev || []).forEach(e => { if (e.k === 'act') return; (kinds[e.id] = kinds[e.id] || []).push(e.k === 'dodge' && e.txt === 'BLOK' ? 'block' : e.k); });
+  const kinds = {}, txts = {};
+  (L.ev || []).forEach(e => { if (e.k === 'act') return; const k = e.k === 'dodge' && e.txt === 'BLOK' ? 'block' : e.k; (kinds[e.id] = kinds[e.id] || []).push(k); (txts[e.id] = txts[e.id] || []).push([k, e.txt]); });
   if (!Object.keys(kinds).length) kinds[act.id] = ['fx'];
   const all = [].concat(...Object.values(kinds));
-  const fx = all.includes('heal') ? 'heal' : all.every(k => k === 'stress' || k === 'fx') ? 'wave' : null;
-  UI.cine = { id: L.id, t: Date.now(), actor: act.id, kinds, fx };
+  const fx = all.includes('heal') ? 'heal' : all.every(k => k === 'stress' || k === 'fx' || k === 'resist') ? 'wave' : null;
+  UI.cine = { id: L.id, t: Date.now(), actor: act.id, name: act.txt, kinds, txts, fx, geo: null };
   applyCine(); return true;
 }
 function cineClear() {
   const st = document.querySelector('.stage'); UI.cine = null; clearTimeout(UI.cineT);
-  if (!st) return; st.classList.remove('cine', 'c-shake'); st.querySelectorAll('.c-actor, .c-target').forEach(el => { el.className = el.className.replace(/\bc-[a-z]+\b/g, '').trim(); el.style.animationDelay = ''; });
-  const fx = st.querySelector('.cine-fx'); if (fx) fx.remove();
+  if (!st) return; st.classList.remove('cine', 'c-shake');
+  st.querySelectorAll('.c-actor, .c-target').forEach(el => { el.className = el.className.replace(/\b(c|k)-[a-z]+\b/g, '').replace(/\s+/g, ' ').trim(); el.style.animationDelay = ''; });
+  const f = st.querySelector('.stage-field'); if (f) f.style.animationDelay = ''; const bg = st.querySelector('.stage-bg'); if (bg) bg.style.animationDelay = '';
+  st.querySelectorAll('.cine-fx, .cine-ui').forEach(x => x.remove());
+}
+/* geometria liczona raz, na świeżej scenie: kto, dokąd się zbliża, jak mocno najeżdża kamera */
+function cineGeo(stage, field, a, others, C) {
+  const fw = field.offsetWidth, fh = field.offsetHeight; const fr = field.getBoundingClientRect();
+  const cx = el => el.offsetLeft + el.offsetWidth / 2;
+  const hero = a.classList.contains('hero'); const ax = cx(a);
+  let dir = hero ? 1 : -1, pull = 0, tpull = 0, lunge = 0, melee = false;
+  const opp = others.some(el => el.classList.contains('hero') !== hero);
+  if (others.length) {
+    const txs = others.map(cx); const near = txs.reduce((m, x) => Math.abs(x - ax) < Math.abs(m - ax) ? x : m, txs[0]);
+    dir = Math.sign(near - ax) || dir; const g = Math.abs(near - ax);
+    melee = opp && !C.fx && g < fw * 0.5;
+    const want = fw * (opp ? (melee ? 0.16 : 0.3) : 0.13);
+    const shift = Math.max(0, g - want);
+    pull = dir * shift * (opp ? 0.6 : 0.5); tpull = -dir * shift * (opp ? 0.4 : 0.5);
+    lunge = melee ? dir * Math.min(want * 0.5, 44) : -dir * 10;
+  }
+  const xs = [ax + pull].concat(others.map(el => cx(el) + tpull));
+  const half = Math.max(a.offsetWidth * 0.8, 40);
+  const minX = Math.min(...xs) - half, maxX = Math.max(...xs) + half;
+  const span = Math.max(maxX - minX, fw * 0.28);
+  const narrow = window.innerWidth < 700;
+  const s = Math.max(1.15, Math.min(narrow ? 1.9 : 1.7, fw * 0.94 / span));
+  const M = (minX + maxX) / 2; const tx = fw / 2 - M * s;
+  const box = el => { const sv = el.querySelector('.fig-svg') || el; const r = sv.getBoundingClientRect(); return { x: r.left - fr.left, y: r.top - fr.top, w: r.width, h: r.height }; };
+  const boxes = {}; others.concat([a]).forEach(el => { boxes[el.dataset.id] = box(el); });
+  /* kadr jak w grze: głowy tuż pod górnym pasem, nogi mogą wyjść poza dół kadru */
+  const sw = stage.offsetWidth, sh = stage.offsetHeight;
+  const tops = Object.values(boxes).map(b => b.y); const minTop = Math.min(...tops);
+  const topLine = sh * 0.115 + 34 - field.offsetTop; const ty = Math.min(0, topLine - minTop * s); /* miejsce na liczby nad głowami */
+  /* punkt uderzenia: tam kamera robi krótki dodatkowy najazd */
+  const ix = others.length ? xs.slice(1).reduce((p, x) => p + x, 0) / others.length : ax; const hh = Math.max(...Object.values(boxes).map(b => b.h)); const iy = minTop + hh * 0.35; const s2 = s * 1.045;
+  const bs = 1 + (s - 1) * 0.35;
+  const btx = Math.min(0, Math.max(sw - sw * bs, sw / 2 - (field.offsetLeft + M) * bs)); const bty = Math.min(0, Math.max(sh - sh * bs, sh * (1 - bs) * 0.6));
+  return { s, tx, ty, s2, cpx: ix * (s2 - s), cpy: iy * (s2 - s), bs, btx, bty, pull, tpull, lunge, dir, melee, boxes, fw, fh };
 }
 function applyCine() {
-  const C = UI.cine; if (!C) return; const el0 = Date.now() - C.t; const stage = document.querySelector('.stage');
-  if (!stage || el0 >= CINE_MS) return cineClear();
-  const a = stage.querySelector('.fig[data-id="' + C.actor + '"]'); if (!a) return cineClear();
-  const sr = stage.getBoundingClientRect(); const ar = a.getBoundingClientRect(); const delay = -el0 + 'ms';
-  const tEls = Object.keys(C.kinds).map(id => [id, stage.querySelector('.fig[data-id="' + id + '"]')]).filter(x => x[1]);
-  const t0 = tEls.find(([id]) => id !== C.actor);
-  let dx = 0; if (t0) { const tr = t0[1].getBoundingClientRect(); dx = ((tr.left + tr.width / 2) - (ar.left + ar.width / 2)) * 0.42; }
-  const melee = !!t0 && !C.fx && Math.abs(dx) < sr.width * 0.24 && t0[1].classList.contains('hero') !== a.classList.contains('hero');
-  if (!melee) dx = Math.sign(dx || (a.classList.contains('hero') ? 1 : -1)) * Math.min(Math.abs(dx) || 16, 16);
-  stage.classList.add('cine'); a.classList.add('c-actor'); a.style.setProperty('--dx', dx + 'px'); a.style.animationDelay = delay;
+  const C = UI.cine; if (!C) return; const el0 = Date.now() - C.t;
+  const stage = document.querySelector('.stage'); if (!stage || el0 >= CINE_MS) return cineClear();
+  const field = stage.querySelector('.stage-field'); const a = stage.querySelector('.fig[data-id="' + C.actor + '"]'); if (!field || !a) return cineClear();
+  const ids = Object.keys(C.kinds); const selfOnly = ids.every(id => id === C.actor);
+  const tEls = ids.filter(id => id !== C.actor || selfOnly).map(id => [id, stage.querySelector('.fig[data-id="' + id + '"]')]).filter(x => x[1]);
+  const others = tEls.filter(([id]) => id !== C.actor).map(x => x[1]);
+  if (!C.geo) C.geo = cineGeo(stage, field, a, others, C);
+  const G = C.geo; const delay = -el0 + 'ms';
+  const V = { '--cs': G.s, '--ctx': G.tx + 'px', '--cty': G.ty + 'px', '--cs2': G.s2, '--cpx': G.cpx + 'px', '--cpy': G.cpy + 'px', '--bs': G.bs, '--btx': G.btx + 'px', '--bty': G.bty + 'px' };
+  Object.entries(V).forEach(([k, v]) => stage.style.setProperty(k, v));
+  stage.style.setProperty('--cd', delay); stage.classList.add('cine'); field.style.animationDelay = delay; const bg = stage.querySelector('.stage-bg'); if (bg) bg.style.animationDelay = delay;
+  a.classList.add('c-actor', G.melee ? 'c-melee' : others.length && !C.fx ? 'c-ranged' : 'c-cast');
+  a.style.setProperty('--pull', G.pull + 'px'); a.style.setProperty('--lunge', G.lunge + 'px'); a.style.setProperty('--dir', G.dir); a.style.animationDelay = delay;
   const all = [].concat(...Object.values(C.kinds));
+  const kindOf = k => k.includes('kill') ? 'kill' : k.includes('crit') ? 'crit' : k.includes('hit') ? 'hit' : k.includes('block') ? 'block' : k.includes('dodge') ? 'dodge' : k.includes('miss') ? 'miss' : k.includes('heal') ? 'heal' : k.includes('stress') ? 'stress' : 'fx';
   tEls.forEach(([id, el]) => {
-    if (id === C.actor && tEls.length > 1) return; if (id === C.actor && !C.fx) return;
-    const k = C.kinds[id]; const cls = k.includes('kill') ? 'c-kill' : k.includes('crit') ? 'c-crit' : k.includes('hit') ? 'c-hit' : k.includes('block') ? 'c-block' : k.includes('dodge') ? 'c-dodge' : k.includes('miss') ? 'c-miss' : k.includes('heal') ? 'c-heal' : 'c-fx';
-    el.classList.add('c-target', cls); el.style.setProperty('--away', (el.classList.contains('hero') ? -1 : 1) * 16 + 'px'); el.style.animationDelay = delay;
+    if (id === C.actor) return;
+    el.classList.add('c-target', 'k-' + kindOf(C.kinds[id]));
+    el.style.setProperty('--tpull', G.tpull + 'px'); el.style.setProperty('--away', G.dir * 18 + 'px'); el.style.setProperty('--dir', G.dir); el.style.animationDelay = delay;
   });
   if (all.includes('crit') || all.includes('kill')) { stage.classList.add('c-shake'); stage.style.setProperty('--shd', delay); }
-  let layer = stage.querySelector('.cine-fx'); if (!layer) { layer = document.createElement('div'); layer.className = 'cine-fx'; layer.setAttribute('aria-hidden', 'true'); stage.appendChild(layer); }
-  const ax = ar.left - sr.left + ar.width / 2, ay = ar.top - sr.top + ar.height * 0.45;
-  layer.innerHTML = tEls.filter(([id]) => id !== C.actor || C.fx).map(([id, el]) => {
-    const r = el.getBoundingClientRect(); const x = r.left - sr.left + r.width / 2, y = r.top - sr.top + r.height * 0.42; const k = C.kinds[id];
-    const hitk = k.includes('crit') ? 'crit' : (k.includes('hit') || k.includes('kill')) ? 'hit' : k.includes('block') ? 'block' : (k.includes('dodge') || k.includes('miss')) ? 'miss' : 'other';
-    if (C.fx === 'heal') return `<i class="fx-heal" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i><i class="fx-heal b" style="left:${x - 14}px;top:${y + 16}px;animation-delay:${delay}"></i><i class="fx-heal c" style="left:${x + 14}px;top:${y + 8}px;animation-delay:${delay}"></i>`;
-    if (C.fx === 'wave') return `<i class="fx-wave" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i><i class="fx-wave b" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>`;
-    const shot = melee ? '' : (() => { const ang = Math.atan2(y - ay, x - ax) * 180 / Math.PI; return `<i class="fx-bolt" style="left:${ax}px;top:${ay}px;--tx:${x - ax}px;--ty:${y - ay}px;--ang:${ang}deg;animation-delay:${delay}"></i>`; })();
-    const imp = hitk === 'block' ? `<i class="fx-block" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>` : hitk === 'miss' ? `<svg class="fx-slash miss" style="left:${x + (el.classList.contains('hero') ? 26 : -26)}px;top:${y}px;animation-delay:${delay}" viewBox="-50 -50 100 100"><path d="M-34-30Q0-6 32 32"/></svg>`
-      : hitk === 'other' ? `<i class="fx-wave" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>` : `<svg class="fx-slash ${hitk}" style="left:${x}px;top:${y}px;animation-delay:${delay}" viewBox="-50 -50 100 100"><path d="M-36-30Q0-6 34 32"/>${hitk === 'crit' ? '<path d="M34-28Q2-2-32 30"/>' : ''}</svg><i class="fx-burst ${hitk}" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>`;
-    return shot + imp;
-  }).join('');
-  clearTimeout(UI.cineT); UI.cineT = setTimeout(cineClear, CINE_MS - el0 + 20);
+  /* warstwa efektów w przestrzeni sceny (przybliża się razem z kamerą) */
+  let fxl = field.querySelector('.cine-fx'); if (!fxl) { fxl = document.createElement('div'); fxl.className = 'cine-fx'; fxl.setAttribute('aria-hidden', 'true'); field.appendChild(fxl); }
+  const rnd = cineRand(C.id); const ab = G.boxes[C.actor] || { x: 0, y: 0, w: 60, h: 120 };
+  const ax = ab.x + ab.w / 2 + G.pull + G.lunge * 0.6, ay = ab.y + ab.h * 0.4;
+  let html = ''; let tj = 0;
+  tEls.forEach(([id, el]) => {
+    const b = G.boxes[id]; if (!b) return; const k = kindOf(C.kinds[id]);
+    const self = id === C.actor; const x = b.x + b.w / 2 + (self ? G.pull : G.tpull), y = b.y + b.h * 0.38;
+    const st = `animation-delay:${delay}`;
+    if (C.fx === 'heal' || k === 'heal') {
+      html += `<i class="fx-glow g-heal" style="left:${x}px;top:${y + b.h * 0.2}px;${st}"></i>`;
+      for (let i = 0; i < 9; i++) html += `<i class="fx-mote" style="left:${x + (rnd() - .5) * b.w * .9}px;top:${y + b.h * (.1 + rnd() * .45)}px;--d:${(rnd() * .25).toFixed(2)}s;${st}"></i>`;
+    } else if (C.fx === 'wave' || k === 'stress' || k === 'fx') {
+      html += `<i class="fx-wave" style="left:${x}px;top:${y}px;${st}"></i><i class="fx-wave b" style="left:${x}px;top:${y}px;${st}"></i>`;
+    } else {
+      if (!G.melee) { const ang = Math.atan2(y - ay, x - ax) * 180 / Math.PI; html += `<i class="fx-bolt" style="left:${ax}px;top:${ay}px;--tx:${x - ax}px;--ty:${y - ay}px;--ang:${ang}deg;${st}"></i>`; }
+      if (k === 'hit' || k === 'crit' || k === 'kill') {
+        const ix = x + G.dir * 18 * (k === 'hit' ? 1 : 2);
+        html += `<svg class="fx-slash ${k === 'hit' ? 'hit' : 'crit'}" style="left:${x}px;top:${y}px;${st}" viewBox="-50 -50 100 100"><path d="${G.dir > 0 ? 'M-36-30Q0-6 34 32' : 'M36-30Q0-6-34 32'}"/>${k !== 'hit' ? `<path d="${G.dir > 0 ? 'M34-28Q2-2-32 30' : 'M-34-28Q-2-2 32 30'}"/>` : ''}</svg><i class="fx-burst ${k === 'hit' ? 'hit' : 'crit'}" style="left:${x}px;top:${y}px;${st}"></i>`;
+        const n = k === 'hit' ? 9 : 16;
+        for (let i = 0; i < n; i++) { const vx = G.dir * (14 + rnd() * (k === 'hit' ? 60 : 95)); const vy = -(8 + rnd() * 55); html += `<i class="fx-drop" style="left:${ix}px;top:${y + (rnd() - .5) * 20}px;--vx:${vx.toFixed(0)}px;--vy:${vy.toFixed(0)}px;--sz:${(3 + rnd() * 5).toFixed(1)}px;${st}"></i>`; }
+        if (k !== 'hit') for (let i = 0; i < 8; i++) { const ang = (G.dir > 0 ? -60 : 120) + rnd() * 120; html += `<i class="fx-spark" style="left:${x}px;top:${y}px;--ang:${ang.toFixed(0)}deg;--len:${(26 + rnd() * 40).toFixed(0)}px;${st}"></i>`; }
+      } else if (k === 'block') {
+        html += `<i class="fx-block" style="left:${x}px;top:${y}px;${st}"></i>`;
+        for (let i = 0; i < 7; i++) { const ang = (G.dir > 0 ? 120 : -60) + rnd() * 120; html += `<i class="fx-spark s-blue" style="left:${x - G.dir * 14}px;top:${y}px;--ang:${ang.toFixed(0)}deg;--len:${(20 + rnd() * 30).toFixed(0)}px;${st}"></i>`; }
+      } else if (k === 'dodge' || k === 'miss') {
+        html += `<svg class="fx-slash miss" style="left:${x - G.dir * 10}px;top:${y}px;${st}" viewBox="-50 -50 100 100"><path d="${G.dir > 0 ? 'M-34-30Q0-6 32 32' : 'M34-30Q0-6-32 32'}"/></svg>`;
+        if (k === 'dodge') { const svg = (el.querySelector('.fig-svg') || {}).outerHTML || ''; [1, 2].forEach(i => { html += `<div class="fx-ghost g${i}" style="left:${b.x + G.tpull}px;top:${b.y}px;width:${b.w}px;height:${b.h}px;--gx:${(G.dir * 18 * 1.2 * i).toFixed(0)}px;${st}">${svg}</div>`; }); }
+      }
+    }
+    /* liczby i napisy przy celu, w przybliżeniu (jak w grze) */
+    /* nad głową celu (jak w grze); przy krawędzi kadru przesunięte do środka, sąsiednie cele na różnych wysokościach */
+    const X = Math.max(G.fw * 0.16, Math.min(G.fw * 0.84, x * G.s + G.tx)); const nx = (X - G.tx) / G.s; const drop = (tj++ % 2) * 16;
+    (C.txts[id] || []).forEach(([kk, t], i) => { html += `<i class="fx-num n-${kk}" style="left:${nx}px;top:${b.y - 16 + drop + i * 17}px;${st}">${esc(t)}</i>`; });
+  });
+  if (fxl._html !== html) { fxl.innerHTML = html; fxl._html = html; }
+  /* warstwa kinowa: czarne pasy, winieta, nazwa umiejętności, błysk przy krytyku */
+  let ui = stage.querySelector('.cine-ui'); if (!ui) { ui = document.createElement('div'); ui.className = 'cine-ui'; ui.setAttribute('aria-hidden', 'true'); stage.appendChild(ui); }
+  const who = (a.querySelector('.fig-tag .tl') || a.querySelector('.fig-tag') || {}).textContent || '';
+  const uh = `<i class="cbar t" style="animation-delay:${delay}"></i><i class="cbar b" style="animation-delay:${delay}"></i><i class="cvig" style="animation-delay:${delay}"></i><div class="cname" style="animation-delay:${delay}"><small>${esc(who)}</small><b>${esc(C.name || '')}</b></div>${all.includes('crit') ? `<i class="cflash" style="animation-delay:${delay}"></i>` : ''}`;
+  if (ui._html !== uh) { ui.innerHTML = uh; ui._html = uh; }
+  clearTimeout(UI.cineT); UI.cineT = setTimeout(cineClear, CINE_MS - el0 + 30);
 }
 /* napisy nad postaciami po każdej akcji: PUDŁO, UNIK, −5, KRYTYK… (jak w grze) */
 function showPops() {
@@ -191,6 +265,7 @@ function showPops() {
   if (!L || L.id === UI.lastShown) return;
   UI.lastShown = L.id; if (Date.now() - L.t > 10000) return;
   const cine = startCine(L);
+  if (cine) return; /* liczby i napisy pokazuje samo zbliżenie */
   let layer = document.getElementById('pops');
   if (!layer) { layer = document.createElement('div'); layer.id = 'pops'; layer.setAttribute('aria-hidden', 'true'); document.body.appendChild(layer); }
   const count = {};

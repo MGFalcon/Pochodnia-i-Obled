@@ -757,52 +757,125 @@ body.scene-on { overflow: hidden; }
 @media (prefers-reduced-motion: reduce) { .fig-svg, .stage .flick, .fig.act-h .fig-svg, .fig.act-e .fig-svg, .fig.flash-hit .fig-svg { animation: none; } }
 @media (max-width: 700px) { .stage { height: 210px; min-width: 0; } .stage-field { left: 1%; right: 1%; top: 8px; grid-template-columns: minmax(0, 1fr) 22px minmax(0, 1fr); } .fig-tag { font-size: 9px; } .fig-bar { width: 86%; height: 4px; } .fig.cur::before { bottom: 24px; } }
 
-/* zbliżenia akcji */
-.stage .fig, .stage .stage-bg { transition: opacity .18s, filter .18s; }
-.stage.cine .stage-bg { filter: brightness(.5) saturate(.8); }
-.stage.cine .fig:not(.c-actor):not(.c-target):not(.empty) { opacity: .3; filter: grayscale(.7) brightness(.55); }
-.stage.cine .fig.c-actor, .stage.cine .fig.c-target { z-index: 3; }
-.stage.cine .fig.c-actor .fig-svg, .stage.cine .fig.c-target .fig-svg { animation: none; }
-.fig.c-actor { animation: cAct 1.15s ease-in-out both; }
-@keyframes cAct { 0% { transform: none; } 22% { transform: translateX(calc(var(--dx) * -0.18)) scale(1.08); } 40% { transform: translateX(var(--dx)) scale(1.16); } 72% { transform: translateX(var(--dx)) scale(1.16); } 100% { transform: none; } }
-.fig.c-hit { animation: cHit 1.15s ease-out both; }
-@keyframes cHit { 0%, 38% { transform: none; filter: none; } 44% { transform: translateX(var(--away)) scale(1.1); filter: brightness(2.4) sepia(1) hue-rotate(-45deg) saturate(5); } 62% { transform: translateX(calc(var(--away) * .6)) scale(1.1); filter: none; } 100% { transform: none; } }
-.fig.c-crit { animation: cCrit 1.15s ease-out both; }
-@keyframes cCrit { 0%, 38% { transform: none; filter: none; } 42% { transform: translateX(calc(var(--away) * 2.2)) scale(1.14) rotate(calc(var(--away) * .35deg)); filter: brightness(3) saturate(0); } 50% { filter: brightness(2.2) sepia(1) hue-rotate(-45deg) saturate(6); } 70% { transform: translateX(calc(var(--away) * 1.2)) scale(1.12); filter: none; } 100% { transform: none; } }
-.fig.c-dodge { animation: cDodge 1.15s ease-out both; }
-@keyframes cDodge { 0%, 30% { transform: none; } 42% { transform: translateX(calc(var(--away) * 2.4)) translateY(-14px) scale(1.08); } 70% { transform: translateX(calc(var(--away) * 2.4)) translateY(0) scale(1.08); } 100% { transform: none; } }
-.fig.c-miss { animation: cMiss 1.15s ease-out both; }
-@keyframes cMiss { 0%, 36% { transform: none; } 46% { transform: scale(1.08) translateX(calc(var(--away) * .4)); } 100% { transform: none; } }
-.fig.c-block { animation: cBlock 1.15s ease-out both; }
-@keyframes cBlock { 0%, 38% { transform: none; filter: none; } 44% { transform: translateX(calc(var(--away) * .5)) scale(1.08); filter: brightness(1.6) sepia(.6); } 100% { transform: none; filter: none; } }
-.fig.c-heal { animation: cHeal 1.15s ease-out both; }
-@keyframes cHeal { 0%, 30% { filter: none; } 50% { filter: brightness(1.5) sepia(.5) hue-rotate(70deg) saturate(2); transform: scale(1.08); } 100% { filter: none; transform: none; } }
-.fig.c-fx { animation: cFx 1.15s ease-out both; }
-@keyframes cFx { 0%, 34% { filter: none; } 50% { filter: brightness(1.3) sepia(.6) hue-rotate(230deg) saturate(3); transform: scale(1.06); } 100% { filter: none; transform: none; } }
-.fig.c-kill { animation: cKill 1.15s ease-in both; }
-@keyframes cKill { 0%, 38% { transform: none; filter: none; opacity: 1; } 44% { transform: translateX(var(--away)) scale(1.1); filter: brightness(2.4) sepia(1) hue-rotate(-45deg) saturate(5); } 100% { transform: translateX(calc(var(--away) * 1.6)) translateY(26px) rotate(calc(var(--away) * 4deg)) scale(.95); filter: brightness(.5); opacity: .25; } }
-.stage.c-shake { animation: cShake .36s .46s linear; }
-@keyframes cShake { 20% { transform: translate(-5px, 2px); } 40% { transform: translate(5px, -2px); } 60% { transform: translate(-4px, 1px); } 80% { transform: translate(3px, -1px); } }
-.cine-fx { position: absolute; inset: 0; pointer-events: none; z-index: 5; }
+/* zbliżenia akcji w stylu Darkest Dungeon 2 (1,8 s): 0–13% najazd kamery, 27% zamach, 35% cios,
+   35–43% zatrzymanie w chwili trafienia, 43–80% reakcja i liczby, 80–100% powrót kamery */
+.stage .fig { transition: opacity .2s; }
+.stage.cine .stage-field { transform-origin: 0 0; animation: camF 1.8s cubic-bezier(.25,.8,.25,1) both; will-change: transform; }
+@keyframes camF { 0% { transform: none; } 13%, 33% { transform: translate(var(--ctx), var(--cty)) scale(var(--cs)); } 37%, 41% { transform: translate(calc(var(--ctx) - var(--cpx)), calc(var(--cty) - var(--cpy))) scale(var(--cs2)); } 52%, 80% { transform: translate(var(--ctx), var(--cty)) scale(var(--cs)); } 100% { transform: none; } }
+.stage.cine .stage-bg { transform-origin: 0 0; animation: camB 1.8s cubic-bezier(.25,.8,.25,1) both; }
+@keyframes camB { 0% { transform: none; filter: none; } 13%, 80% { transform: translate(var(--btx), var(--bty)) scale(var(--bs)); filter: brightness(.4) saturate(.7) blur(1.6px); } 100% { transform: none; filter: none; } }
+.stage.cine .fig:not(.c-actor):not(.c-target), .stage.cine .fig .fig-tag, .stage.cine .fig .fig-bar, .stage.cine .fig .fig-fx { animation: cOff 1.8s ease both; animation-delay: var(--cd, 0ms); }
+.stage.cine .fig.cur::before { opacity: 0; }
+@keyframes cOff { 0% { opacity: 1; } 9%, 84% { opacity: 0; } 100% { opacity: 1; } }
+.stage.cine .fig.c-actor, .stage.cine .fig.c-target { z-index: 3; transform-origin: 50% 92%; }
+.stage.cine .fig.c-actor { z-index: 4; }
+.stage.cine .fig.c-actor .fig-svg, .stage.cine .fig.c-target .fig-svg { animation: none; filter: none; }
+/* atakujący: wjazd, zamach, cios, zatrzymanie, powrót */
+.fig.c-actor { animation: cAct 1.8s cubic-bezier(.3,.7,.3,1) both; }
+@keyframes cAct {
+  0% { transform: none; }
+  13% { transform: translateX(var(--pull)); }
+  27% { transform: translateX(calc(var(--pull) - var(--dir) * 12px)) rotate(calc(var(--dir) * -3deg)) scale(1.02); }
+  34% { transform: translateX(calc(var(--pull) + var(--lunge))) rotate(calc(var(--dir) * 5deg)) scale(1.08); }
+  43% { transform: translateX(calc(var(--pull) + var(--lunge))) rotate(calc(var(--dir) * 5deg)) scale(1.08); }
+  70% { transform: translateX(calc(var(--pull) + var(--lunge) * .75)) rotate(calc(var(--dir) * 2deg)) scale(1.05); }
+  80% { transform: translateX(var(--pull)); }
+  100% { transform: none; } }
+.fig.c-actor.c-ranged .fig-svg, .fig.c-actor.c-cast .fig-svg { animation: none; }
+.fig.c-actor.c-cast { animation-name: cCast; }
+@keyframes cCast { 0% { transform: none; filter: none; } 13% { transform: translateX(var(--pull)); } 30% { transform: translateX(var(--pull)) translateY(-6px) scale(1.06); filter: brightness(1.35) drop-shadow(0 0 10px rgba(255,220,150,.7)); } 60% { transform: translateX(var(--pull)) scale(1.04); filter: none; } 80% { transform: translateX(var(--pull)); } 100% { transform: none; } }
+/* cele */
+.fig.c-target { animation: kHold 1.8s ease-out both; }
+@keyframes kHold { 0% { transform: none; } 13%, 80% { transform: translateX(var(--tpull)); } 100% { transform: none; } }
+.fig.k-hit { animation-name: kHit; }
+@keyframes kHit { 0% { transform: none; filter: none; } 13%, 33% { transform: translateX(var(--tpull)); filter: none; }
+  35% { transform: translateX(calc(var(--tpull) + var(--away))) skewX(calc(var(--dir) * -7deg)); filter: brightness(3.2) saturate(0); }
+  41% { transform: translateX(calc(var(--tpull) + var(--away))) skewX(calc(var(--dir) * -4deg)); filter: brightness(1.7) sepia(1) hue-rotate(-45deg) saturate(5); }
+  58% { transform: translateX(calc(var(--tpull) + var(--away) * .55)); filter: none; } 80% { transform: translateX(var(--tpull)); } 100% { transform: none; filter: none; } }
+.fig.k-crit { animation-name: kCrit; }
+@keyframes kCrit { 0% { transform: none; filter: none; } 13%, 33% { transform: translateX(var(--tpull)); filter: none; }
+  35% { transform: translateX(calc(var(--tpull) + var(--away) * 2.2)) rotate(calc(var(--dir) * 7deg)) skewX(calc(var(--dir) * -9deg)); filter: brightness(4) saturate(0); }
+  38% { filter: brightness(1.2) sepia(1) hue-rotate(-50deg) saturate(7); } 41% { filter: brightness(3) saturate(0); }
+  46% { transform: translateX(calc(var(--tpull) + var(--away) * 2)) rotate(calc(var(--dir) * 6deg)); filter: brightness(1.5) sepia(1) hue-rotate(-45deg) saturate(5); }
+  64% { transform: translateX(calc(var(--tpull) + var(--away) * 1.2)) rotate(calc(var(--dir) * 2deg)); filter: none; } 80% { transform: translateX(var(--tpull)); } 100% { transform: none; filter: none; } }
+.fig.k-kill { animation-name: kKill; animation-timing-function: ease-in; }
+@keyframes kKill { 0% { transform: none; filter: none; opacity: 1; } 13%, 33% { transform: translateX(var(--tpull)); filter: none; }
+  35% { transform: translateX(calc(var(--tpull) + var(--away) * 1.8)) skewX(calc(var(--dir) * -8deg)); filter: brightness(3.5) saturate(0); }
+  42% { transform: translateX(calc(var(--tpull) + var(--away) * 2)); filter: brightness(1.5) sepia(1) hue-rotate(-45deg) saturate(6); }
+  70% { transform: translateX(calc(var(--tpull) + var(--away) * 2.6)) translateY(16px) rotate(calc(var(--dir) * 16deg)); filter: brightness(.45) saturate(.4); opacity: .8; }
+  90% { transform: translateX(calc(var(--tpull) + var(--away) * 2.6)) translateY(24px) rotate(calc(var(--dir) * 20deg)); opacity: .35; }
+  100% { transform: none; filter: none; opacity: 1; } }
+.fig.k-dodge { animation-name: kDodge; }
+@keyframes kDodge { 0% { transform: none; filter: none; } 13%, 29% { transform: translateX(var(--tpull)); filter: none; }
+  34% { transform: translateX(calc(var(--tpull) + var(--away) * 2.6)) translateY(-12px) skewX(calc(var(--dir) * 12deg)); filter: blur(1.4px) brightness(1.2); }
+  43% { transform: translateX(calc(var(--tpull) + var(--away) * 2.5)) translateY(0) skewX(0deg); filter: none; }
+  72% { transform: translateX(calc(var(--tpull) + var(--away) * 2.2)); } 82% { transform: translateX(var(--tpull)); } 100% { transform: none; } }
+.fig.k-miss { animation-name: kMiss; }
+@keyframes kMiss { 0% { transform: none; } 13%, 31% { transform: translateX(var(--tpull)); } 38% { transform: translateX(calc(var(--tpull) + var(--away) * .6)) rotate(calc(var(--dir) * 4deg)); } 70% { transform: translateX(var(--tpull)); } 80% { transform: translateX(var(--tpull)); } 100% { transform: none; } }
+.fig.k-block { animation-name: kBlock; }
+@keyframes kBlock { 0% { transform: none; filter: none; } 13%, 33% { transform: translateX(var(--tpull)); filter: none; } 36% { transform: translateX(calc(var(--tpull) + var(--away) * .7)) scale(1.04); filter: brightness(1.9) sepia(.7) drop-shadow(0 0 10px #ffd27a); } 55% { transform: translateX(calc(var(--tpull) + var(--away) * .3)); filter: none; } 80% { transform: translateX(var(--tpull)); } 100% { transform: none; filter: none; } }
+.fig.k-heal { animation-name: kHeal; }
+@keyframes kHeal { 0% { transform: none; filter: none; } 13% { transform: translateX(var(--tpull)); } 32% { transform: translateX(var(--tpull)); filter: none; } 48% { transform: translateX(var(--tpull)) translateY(-4px) scale(1.05); filter: brightness(1.45) drop-shadow(0 0 12px rgba(120,230,140,.8)); } 72% { transform: translateX(var(--tpull)); filter: none; } 80% { transform: translateX(var(--tpull)); } 100% { transform: none; filter: none; } }
+.fig.k-stress, .fig.k-fx { animation-name: kStress; }
+@keyframes kStress { 0% { transform: none; filter: none; } 13%, 33% { transform: translateX(var(--tpull)); filter: none; } 37% { transform: translateX(calc(var(--tpull) - 4px)); filter: brightness(1.3) sepia(.8) hue-rotate(230deg) saturate(3); } 41% { transform: translateX(calc(var(--tpull) + 4px)); } 45% { transform: translateX(calc(var(--tpull) - 3px)); } 60% { transform: translateX(var(--tpull)); filter: none; } 80% { transform: translateX(var(--tpull)); } 100% { transform: none; filter: none; } }
+.stage.c-shake { animation: cShake .34s linear both; animation-delay: calc(var(--shd, 0ms) + 630ms); }
+@keyframes cShake { 0%, 100% { transform: none; } 15% { transform: translate(-7px, 3px); } 35% { transform: translate(6px, -3px); } 55% { transform: translate(-5px, 2px); } 75% { transform: translate(3px, -1px); } }
+/* warstwa kinowa */
+.cine-ui { position: absolute; inset: 0; pointer-events: none; z-index: 6; overflow: hidden; }
+.cine-ui > * { position: absolute; display: block; }
+.cbar { left: 0; right: 0; height: 11%; background: #000; animation: cBar 1.8s cubic-bezier(.3,.8,.3,1) both; }
+.cbar.t { top: 0; transform-origin: top; } .cbar.b { bottom: 0; transform-origin: bottom; }
+@keyframes cBar { 0% { transform: scaleY(0); } 12%, 82% { transform: scaleY(1); } 100% { transform: scaleY(0); } }
+.cvig { inset: 0; background: radial-gradient(ellipse at 50% 55%, rgba(0,0,0,0) 45%, rgba(0,0,0,.75) 100%); animation: cVig 1.8s ease both; }
+@keyframes cVig { 0%, 100% { opacity: 0; } 12%, 82% { opacity: 1; } }
+.cname { bottom: 2.2%; left: 50%; transform: translateX(-50%); text-align: center; white-space: nowrap; animation: cName 1.8s ease both; }
+.cname small { display: inline; margin-right: 10px; }
+.cname b { display: inline; }
+.cbar.b { height: 15%; }
+.cname small { font-family: var(--f-sc); font-size: 12px; letter-spacing: .14em; color: var(--bone2); text-transform: uppercase; }
+.cname b { font-family: var(--f-display); font-size: 26px; line-height: 1.05; color: var(--pale); text-shadow: 0 2px 0 #000, 0 0 14px #000; }
+@keyframes cName { 0%, 6% { opacity: 0; transform: translate(-50%, 6px); } 14%, 74% { opacity: 1; transform: translate(-50%, 0); } 86%, 100% { opacity: 0; } }
+.cflash { inset: 0; background: radial-gradient(circle at 55% 42%, rgba(255,244,220,.9), rgba(255,190,120,.35) 45%, rgba(0,0,0,0) 75%); mix-blend-mode: screen; animation: cFlash 1.8s linear both; }
+@keyframes cFlash { 0%, 34% { opacity: 0; } 35% { opacity: .85; } 38%, 100% { opacity: 0; } }
+/* efekty w przestrzeni sceny */
+.cine-fx { position: absolute; inset: 0; pointer-events: none; z-index: 5; overflow: visible; }
 .cine-fx > * { position: absolute; display: block; }
-.fx-slash { width: 110px; height: 110px; margin: -55px 0 0 -55px; overflow: visible; fill: none; stroke: #fff; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 110; stroke-dashoffset: 110; opacity: 0; filter: drop-shadow(0 0 6px #ffd27a); animation: fxSlash 1.15s ease-out both; }
+.fx-slash { width: 110px; height: 110px; margin: -55px 0 0 -55px; overflow: visible; fill: none; stroke: #fff; stroke-width: 7; stroke-linecap: round; stroke-dasharray: 110; stroke-dashoffset: 110; opacity: 0; filter: drop-shadow(0 0 6px #ffd27a); animation: fxSlash 1.8s ease-out both; }
 .fx-slash.crit { stroke: #ffe08a; stroke-width: 10; filter: drop-shadow(0 0 10px #ff5a2a); }
-.fx-slash.miss { stroke: rgba(255,255,255,.55); stroke-width: 4; filter: none; }
-@keyframes fxSlash { 0%, 36% { stroke-dashoffset: 110; opacity: 0; } 40% { opacity: 1; } 50% { stroke-dashoffset: 0; opacity: 1; } 70% { stroke-dashoffset: -110; opacity: 0; } 100% { opacity: 0; } }
-.fx-burst { width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: radial-gradient(#fff, #ffb85a 40%, rgba(255,90,40,0) 70%); opacity: 0; animation: fxBurst 1.15s ease-out both; }
+.fx-slash.miss { stroke: rgba(255,255,255,.6); stroke-width: 4; filter: none; }
+@keyframes fxSlash { 0%, 31% { stroke-dashoffset: 110; opacity: 0; } 33% { opacity: 1; } 37% { stroke-dashoffset: 0; opacity: 1; } 50% { stroke-dashoffset: -110; opacity: 0; } 100% { opacity: 0; } }
+.fx-burst { width: 18px; height: 18px; margin: -9px 0 0 -9px; border-radius: 50%; background: radial-gradient(#fff, #ffb85a 40%, rgba(255,90,40,0) 70%); opacity: 0; animation: fxBurst 1.8s ease-out both; }
 .fx-burst.crit { background: radial-gradient(#fff, #ff5a2a 45%, rgba(255,40,20,0) 72%); }
-@keyframes fxBurst { 0%, 40% { transform: scale(.2); opacity: 0; } 46% { transform: scale(4); opacity: .95; } 68% { transform: scale(6); opacity: 0; } 100% { opacity: 0; } }
-.fx-bolt { width: 34px; height: 4px; margin: -2px 0 0 -17px; border-radius: 2px; background: linear-gradient(90deg, rgba(255,220,150,0), #fff2c0); box-shadow: 0 0 8px #ffd27a; opacity: 0; transform: rotate(var(--ang)); animation: fxBolt 1.15s ease-in both; }
-@keyframes fxBolt { 0%, 30% { opacity: 0; transform: translate(0, 0) rotate(var(--ang)); } 32% { opacity: 1; } 44% { opacity: 1; transform: translate(var(--tx), var(--ty)) rotate(var(--ang)); } 46%, 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) rotate(var(--ang)); } }
-.fx-wave { width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 3px solid #c48aff; box-shadow: 0 0 12px #9a5aff; opacity: 0; animation: fxWave 1.15s ease-out both; }
+@keyframes fxBurst { 0%, 34% { transform: scale(.2); opacity: 0; } 36% { transform: scale(4); opacity: .95; } 52% { transform: scale(6.5); opacity: 0; } 100% { opacity: 0; } }
+.fx-drop { width: var(--sz); height: var(--sz); margin: calc(var(--sz) / -2) 0 0 calc(var(--sz) / -2); border-radius: 50% 50% 50% 0; background: #8c0d0d; box-shadow: 0 0 2px #3a0000; opacity: 0; animation: fxDrop 1.8s cubic-bezier(.2,.6,.4,1) both; }
+@keyframes fxDrop { 0%, 34% { opacity: 0; transform: translate(0, 0) scale(.6); } 36% { opacity: 1; } 52% { transform: translate(var(--vx), var(--vy)) scale(1); opacity: 1; } 72% { transform: translate(calc(var(--vx) * 1.35), calc(var(--vy) + 46px)) scale(.8); opacity: 0; } 100% { opacity: 0; } }
+.fx-spark { width: var(--len); height: 2px; margin-top: -1px; transform-origin: 0 50%; background: linear-gradient(90deg, #fff, #ffd27a 40%, rgba(255,140,40,0)); box-shadow: 0 0 6px #ffb84a; opacity: 0; animation: fxSpark 1.8s ease-out both; }
+.fx-spark.s-blue { background: linear-gradient(90deg, #fff, #9fd0ff 40%, rgba(80,140,255,0)); box-shadow: 0 0 6px #7ab8ff; }
+@keyframes fxSpark { 0%, 34% { opacity: 0; transform: rotate(var(--ang)) translateX(0) scaleX(.2); } 36% { opacity: 1; transform: rotate(var(--ang)) translateX(6px) scaleX(1); } 50% { opacity: 0; transform: rotate(var(--ang)) translateX(34px) scaleX(.4); } 100% { opacity: 0; } }
+.fx-bolt { width: 34px; height: 4px; margin: -2px 0 0 -17px; border-radius: 2px; background: linear-gradient(90deg, rgba(255,220,150,0), #fff2c0); box-shadow: 0 0 8px #ffd27a; opacity: 0; transform: rotate(var(--ang)); animation: fxBolt 1.8s ease-in both; }
+@keyframes fxBolt { 0%, 26% { opacity: 0; transform: translate(0, 0) rotate(var(--ang)); } 28% { opacity: 1; } 34% { opacity: 1; transform: translate(var(--tx), var(--ty)) rotate(var(--ang)); } 36%, 100% { opacity: 0; transform: translate(var(--tx), var(--ty)) rotate(var(--ang)); } }
+.fx-wave { width: 20px; height: 20px; margin: -10px 0 0 -10px; border-radius: 50%; border: 3px solid #c48aff; box-shadow: 0 0 12px #9a5aff; opacity: 0; animation: fxWave 1.8s ease-out both; }
 .fx-wave.b { animation-name: fxWave2; }
-@keyframes fxWave { 0%, 30% { transform: scale(.3); opacity: 0; } 40% { opacity: .9; } 75% { transform: scale(5); opacity: 0; } 100% { opacity: 0; } }
-@keyframes fxWave2 { 0%, 42% { transform: scale(.3); opacity: 0; } 52% { opacity: .8; } 88% { transform: scale(4); opacity: 0; } 100% { opacity: 0; } }
-.fx-heal { width: 10px; height: 10px; margin: -5px 0 0 -5px; border-radius: 50%; background: #b8ffcf; box-shadow: 0 0 10px #6fdc8c, 0 0 2px #fff; opacity: 0; animation: fxHeal 1.15s ease-out both; }
-.fx-heal.b { animation-duration: 1.1s; } .fx-heal.c { animation-duration: 1.05s; }
-@keyframes fxHeal { 0%, 30% { transform: translateY(20px) scale(.4); opacity: 0; } 45% { opacity: 1; } 90% { transform: translateY(-46px) scale(1); opacity: 0; } 100% { opacity: 0; } }
-.fx-block { width: 70px; height: 70px; margin: -35px 0 0 -35px; border-radius: 50%; border: 4px solid #ffd27a; box-shadow: 0 0 16px #ffd27a, inset 0 0 12px rgba(255,210,122,.6); opacity: 0; animation: fxBlock 1.15s ease-out both; }
-@keyframes fxBlock { 0%, 40% { transform: scale(.5); opacity: 0; } 46% { transform: scale(1); opacity: 1; } 75% { transform: scale(1.3); opacity: 0; } 100% { opacity: 0; } }
+@keyframes fxWave { 0%, 30% { transform: scale(.3); opacity: 0; } 36% { opacity: .9; } 62% { transform: scale(5); opacity: 0; } 100% { opacity: 0; } }
+@keyframes fxWave2 { 0%, 38% { transform: scale(.3); opacity: 0; } 44% { opacity: .8; } 72% { transform: scale(4); opacity: 0; } 100% { opacity: 0; } }
+.fx-glow { width: 120px; height: 60px; margin: -30px 0 0 -60px; border-radius: 50%; background: radial-gradient(rgba(140,255,170,.55), rgba(140,255,170,0) 70%); opacity: 0; animation: fxGlow 1.8s ease-out both; }
+@keyframes fxGlow { 0%, 28% { opacity: 0; transform: scale(.6); } 44% { opacity: 1; transform: scale(1.1); } 76%, 100% { opacity: 0; transform: scale(1.3); } }
+.fx-mote { width: 7px; height: 7px; margin: -3px 0 0 -3px; border-radius: 50%; background: #c8ffd8; box-shadow: 0 0 8px #6fdc8c, 0 0 2px #fff; opacity: 0; animation: fxMote 1.8s ease-out both; animation-delay: var(--d); }
+@keyframes fxMote { 0%, 28% { transform: translateY(18px) scale(.4); opacity: 0; } 40% { opacity: 1; } 74% { transform: translateY(-52px) scale(1); opacity: 0; } 100% { opacity: 0; } }
+.fx-block { width: 74px; height: 74px; margin: -37px 0 0 -37px; border-radius: 50%; border: 4px solid #ffd27a; box-shadow: 0 0 16px #ffd27a, inset 0 0 12px rgba(255,210,122,.6); opacity: 0; animation: fxBlock 1.8s ease-out both; }
+@keyframes fxBlock { 0%, 33% { transform: scale(.5); opacity: 0; } 36% { transform: scale(1); opacity: 1; } 56% { transform: scale(1.35); opacity: 0; } 100% { opacity: 0; } }
+.fx-ghost { opacity: 0; pointer-events: none; filter: sepia(1) hue-rotate(170deg) saturate(2.5) brightness(1.3); animation: fxGhost 1.8s ease-out both; }
+.fx-ghost .fig-svg { width: 100%; height: 100%; max-width: none; max-height: none; animation: none; }
+.fx-ghost.g2 { animation-name: fxGhost2; }
+@keyframes fxGhost { 0%, 30% { opacity: 0; transform: none; } 33% { opacity: .45; transform: translateX(calc(var(--gx) * .3)); } 48% { opacity: 0; transform: translateX(var(--gx)); } 100% { opacity: 0; } }
+@keyframes fxGhost2 { 0%, 31% { opacity: 0; transform: none; } 35% { opacity: .25; transform: translateX(calc(var(--gx) * .3)); } 52% { opacity: 0; transform: translateX(var(--gx)); } 100% { opacity: 0; } }
+.fx-num { --ax: -50%; transform: translate(var(--ax), 0); font-style: normal; font-family: var(--f-display); font-weight: 700; font-size: 15px; white-space: nowrap; text-shadow: 0 2px 0 #000, 0 0 8px #000, 0 0 2px #000; opacity: 0; animation: fxNum 1.8s ease-out both; }
+.fx-num.n-hit, .fx-num.n-kill { color: #ff6a50; } .fx-num.n-crit { color: #ffd27a; font-size: 18px; }
+.fx-num.n-miss, .fx-num.n-dodge, .fx-num.n-block { color: #b9d0e2; } .fx-num.n-heal { color: #9fd67f; }
+.fx-num.n-stress { color: #e6d6ff; font-size: 13px; } .fx-num.n-fx, .fx-num.n-resist { color: #d6b98a; font-size: 12px; }
+@keyframes fxNum { 0%, 35% { opacity: 0; transform: translate(var(--ax), 10px) scale(.7); } 39% { opacity: 1; transform: translate(var(--ax), -2px) scale(1.18); } 46% { transform: translate(var(--ax), -4px) scale(1); } 74% { opacity: 1; transform: translate(var(--ax), -14px); } 84%, 100% { opacity: 0; transform: translate(var(--ax), -20px); } }
+@media (max-width: 700px) { .cname b { font-size: 17px; } .cname small { font-size: 9px; margin-right: 6px; } .fx-num { font-size: 11px; } .fx-num.n-crit { font-size: 13px; } .cbar { height: 9%; } .cbar.b { height: 14%; } }
+@media (prefers-reduced-motion: reduce) { .stage.cine .stage-field, .stage.cine .stage-bg, .fig.c-actor, .fig.c-target, .cine-ui, .cine-fx { animation: none !important; } }
 
 /* obóz */
 .campstage { height: 320px; min-width: 0; }
@@ -1059,7 +1132,7 @@ body.hbw-on { overflow: hidden; }
 <div id="dark" aria-hidden="true"></div>
 <div class="wrap" id="app">
   <header class="top" id="top">
-    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 13.11 · 16:20</span></small><h1>Stół <em>rodu</em></h1></div>
+    <div class="brand"><small>pochodnia i obłęd · <span class="ver" title="Jeśli po aktualizacji widzisz starszą wersję, odśwież stronę: Ctrl+F5">wersja 14.11 · 07:02</span></small><h1>Stół <em>rodu</em></h1></div>
     <button class="btn sm ghost menubtn" id="menubtn" type="button" aria-expanded="false" aria-controls="toolbar" aria-label="Menu: rola, Słownik, tryb gry">⋯</button>
     <nav class="tabs" id="tabs" aria-label="Widoki stołu"></nav>
     <div class="toolbar" id="toolbar"><span class="sync" data-s="local">gra na jednym urządzeniu</span><span id="who" class="who"></span></div>
@@ -3655,55 +3728,129 @@ function lastActHtml(L) {
   const col = h => h.replace(/<b>(PUDŁO|UNIK|BLOK)<\/b>/g, '<b class="k-miss">$1</b>').replace(/<b>(TRAFIENIE)<\/b>/g, '<b class="k-hit">$1</b>').replace(/<b>(KRYTYK)<\/b>/g, '<b class="k-crit">$1</b>');
   return `<div class="lastact" aria-live="polite"><span class="lbl">Ostatnia akcja</span> <b class="la-head">${esc(L.head)}</b>${(L.sum || []).length ? `<ul>${L.sum.map(x => `<li>${col(md(x))}</li>`).join('')}</ul>` : ''}</div>`;
 }
-/* ---------- zbliżenia akcji: ~1 s na atak, unik, obronę (jak w grze) ---------- */
-const CINE_MS = 1150;
+/* ---------- zbliżenia w stylu Darkest Dungeon 2: kamera najeżdża na atakującego i cel,
+   zamach, cios, krótkie zatrzymanie, wstrząs, krew i iskry, unik z cieniami, kamera wraca ---------- */
+const CINE_MS = 1800;
 function cineOn() { try { return localStorage.getItem('pio:cine') !== 'off' && !window.matchMedia('(prefers-reduced-motion: reduce)').matches; } catch (e) { return true; } }
+function cineLeft() { return UI.cine ? Math.max(0, CINE_MS - (Date.now() - UI.cine.t)) : 0; }
+function cineRand(seed) { let x = 2166136261; for (const ch of String(seed)) x = Math.imul(x ^ ch.charCodeAt(0), 16777619) >>> 0; return () => { x = (Math.imul(x, 1664525) + 1013904223) >>> 0; return x / 4294967296; }; }
 function startCine(L) {
   if (!cineOn()) return false;
   const act = (L.ev || []).find(e => e.k === 'act'); if (!act) return false;
-  const kinds = {}; (L.ev || []).forEach(e => { if (e.k === 'act') return; (kinds[e.id] = kinds[e.id] || []).push(e.k === 'dodge' && e.txt === 'BLOK' ? 'block' : e.k); });
+  const kinds = {}, txts = {};
+  (L.ev || []).forEach(e => { if (e.k === 'act') return; const k = e.k === 'dodge' && e.txt === 'BLOK' ? 'block' : e.k; (kinds[e.id] = kinds[e.id] || []).push(k); (txts[e.id] = txts[e.id] || []).push([k, e.txt]); });
   if (!Object.keys(kinds).length) kinds[act.id] = ['fx'];
   const all = [].concat(...Object.values(kinds));
-  const fx = all.includes('heal') ? 'heal' : all.every(k => k === 'stress' || k === 'fx') ? 'wave' : null;
-  UI.cine = { id: L.id, t: Date.now(), actor: act.id, kinds, fx };
+  const fx = all.includes('heal') ? 'heal' : all.every(k => k === 'stress' || k === 'fx' || k === 'resist') ? 'wave' : null;
+  UI.cine = { id: L.id, t: Date.now(), actor: act.id, name: act.txt, kinds, txts, fx, geo: null };
   applyCine(); return true;
 }
 function cineClear() {
   const st = document.querySelector('.stage'); UI.cine = null; clearTimeout(UI.cineT);
-  if (!st) return; st.classList.remove('cine', 'c-shake'); st.querySelectorAll('.c-actor, .c-target').forEach(el => { el.className = el.className.replace(/\bc-[a-z]+\b/g, '').trim(); el.style.animationDelay = ''; });
-  const fx = st.querySelector('.cine-fx'); if (fx) fx.remove();
+  if (!st) return; st.classList.remove('cine', 'c-shake');
+  st.querySelectorAll('.c-actor, .c-target').forEach(el => { el.className = el.className.replace(/\b(c|k)-[a-z]+\b/g, '').replace(/\s+/g, ' ').trim(); el.style.animationDelay = ''; });
+  const f = st.querySelector('.stage-field'); if (f) f.style.animationDelay = ''; const bg = st.querySelector('.stage-bg'); if (bg) bg.style.animationDelay = '';
+  st.querySelectorAll('.cine-fx, .cine-ui').forEach(x => x.remove());
+}
+/* geometria liczona raz, na świeżej scenie: kto, dokąd się zbliża, jak mocno najeżdża kamera */
+function cineGeo(stage, field, a, others, C) {
+  const fw = field.offsetWidth, fh = field.offsetHeight; const fr = field.getBoundingClientRect();
+  const cx = el => el.offsetLeft + el.offsetWidth / 2;
+  const hero = a.classList.contains('hero'); const ax = cx(a);
+  let dir = hero ? 1 : -1, pull = 0, tpull = 0, lunge = 0, melee = false;
+  const opp = others.some(el => el.classList.contains('hero') !== hero);
+  if (others.length) {
+    const txs = others.map(cx); const near = txs.reduce((m, x) => Math.abs(x - ax) < Math.abs(m - ax) ? x : m, txs[0]);
+    dir = Math.sign(near - ax) || dir; const g = Math.abs(near - ax);
+    melee = opp && !C.fx && g < fw * 0.5;
+    const want = fw * (opp ? (melee ? 0.16 : 0.3) : 0.13);
+    const shift = Math.max(0, g - want);
+    pull = dir * shift * (opp ? 0.6 : 0.5); tpull = -dir * shift * (opp ? 0.4 : 0.5);
+    lunge = melee ? dir * Math.min(want * 0.5, 44) : -dir * 10;
+  }
+  const xs = [ax + pull].concat(others.map(el => cx(el) + tpull));
+  const half = Math.max(a.offsetWidth * 0.8, 40);
+  const minX = Math.min(...xs) - half, maxX = Math.max(...xs) + half;
+  const span = Math.max(maxX - minX, fw * 0.28);
+  const narrow = window.innerWidth < 700;
+  const s = Math.max(1.15, Math.min(narrow ? 1.9 : 1.7, fw * 0.94 / span));
+  const M = (minX + maxX) / 2; const tx = fw / 2 - M * s;
+  const box = el => { const sv = el.querySelector('.fig-svg') || el; const r = sv.getBoundingClientRect(); return { x: r.left - fr.left, y: r.top - fr.top, w: r.width, h: r.height }; };
+  const boxes = {}; others.concat([a]).forEach(el => { boxes[el.dataset.id] = box(el); });
+  /* kadr jak w grze: głowy tuż pod górnym pasem, nogi mogą wyjść poza dół kadru */
+  const sw = stage.offsetWidth, sh = stage.offsetHeight;
+  const tops = Object.values(boxes).map(b => b.y); const minTop = Math.min(...tops);
+  const topLine = sh * 0.115 + 34 - field.offsetTop; const ty = Math.min(0, topLine - minTop * s); /* miejsce na liczby nad głowami */
+  /* punkt uderzenia: tam kamera robi krótki dodatkowy najazd */
+  const ix = others.length ? xs.slice(1).reduce((p, x) => p + x, 0) / others.length : ax; const hh = Math.max(...Object.values(boxes).map(b => b.h)); const iy = minTop + hh * 0.35; const s2 = s * 1.045;
+  const bs = 1 + (s - 1) * 0.35;
+  const btx = Math.min(0, Math.max(sw - sw * bs, sw / 2 - (field.offsetLeft + M) * bs)); const bty = Math.min(0, Math.max(sh - sh * bs, sh * (1 - bs) * 0.6));
+  return { s, tx, ty, s2, cpx: ix * (s2 - s), cpy: iy * (s2 - s), bs, btx, bty, pull, tpull, lunge, dir, melee, boxes, fw, fh };
 }
 function applyCine() {
-  const C = UI.cine; if (!C) return; const el0 = Date.now() - C.t; const stage = document.querySelector('.stage');
-  if (!stage || el0 >= CINE_MS) return cineClear();
-  const a = stage.querySelector('.fig[data-id="' + C.actor + '"]'); if (!a) return cineClear();
-  const sr = stage.getBoundingClientRect(); const ar = a.getBoundingClientRect(); const delay = -el0 + 'ms';
-  const tEls = Object.keys(C.kinds).map(id => [id, stage.querySelector('.fig[data-id="' + id + '"]')]).filter(x => x[1]);
-  const t0 = tEls.find(([id]) => id !== C.actor);
-  let dx = 0; if (t0) { const tr = t0[1].getBoundingClientRect(); dx = ((tr.left + tr.width / 2) - (ar.left + ar.width / 2)) * 0.42; }
-  const melee = !!t0 && !C.fx && Math.abs(dx) < sr.width * 0.24 && t0[1].classList.contains('hero') !== a.classList.contains('hero');
-  if (!melee) dx = Math.sign(dx || (a.classList.contains('hero') ? 1 : -1)) * Math.min(Math.abs(dx) || 16, 16);
-  stage.classList.add('cine'); a.classList.add('c-actor'); a.style.setProperty('--dx', dx + 'px'); a.style.animationDelay = delay;
+  const C = UI.cine; if (!C) return; const el0 = Date.now() - C.t;
+  const stage = document.querySelector('.stage'); if (!stage || el0 >= CINE_MS) return cineClear();
+  const field = stage.querySelector('.stage-field'); const a = stage.querySelector('.fig[data-id="' + C.actor + '"]'); if (!field || !a) return cineClear();
+  const ids = Object.keys(C.kinds); const selfOnly = ids.every(id => id === C.actor);
+  const tEls = ids.filter(id => id !== C.actor || selfOnly).map(id => [id, stage.querySelector('.fig[data-id="' + id + '"]')]).filter(x => x[1]);
+  const others = tEls.filter(([id]) => id !== C.actor).map(x => x[1]);
+  if (!C.geo) C.geo = cineGeo(stage, field, a, others, C);
+  const G = C.geo; const delay = -el0 + 'ms';
+  const V = { '--cs': G.s, '--ctx': G.tx + 'px', '--cty': G.ty + 'px', '--cs2': G.s2, '--cpx': G.cpx + 'px', '--cpy': G.cpy + 'px', '--bs': G.bs, '--btx': G.btx + 'px', '--bty': G.bty + 'px' };
+  Object.entries(V).forEach(([k, v]) => stage.style.setProperty(k, v));
+  stage.style.setProperty('--cd', delay); stage.classList.add('cine'); field.style.animationDelay = delay; const bg = stage.querySelector('.stage-bg'); if (bg) bg.style.animationDelay = delay;
+  a.classList.add('c-actor', G.melee ? 'c-melee' : others.length && !C.fx ? 'c-ranged' : 'c-cast');
+  a.style.setProperty('--pull', G.pull + 'px'); a.style.setProperty('--lunge', G.lunge + 'px'); a.style.setProperty('--dir', G.dir); a.style.animationDelay = delay;
   const all = [].concat(...Object.values(C.kinds));
+  const kindOf = k => k.includes('kill') ? 'kill' : k.includes('crit') ? 'crit' : k.includes('hit') ? 'hit' : k.includes('block') ? 'block' : k.includes('dodge') ? 'dodge' : k.includes('miss') ? 'miss' : k.includes('heal') ? 'heal' : k.includes('stress') ? 'stress' : 'fx';
   tEls.forEach(([id, el]) => {
-    if (id === C.actor && tEls.length > 1) return; if (id === C.actor && !C.fx) return;
-    const k = C.kinds[id]; const cls = k.includes('kill') ? 'c-kill' : k.includes('crit') ? 'c-crit' : k.includes('hit') ? 'c-hit' : k.includes('block') ? 'c-block' : k.includes('dodge') ? 'c-dodge' : k.includes('miss') ? 'c-miss' : k.includes('heal') ? 'c-heal' : 'c-fx';
-    el.classList.add('c-target', cls); el.style.setProperty('--away', (el.classList.contains('hero') ? -1 : 1) * 16 + 'px'); el.style.animationDelay = delay;
+    if (id === C.actor) return;
+    el.classList.add('c-target', 'k-' + kindOf(C.kinds[id]));
+    el.style.setProperty('--tpull', G.tpull + 'px'); el.style.setProperty('--away', G.dir * 18 + 'px'); el.style.setProperty('--dir', G.dir); el.style.animationDelay = delay;
   });
   if (all.includes('crit') || all.includes('kill')) { stage.classList.add('c-shake'); stage.style.setProperty('--shd', delay); }
-  let layer = stage.querySelector('.cine-fx'); if (!layer) { layer = document.createElement('div'); layer.className = 'cine-fx'; layer.setAttribute('aria-hidden', 'true'); stage.appendChild(layer); }
-  const ax = ar.left - sr.left + ar.width / 2, ay = ar.top - sr.top + ar.height * 0.45;
-  layer.innerHTML = tEls.filter(([id]) => id !== C.actor || C.fx).map(([id, el]) => {
-    const r = el.getBoundingClientRect(); const x = r.left - sr.left + r.width / 2, y = r.top - sr.top + r.height * 0.42; const k = C.kinds[id];
-    const hitk = k.includes('crit') ? 'crit' : (k.includes('hit') || k.includes('kill')) ? 'hit' : k.includes('block') ? 'block' : (k.includes('dodge') || k.includes('miss')) ? 'miss' : 'other';
-    if (C.fx === 'heal') return `<i class="fx-heal" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i><i class="fx-heal b" style="left:${x - 14}px;top:${y + 16}px;animation-delay:${delay}"></i><i class="fx-heal c" style="left:${x + 14}px;top:${y + 8}px;animation-delay:${delay}"></i>`;
-    if (C.fx === 'wave') return `<i class="fx-wave" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i><i class="fx-wave b" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>`;
-    const shot = melee ? '' : (() => { const ang = Math.atan2(y - ay, x - ax) * 180 / Math.PI; return `<i class="fx-bolt" style="left:${ax}px;top:${ay}px;--tx:${x - ax}px;--ty:${y - ay}px;--ang:${ang}deg;animation-delay:${delay}"></i>`; })();
-    const imp = hitk === 'block' ? `<i class="fx-block" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>` : hitk === 'miss' ? `<svg class="fx-slash miss" style="left:${x + (el.classList.contains('hero') ? 26 : -26)}px;top:${y}px;animation-delay:${delay}" viewBox="-50 -50 100 100"><path d="M-34-30Q0-6 32 32"/></svg>`
-      : hitk === 'other' ? `<i class="fx-wave" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>` : `<svg class="fx-slash ${hitk}" style="left:${x}px;top:${y}px;animation-delay:${delay}" viewBox="-50 -50 100 100"><path d="M-36-30Q0-6 34 32"/>${hitk === 'crit' ? '<path d="M34-28Q2-2-32 30"/>' : ''}</svg><i class="fx-burst ${hitk}" style="left:${x}px;top:${y}px;animation-delay:${delay}"></i>`;
-    return shot + imp;
-  }).join('');
-  clearTimeout(UI.cineT); UI.cineT = setTimeout(cineClear, CINE_MS - el0 + 20);
+  /* warstwa efektów w przestrzeni sceny (przybliża się razem z kamerą) */
+  let fxl = field.querySelector('.cine-fx'); if (!fxl) { fxl = document.createElement('div'); fxl.className = 'cine-fx'; fxl.setAttribute('aria-hidden', 'true'); field.appendChild(fxl); }
+  const rnd = cineRand(C.id); const ab = G.boxes[C.actor] || { x: 0, y: 0, w: 60, h: 120 };
+  const ax = ab.x + ab.w / 2 + G.pull + G.lunge * 0.6, ay = ab.y + ab.h * 0.4;
+  let html = ''; let tj = 0;
+  tEls.forEach(([id, el]) => {
+    const b = G.boxes[id]; if (!b) return; const k = kindOf(C.kinds[id]);
+    const self = id === C.actor; const x = b.x + b.w / 2 + (self ? G.pull : G.tpull), y = b.y + b.h * 0.38;
+    const st = `animation-delay:${delay}`;
+    if (C.fx === 'heal' || k === 'heal') {
+      html += `<i class="fx-glow g-heal" style="left:${x}px;top:${y + b.h * 0.2}px;${st}"></i>`;
+      for (let i = 0; i < 9; i++) html += `<i class="fx-mote" style="left:${x + (rnd() - .5) * b.w * .9}px;top:${y + b.h * (.1 + rnd() * .45)}px;--d:${(rnd() * .25).toFixed(2)}s;${st}"></i>`;
+    } else if (C.fx === 'wave' || k === 'stress' || k === 'fx') {
+      html += `<i class="fx-wave" style="left:${x}px;top:${y}px;${st}"></i><i class="fx-wave b" style="left:${x}px;top:${y}px;${st}"></i>`;
+    } else {
+      if (!G.melee) { const ang = Math.atan2(y - ay, x - ax) * 180 / Math.PI; html += `<i class="fx-bolt" style="left:${ax}px;top:${ay}px;--tx:${x - ax}px;--ty:${y - ay}px;--ang:${ang}deg;${st}"></i>`; }
+      if (k === 'hit' || k === 'crit' || k === 'kill') {
+        const ix = x + G.dir * 18 * (k === 'hit' ? 1 : 2);
+        html += `<svg class="fx-slash ${k === 'hit' ? 'hit' : 'crit'}" style="left:${x}px;top:${y}px;${st}" viewBox="-50 -50 100 100"><path d="${G.dir > 0 ? 'M-36-30Q0-6 34 32' : 'M36-30Q0-6-34 32'}"/>${k !== 'hit' ? `<path d="${G.dir > 0 ? 'M34-28Q2-2-32 30' : 'M-34-28Q-2-2 32 30'}"/>` : ''}</svg><i class="fx-burst ${k === 'hit' ? 'hit' : 'crit'}" style="left:${x}px;top:${y}px;${st}"></i>`;
+        const n = k === 'hit' ? 9 : 16;
+        for (let i = 0; i < n; i++) { const vx = G.dir * (14 + rnd() * (k === 'hit' ? 60 : 95)); const vy = -(8 + rnd() * 55); html += `<i class="fx-drop" style="left:${ix}px;top:${y + (rnd() - .5) * 20}px;--vx:${vx.toFixed(0)}px;--vy:${vy.toFixed(0)}px;--sz:${(3 + rnd() * 5).toFixed(1)}px;${st}"></i>`; }
+        if (k !== 'hit') for (let i = 0; i < 8; i++) { const ang = (G.dir > 0 ? -60 : 120) + rnd() * 120; html += `<i class="fx-spark" style="left:${x}px;top:${y}px;--ang:${ang.toFixed(0)}deg;--len:${(26 + rnd() * 40).toFixed(0)}px;${st}"></i>`; }
+      } else if (k === 'block') {
+        html += `<i class="fx-block" style="left:${x}px;top:${y}px;${st}"></i>`;
+        for (let i = 0; i < 7; i++) { const ang = (G.dir > 0 ? 120 : -60) + rnd() * 120; html += `<i class="fx-spark s-blue" style="left:${x - G.dir * 14}px;top:${y}px;--ang:${ang.toFixed(0)}deg;--len:${(20 + rnd() * 30).toFixed(0)}px;${st}"></i>`; }
+      } else if (k === 'dodge' || k === 'miss') {
+        html += `<svg class="fx-slash miss" style="left:${x - G.dir * 10}px;top:${y}px;${st}" viewBox="-50 -50 100 100"><path d="${G.dir > 0 ? 'M-34-30Q0-6 32 32' : 'M34-30Q0-6-32 32'}"/></svg>`;
+        if (k === 'dodge') { const svg = (el.querySelector('.fig-svg') || {}).outerHTML || ''; [1, 2].forEach(i => { html += `<div class="fx-ghost g${i}" style="left:${b.x + G.tpull}px;top:${b.y}px;width:${b.w}px;height:${b.h}px;--gx:${(G.dir * 18 * 1.2 * i).toFixed(0)}px;${st}">${svg}</div>`; }); }
+      }
+    }
+    /* liczby i napisy przy celu, w przybliżeniu (jak w grze) */
+    /* nad głową celu (jak w grze); przy krawędzi kadru przesunięte do środka, sąsiednie cele na różnych wysokościach */
+    const X = Math.max(G.fw * 0.16, Math.min(G.fw * 0.84, x * G.s + G.tx)); const nx = (X - G.tx) / G.s; const drop = (tj++ % 2) * 16;
+    (C.txts[id] || []).forEach(([kk, t], i) => { html += `<i class="fx-num n-${kk}" style="left:${nx}px;top:${b.y - 16 + drop + i * 17}px;${st}">${esc(t)}</i>`; });
+  });
+  if (fxl._html !== html) { fxl.innerHTML = html; fxl._html = html; }
+  /* warstwa kinowa: czarne pasy, winieta, nazwa umiejętności, błysk przy krytyku */
+  let ui = stage.querySelector('.cine-ui'); if (!ui) { ui = document.createElement('div'); ui.className = 'cine-ui'; ui.setAttribute('aria-hidden', 'true'); stage.appendChild(ui); }
+  const who = (a.querySelector('.fig-tag .tl') || a.querySelector('.fig-tag') || {}).textContent || '';
+  const uh = `<i class="cbar t" style="animation-delay:${delay}"></i><i class="cbar b" style="animation-delay:${delay}"></i><i class="cvig" style="animation-delay:${delay}"></i><div class="cname" style="animation-delay:${delay}"><small>${esc(who)}</small><b>${esc(C.name || '')}</b></div>${all.includes('crit') ? `<i class="cflash" style="animation-delay:${delay}"></i>` : ''}`;
+  if (ui._html !== uh) { ui.innerHTML = uh; ui._html = uh; }
+  clearTimeout(UI.cineT); UI.cineT = setTimeout(cineClear, CINE_MS - el0 + 30);
 }
 /* napisy nad postaciami po każdej akcji: PUDŁO, UNIK, −5, KRYTYK… (jak w grze) */
 function showPops() {
@@ -3711,6 +3858,7 @@ function showPops() {
   if (!L || L.id === UI.lastShown) return;
   UI.lastShown = L.id; if (Date.now() - L.t > 10000) return;
   const cine = startCine(L);
+  if (cine) return; /* liczby i napisy pokazuje samo zbliżenie */
   let layer = document.getElementById('pops');
   if (!layer) { layer = document.createElement('div'); layer.id = 'pops'; layer.setAttribute('aria-hidden', 'true'); document.body.appendChild(layer); }
   const count = {};
@@ -6444,7 +6592,7 @@ function autoDriver() {
   if (!ce) { if (s.turn < 0) { const k2 = key + ':gap'; if (_autoKey === k2) return; _autoKey = k2; setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key) ACT.nextTurn(); }, 900); } return; }
   if (s.acted === key) {
     const k2 = key + ':next'; if (_autoKey === k2) return; _autoKey = k2;
-    setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key && s2.acted === key) ACT.nextTurn(); }, 1300);
+    setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key && s2.acted === key) ACT.nextTurn(); }, Math.max(1300, (typeof cineLeft === 'function' ? cineLeft() : 0) + 300));
     return;
   }
   if (ce.k === 'e') {

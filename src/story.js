@@ -14,7 +14,7 @@ function autoDriver() {
   if (!ce) { if (s.turn < 0) { const k2 = key + ':gap'; if (_autoKey === k2) return; _autoKey = k2; setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key) ACT.nextTurn(); }, 900); } return; }
   if (s.acted === key) {
     const k2 = key + ':next'; if (_autoKey === k2) return; _autoKey = k2;
-    setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key && s2.acted === key) ACT.nextTurn(); }, 1300);
+    setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key && s2.acted === key) ACT.nextTurn(); }, Math.max(1300, (typeof cineLeft === 'function' ? cineLeft() : 0) + 300));
     return;
   }
   if (ce.k === 'e') {
