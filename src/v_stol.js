@@ -289,7 +289,7 @@ VIEWS.stol = {
     const living = s.enemies.filter(e => !e.corpse).length;
     const ce = curEntry();
     /* nowa tura: od razu zaznacz tego, kto działa (jak w grze) — bez szukania i klikania */
-    if (s.fight && ce && !UI.pend && !UI.epend && UI.autoSelKey !== turnKey()) { UI.autoSelKey = turnKey(); if (ce.k === 'h' || gm) UI.sel = { k: ce.k, id: ce.id }; }
+    if (s.fight && ce && !UI.pend && !UI.epend && UI.autoSelKey !== turnKey() + ce.k + ce.id) { UI.autoSelKey = turnKey() + ce.k + ce.id; if (ce.k === 'h' || gm) UI.sel = { k: ce.k, id: ce.id }; }
     const curName = ce ? entryName(ce) : null;
     const curNote = ce ? (() => { const x = ce.k === 'h' ? H(ce.id) : s.enemies.find(e => e.id === ce.id); return x && x.fx && x.fx.lostTurn === (s.round || 0) ? (x.fx.lostWhy === 'stun' ? ' · ogłuszony, tura przepada' : ' · tura przejęta') : s.acted === turnKey() ? ' · już działał' : ''; })() : '';
     return `

@@ -12,15 +12,17 @@ function autoDriver() {
   const ce = curEntry(); const key = turnKey();
   /* ten, czyja była tura, właśnie wypadł z kolejki na jej początku — przejdź do następnego */
   if (!ce) { if (s.turn < 0) { const k2 = key + ':gap'; if (_autoKey === k2) return; _autoKey = k2; setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key) ACT.nextTurn(); }, 900); } return; }
+  /* klucz z id postaci i ostatniej akcji: po zabiciu wroga numer tury może się powtórzyć w tej samej rundzie */
+  const lastId = (s.last && s.last.id) || '';
   if (s.acted === key) {
-    const k2 = key + ':next'; if (_autoKey === k2) return; _autoKey = k2;
+    const k2 = key + ':next:' + ce.k + ce.id + ':' + lastId; if (_autoKey === k2) return; _autoKey = k2;
     setTimeout(() => { const s2 = Store.S.stol; if (s2.fight && turnKey() === key && s2.acted === key) ACT.nextTurn(); }, Math.max(1300, (typeof cineLeft === 'function' ? cineLeft() : 0) + 300));
     return;
   }
   if (ce.k === 'e') {
     const e = s.enemies.find(x => x.id === ce.id); if (!e || e.corpse) return;
     if (e.fx && e.fx.lostTurn === (s.round || 0)) return; /* ogłuszony — przejdzie sam */
-    const k2 = key + ':enemy'; if (_autoKey === k2) return; _autoKey = k2;
+    const k2 = key + ':enemy:' + ce.id + ':' + lastId; if (_autoKey === k2) return; _autoKey = k2;
     setTimeout(() => {
       const s2 = Store.S.stol; if (!s2.fight || turnKey() !== key || s2.acted === key || !autoOn()) return;
       const e2 = s2.enemies.find(x => x.id === ce.id); if (!e2 || e2.corpse) return;
